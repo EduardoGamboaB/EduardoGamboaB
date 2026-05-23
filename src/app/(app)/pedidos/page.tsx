@@ -81,7 +81,7 @@ export default function PedidosPage() {
               className="input pl-10"
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto -mx-1 px-1 sm:overflow-visible">
+          <div className="flex gap-2 overflow-x-auto -mx-1 px-1 lg:overflow-visible lg:flex-wrap">
             {['Todos', 'Borrador', 'Confirmado', 'En producción', 'Terminado', 'Entregado'].map(
               (f, i) => (
                 <button
@@ -106,8 +106,8 @@ export default function PedidosPage() {
 
       {/* Lista — tabla en desktop, cards en móvil */}
       <Card className="p-0 overflow-hidden">
-        {/* Vista tabla (md+) */}
-        <div className="hidden md:block">
+        {/* Vista tabla (lg+) — en tablet usamos la vista de cards porque la tabla es ancha */}
+        <div className="hidden lg:block">
           <table className="w-full text-sm">
             <thead className="bg-mallatex-soil-50 text-left text-xs uppercase tracking-wider text-mallatex-soil-500">
               <tr>
@@ -158,8 +158,8 @@ export default function PedidosPage() {
           </table>
         </div>
 
-        {/* Vista cards (móvil) */}
-        <ul className="md:hidden divide-y divide-mallatex-soil-200/60">
+        {/* Vista cards (móvil + tablet) */}
+        <ul className="lg:hidden divide-y divide-mallatex-soil-200/60">
           {PEDIDOS.map((p) => (
             <li key={p.folio}>
               <Link

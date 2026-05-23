@@ -5,6 +5,7 @@ node_modules/
 
 # Testing
 coverage/
+qa/output/
 
 # Next.js
 .next/
@@ -41,3 +42,8 @@ prisma/dev.db-journal
 
 # Vercel
 .vercel
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
