@@ -1,5 +1,13 @@
-// Mallatex Production Suite - Modelo de datos
-// Cubre: catálogo, pedidos, producción, inventario, calidad, trazabilidad
+// Mallatex Production Suite — Modelo de datos (versión 2)
+// Refleja la operación real de TEJIDOS TÉCNICOS MALLATEX, S.A. DE C.V.
+// (Zapopan, Jalisco) tras revisión de documentos formales en planta:
+//   MT-DT-003 · Control MP en Producción
+//   MT-DT-004 · Control conteo de rollo (+ control por máquina-turno)
+//   MT-DT-005 · Control de Peso Diario
+//   MT-DT-006 · Devolución de Materia Prima a Almacén
+//   Pedido de Almacén
+//   Check List diario de Montacargas
+//   Control de Insumos en el Área de Producción
 
 generator client {
   provider = "prisma-client-js"
@@ -15,10 +23,14 @@ datasource db {
 // =====================
 enum Rol {
   ADMIN
+  GERENCIA
   SUPERVISOR
-  OPERARIO
+  JEFE_PRODUCCION
   COMERCIAL
+  OPERARIO
   CALIDAD
+  ALMACENISTA
+  MONTACARGUISTA
 }
 
 model Usuario {
@@ -31,25 +43,40 @@ model Usuario {
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 
-  ordenesCreadas    OrdenProduccion[] @relation("OrdenCreador")
-  registros         RegistroProduccion[]
-  inspecciones      InspeccionCalidad[]
-  pedidosComerciales Pedido[]         @relation("PedidoComercial")
+  pedidosVendedor    Pedido[]              @relation("PedidoVendedor")
+  pedidosComerciales Pedido[]              @relation("PedidoComercial")
+  ordenesCreadas     OrdenProduccion[]     @relation("OrdenCreador")
+  pasosOperario      PasoProduccion[]      @relation("PasoOperario")
+  registros          RegistroProduccion[]
+  tiradasResponsable Tirada[]              @relation("TiradaResponsable")
+  inspeccionesQC     InspeccionCalidad[]
+  controlesMP        ControlMP[]
+  pedidosAlmacenSol  PedidoAlmacen[]       @relation("PASolicito")
+  pedidosAlmacenEnt  PedidoAlmacen[]       @relation("PAEntrego")
+  rollosElaborados   Rollo[]               @relation("RolloElaborador")
+  checklistsMonta    InspeccionMontacargas[] @relation("ChecklistOperador")
+  checklistsMontaSup InspeccionMontacargas[] @relation("ChecklistSupervisor")
+  consumosInsumos    ConsumoInsumoAux[]
 }
 
 // =====================
-// Catálogo
+// Catálogo · Familias y productos
 // =====================
 enum FamiliaProducto {
-  MALLA_SOMBRA
-  MALLA_ANTIGRANIZO
-  MALLA_ANTIPAJAROS
-  MALLA_ANTIAFIDOS
-  MALLA_TUTOR
-  CUBRE_SUELOS
+  CUBRESUELO_NEGRO
+  CUBRESUELO_AZORRILLADO
+  CUBRESUELO_LINEA_VERDE
+  ANTIAFIDO
+  ANTIGRANIZO
   MANTA_TERMICA
-  RAFIA
-  GEOTEXTIL
+  MONOFILAMENTO
+  PANTALLA_TERMICA
+  RASCHEL
+  ESPALDERA
+  EXTRUIDA
+  MALLA_GALLINERA
+  MALLA_TUTOR
+  SOGA
   OTRO
 }
 
@@ -61,29 +88,50 @@ enum UnidadMedida {
   PIEZA
 }
 
+/// Catálogo de producto Mallatex. SKU sigue formato real:
+///   <FAMILIA><DENSIDAD/MEDIDA><COLOR><GRAMAJE?>
+///   Ej.: CUNEGRO105GR, ANTIAFIDO12X22CRISTAL, RASCHEL35BLANCA
 model Producto {
-  id            String          @id @default(cuid())
-  sku           String          @unique
-  nombre        String
-  familia       FamiliaProducto
-  descripcion   String?
-  unidad        UnidadMedida    @default(METRO_LINEAL)
-  // Especificaciones técnicas (JSON serializado para flexibilidad por familia)
-  // Ej.: { "anchoMetros": 4.2, "gramaje": 80, "porcentajeSombra": 50, "color": "negro", "uvProtegido": true }
-  especificaciones String       @default("{}")
-  precioBase    Float           @default(0)
-  activo        Boolean         @default(true)
-  creadoEn      DateTime        @default(now())
+  id                String          @id @default(cuid())
+  sku               String          @unique
+  nombre            String                                    // "Cubresuelo Azorrillado 105GR"
+  familia           FamiliaProducto
+  descripcion       String?
+  unidad            UnidadMedida    @default(METRO_LINEAL)
 
-  itemsPedido      ItemPedido[]
-  ordenes          OrdenProduccion[]
-  movimientosStock MovimientoStock[]
+  // Atributos técnicos extraídos del catálogo real de fichas en almacén
+  anchoMetros       Float?                                    // 1.80, 3.30, 4.10, 7.70, etc.
+  largoEstandar     Float?                                    // 100, 500, 587 — largo típico del rollo
+  gramaje           Int?                                      // gramos por m² (105, 80, etc.)
+  porcentajeCobertura Int?                                    // 35, 40 — % sombra/transmisión
+  densidadHilos     String?                                   // "10x16", "12x22", "13x31"
+  color             String?                                   // negro, blanco, cristal, verde, bicolor
+  colorSecundario   String?                                   // para BICOLOR o LÍNEA VERDE
+  caracteristicas   String?                                   // "Perforados cada 70cm", "Plastificada 1 cara", "Confeccionada"
+
+  // Espec. extra como JSON serializado para casos especiales
+  especificaciones  String          @default("{}")
+  precioBase        Float           @default(0)
+  activo            Boolean         @default(true)
+  creadoEn          DateTime        @default(now())
+
+  itemsPedido       ItemPedido[]
+  ordenes           OrdenProduccion[]
+  movimientosStock  MovimientoStock[]
+  rollos            Rollo[]
+  controlesMP       ControlMP[]
 }
 
+// =====================
+// Clientes
+// =====================
 model Cliente {
   id           String   @id @default(cuid())
   rfc          String?  @unique
   razonSocial  String
+  /// Prefijo de folio del cliente, 3-5 caracteres alfanuméricos. Ej.: "VFGC", "VEG", "EZE", "P.FEL"
+  /// Si es null, el pedido usa folio interno numérico de 6 dígitos.
+  prefijoFolio String?
   contacto     String?
   email        String?
   telefono     String?
@@ -97,21 +145,92 @@ model Cliente {
   pedidos      Pedido[]
 }
 
+// =====================
+// Materia prima y lotes
+// =====================
 model MateriaPrima {
   id           String   @id @default(cuid())
   codigo       String   @unique
-  nombre       String   // HDPE virgen, polipropileno, aditivo UV, masterbatch negro...
+  nombre       String   // HDPE virgen, polipropileno, MB negro, etc.
   unidad       UnidadMedida @default(KILOGRAMO)
   stockMinimo  Float    @default(0)
   proveedor    String?
   creadoEn     DateTime @default(now())
 
+  lotes        LoteMP[]
   movimientos  MovimientoStock[]
-  consumos     ConsumoMateriaPrima[]
+}
+
+/// Lote de materia prima — número con el que se etiqueta en almacén (ej. 6619, 4153)
+/// Habilita trazabilidad MP → rollo terminado.
+model LoteMP {
+  id               String       @id @default(cuid())
+  codigo           String       @unique
+  materiaPrimaId   String
+  materiaPrima     MateriaPrima @relation(fields: [materiaPrimaId], references: [id])
+  fechaIngreso     DateTime     @default(now())
+  cantidadOriginal Float
+  cantidadDisponible Float
+  proveedor        String?
+  notas            String?
+
+  controlesMP      ControlMP[]
 }
 
 // =====================
-// Pedidos
+// Líneas y operaciones (en lugar de máquinas individuales)
+// =====================
+enum TipoOperacion {
+  EXTRUSION
+  TEJIDO
+  EMBOBINAR
+  PLANCHAR
+  CONFECCION
+  CONFECCIONADA
+  AZORRILLADO
+  PERFORAR
+  CORTE
+  BASTILLAR
+  BAJADA_COLILLOS
+  BAJADA_ROLLOS
+  ETIQUETADO
+  EMPAQUE
+  ACABADO
+  OTRO
+}
+
+model Operacion {
+  id          String        @id @default(cuid())
+  codigo      String        @unique     // OP-EMBOB, OP-PLAN, OP-CONF, OP-COR, OP-BAS, OP-PERF, OP-BAJC, OP-BAJR
+  nombre      String                    // "Embobinar", "Planchar", "Confección"...
+  tipo        TipoOperacion
+  descripcion String?
+  activa      Boolean       @default(true)
+
+  pasos       PasoProduccion[]
+}
+
+/// Línea de producción física. Las del tablero Mallatex:
+///   LC1, LC2, LC3 → Líneas de Costura 1, 2, 3
+///   LK            → Línea de Corte
+///   LP            → Línea de Perforadora
+model LineaProduccion {
+  id                    String   @id @default(cuid())
+  codigo                String   @unique
+  nombre                String
+  operacionesSoportadas String   @default("[]") // JSON: TipoOperacion[]
+  capacidadHora         Float    @default(0)
+  activa                Boolean  @default(true)
+  creadoEn              DateTime @default(now())
+
+  pasos                 PasoProduccion[]
+  tiradas               Tirada[]
+  controlesMP           ControlMP[]
+  paros                 ParoProduccion[]
+}
+
+// =====================
+// Pedidos del cliente
 // =====================
 enum EstadoPedido {
   BORRADOR
@@ -124,9 +243,14 @@ enum EstadoPedido {
 
 model Pedido {
   id              String       @id @default(cuid())
-  folio           String       @unique          // PED-2026-00001
+  /// Folio visible: si el cliente tiene prefijo → "VFGC-861". Si no → "183674" (6 dígitos numéricos)
+  folio           String       @unique
+  /// Correlativo interno numérico siempre asignado.
+  numeroInterno   Int          @unique
   clienteId       String
   cliente         Cliente      @relation(fields: [clienteId], references: [id])
+  vendedorId      String?
+  vendedor        Usuario?     @relation("PedidoVendedor", fields: [vendedorId], references: [id])
   comercialId     String?
   comercial       Usuario?     @relation("PedidoComercial", fields: [comercialId], references: [id])
   fechaPedido     DateTime     @default(now())
@@ -139,21 +263,64 @@ model Pedido {
 
   items           ItemPedido[]
   ordenes         OrdenProduccion[]
+  pedidosAlmacen  PedidoAlmacen[]
+  rollos          Rollo[]
 }
 
 model ItemPedido {
-  id              String   @id @default(cuid())
-  pedidoId        String
-  pedido          Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  productoId      String
-  producto        Producto @relation(fields: [productoId], references: [id])
-  cantidad        Float
-  unidad          UnidadMedida
-  // Espec. personalizada para este pedido (sobrescribe la del producto)
-  especificacionesItem String @default("{}")
-  precioUnitario  Float    @default(0)
-  // metros producidos / kg producidos a la fecha
-  cantidadProducida Float  @default(0)
+  id                   String   @id @default(cuid())
+  pedidoId             String
+  pedido               Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  productoId           String
+  producto             Producto @relation(fields: [productoId], references: [id])
+  cantidad             Float
+  unidad               UnidadMedida
+  medidaSolicitada     String?  // formato "3.30×1391.72" o "7.70×100"
+  especificacionesItem String   @default("{}")
+  precioUnitario       Float    @default(0)
+  cantidadProducida    Float    @default(0)
+}
+
+// =====================
+// Pedido de Almacén (documento interno separado del pedido del cliente)
+// =====================
+enum EstadoPedidoAlmacen {
+  PENDIENTE
+  ENTREGADO_PARCIAL
+  ENTREGADO
+  CANCELADO
+}
+
+/// Documento "Pedido de Almacén" — solicitud interna de MP/producto a almacén para producción.
+/// Sigue el formato corporativo Mallatex: SOLICITO → ENTREGO.
+model PedidoAlmacen {
+  id              String              @id @default(cuid())
+  folio           String              @unique   // PA-2026-00001
+  fecha           DateTime            @default(now())
+  pedidoId        String?
+  pedido          Pedido?             @relation(fields: [pedidoId], references: [id])
+  solicitanteId   String
+  solicitante     Usuario             @relation("PASolicito", fields: [solicitanteId], references: [id])
+  entregadoPorId  String?
+  entregadoPor    Usuario?            @relation("PAEntrego", fields: [entregadoPorId], references: [id])
+  fechaEntrega    DateTime?
+  estado          EstadoPedidoAlmacen @default(PENDIENTE)
+  notas           String?
+
+  partidas        PartidaPedidoAlmacen[]
+}
+
+model PartidaPedidoAlmacen {
+  id                  String        @id @default(cuid())
+  pedidoAlmacenId     String
+  pedidoAlmacen       PedidoAlmacen @relation(fields: [pedidoAlmacenId], references: [id], onDelete: Cascade)
+  codigo              String        // CUNEGRO105GR
+  descripcion         String
+  unidad              UnidadMedida  @default(METRO_CUADRADO)
+  cantidad            Float
+  medida              String?       // "7.70×100"
+  numeroRollos        Int?
+  notas               String?
 }
 
 // =====================
@@ -167,51 +334,89 @@ enum EstadoOrdenProduccion {
   CANCELADA
 }
 
-enum Turno {
-  MATUTINO
-  VESPERTINO
-  NOCTURNO
+enum EstadoPaso {
+  PENDIENTE
+  EN_PROCESO
+  TERMINADO
+  OMITIDO
 }
 
-model Maquina {
-  id              String   @id @default(cuid())
-  codigo          String   @unique             // TEL-01, EXT-02
-  nombre          String                       // Telar Karl Mayer 01
-  tipo            String                       // telar, extrusora, recubridora, cortadora
-  capacidadHora   Float    @default(0)         // unidades por hora
-  activa          Boolean  @default(true)
-  creadoEn        DateTime @default(now())
-
-  ordenes         OrdenProduccion[]
-  registros       RegistroProduccion[]
-  paros           ParoProduccion[]
+enum Turno {
+  MATUTINO    // 06:00 - 14:00
+  VESPERTINO  // 14:00 - 22:00
+  NOCTURNO    // 22:00 - 06:00
 }
 
 model OrdenProduccion {
   id            String                @id @default(cuid())
-  folio         String                @unique  // OP-2026-00001
+  folio         String                @unique
   pedidoId      String?
   pedido        Pedido?               @relation(fields: [pedidoId], references: [id])
   productoId    String
   producto      Producto              @relation(fields: [productoId], references: [id])
-  maquinaId     String?
-  maquina       Maquina?              @relation(fields: [maquinaId], references: [id])
   creadorId     String
   creador       Usuario               @relation("OrdenCreador", fields: [creadorId], references: [id])
-  cantidadPlan  Float                 // unidades a producir
+  cantidadPlan  Float
   unidad        UnidadMedida
   estado        EstadoOrdenProduccion @default(PENDIENTE)
-  prioridad     Int                   @default(3) // 1=urgente, 5=baja
+  prioridad     Int                   @default(3)
   fechaPlan     DateTime
   fechaInicio   DateTime?
   fechaFin      DateTime?
   notas         String?
   creadoEn      DateTime              @default(now())
 
-  registros     RegistroProduccion[]
-  paros         ParoProduccion[]
-  consumos      ConsumoMateriaPrima[]
-  rollos        Rollo[]
+  pasos      PasoProduccion[]
+  registros  RegistroProduccion[]
+  tiradas    Tirada[]
+  paros      ParoProduccion[]
+  controlesMP ControlMP[]
+  rollos     Rollo[]
+}
+
+/// Paso de la ruta productiva. Una orden de Cubrenegro puede pasar por:
+/// extrusión → embobinar → planchar → corte → empaque.
+model PasoProduccion {
+  id            String          @id @default(cuid())
+  ordenId       String
+  orden         OrdenProduccion @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  secuencia     Int
+  operacionId   String
+  operacion     Operacion       @relation(fields: [operacionId], references: [id])
+  lineaId       String?
+  linea         LineaProduccion? @relation(fields: [lineaId], references: [id])
+  operarioId    String?
+  operario      Usuario?        @relation("PasoOperario", fields: [operarioId], references: [id])
+  estado        EstadoPaso      @default(PENDIENTE)
+  cantidadOk    Float           @default(0)
+  cantidadMerma Float           @default(0)
+  fechaInicio   DateTime?
+  fechaFin      DateTime?
+  notas         String?
+
+  @@unique([ordenId, secuencia])
+}
+
+/// Tirada (corrida) = sesión de máquina-turno-responsable. Formato MT-DT-004.
+model Tirada {
+  id             String          @id @default(cuid())
+  folio          String          @unique
+  fecha          DateTime
+  horaInicio    String                                          // "06:10"
+  horaFin       String?                                         // "14:00"
+  lineaId        String
+  linea          LineaProduccion @relation(fields: [lineaId], references: [id])
+  responsableId  String
+  responsable    Usuario         @relation("TiradaResponsable", fields: [responsableId], references: [id])
+  ordenId        String?
+  orden          OrdenProduccion? @relation(fields: [ordenId], references: [id])
+  pedidoFolio    String?                                         // referencia rápida (ej. "EZE 503")
+  totalM2        Float           @default(0)
+  totalMetrosLineales Float       @default(0)
+  totalPiezas    Int             @default(0)
+  imprevistos    String?
+  notas          String?
+  creadoEn       DateTime        @default(now())
 }
 
 model RegistroProduccion {
@@ -220,8 +425,6 @@ model RegistroProduccion {
   orden           OrdenProduccion  @relation(fields: [ordenId], references: [id], onDelete: Cascade)
   operarioId      String
   operario        Usuario          @relation(fields: [operarioId], references: [id])
-  maquinaId       String?
-  maquina         Maquina?         @relation(fields: [maquinaId], references: [id])
   turno           Turno
   inicio          DateTime
   fin             DateTime?
@@ -234,11 +437,12 @@ model RegistroProduccion {
 enum MotivoParo {
   CAMBIO_MOLDE
   MANTENIMIENTO
-  FALLA_MAQUINA
+  FALLA_LINEA
   FALTA_MATERIA_PRIMA
   CAMBIO_TURNO
   CALIDAD
   ENERGIA
+  IMPREVISTO
   OTRO
 }
 
@@ -246,8 +450,8 @@ model ParoProduccion {
   id          String          @id @default(cuid())
   ordenId     String?
   orden       OrdenProduccion? @relation(fields: [ordenId], references: [id])
-  maquinaId   String
-  maquina     Maquina         @relation(fields: [maquinaId], references: [id])
+  lineaId     String
+  linea       LineaProduccion @relation(fields: [lineaId], references: [id])
   motivo      MotivoParo
   inicio      DateTime
   fin         DateTime?
@@ -256,19 +460,42 @@ model ParoProduccion {
   creadoEn    DateTime        @default(now())
 }
 
-model ConsumoMateriaPrima {
-  id              String       @id @default(cuid())
+// =====================
+// Control MP en Producción (MT-DT-003)
+// Categoriza cada incidencia de MP en producción, no solo "merma".
+// =====================
+enum CategoriaIncidenciaMP {
+  EXCEDENTE        // sobró m de lo planeado (positivo)
+  DEFECTO          // m con problema de calidad detectado
+  FALTANTE         // m faltantes vs. lo planeado (negativo)
+  SOBRANTE         // queda en planta sin usar
+  DESPERDICIO      // no aprovechable
+}
+
+model ControlMP {
+  id              String                @id @default(cuid())
   ordenId         String
-  orden           OrdenProduccion @relation(fields: [ordenId], references: [id], onDelete: Cascade)
-  materiaPrimaId  String
-  materiaPrima    MateriaPrima @relation(fields: [materiaPrimaId], references: [id])
-  cantidad        Float
-  unidad          UnidadMedida
-  fecha           DateTime     @default(now())
+  orden           OrdenProduccion       @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  fechaElaboracion DateTime
+  productoId      String?
+  producto        Producto?             @relation(fields: [productoId], references: [id])
+  material        String                                  // "Cubresuelo Negro", "Antigranizo"
+  medida          String?                                 // "3.30×1391.72"
+  lineaId         String?
+  linea           LineaProduccion?      @relation(fields: [lineaId], references: [id])
+  loteId          String?
+  lote            LoteMP?               @relation(fields: [loteId], references: [id])
+  categoria       CategoriaIncidenciaMP
+  cantidad        Float                                   // m, m², kg según unidad
+  unidad          UnidadMedida          @default(METRO_LINEAL)
+  observaciones   String?
+  registradoPorId String
+  registradoPor   Usuario               @relation(fields: [registradoPorId], references: [id])
+  creadoEn        DateTime              @default(now())
 }
 
 // =====================
-// Trazabilidad (rollos individuales)
+// Trazabilidad de rollos
 // =====================
 enum EstadoRollo {
   EN_PROCESO
@@ -280,19 +507,26 @@ enum EstadoRollo {
 }
 
 model Rollo {
-  id            String      @id @default(cuid())
-  codigo        String      @unique           // R-2026-00001
-  ordenId       String
-  orden         OrdenProduccion @relation(fields: [ordenId], references: [id])
-  metros        Float
-  peso          Float?
-  anchoMetros   Float?
-  qrPayload     String                        // contenido del QR (incluye codigo + hash)
-  estado        EstadoRollo @default(EN_PROCESO)
-  ubicacion     String?                       // almacén / racks
-  creadoEn      DateTime    @default(now())
+  id              String      @id @default(cuid())
+  codigo          String      @unique
+  ordenId         String
+  orden           OrdenProduccion @relation(fields: [ordenId], references: [id])
+  pedidoId        String?
+  pedido          Pedido?     @relation(fields: [pedidoId], references: [id])
+  productoId      String
+  producto        Producto    @relation(fields: [productoId], references: [id])
+  anchoMetros     Float                                       // 1.80, 4.10
+  largoMetros     Float                                       // 500, 74, 587
+  peso            Float?                                      // kg
+  elaboradoPorId  String?
+  elaboradoPor    Usuario?    @relation("RolloElaborador", fields: [elaboradoPorId], references: [id])
+  notasEtiqueta   String?                                     // "Perforados cada 70cm"
+  qrPayload       String                                      // contenido del QR/etiqueta
+  estado          EstadoRollo @default(EN_PROCESO)
+  ubicacion       String?
+  creadoEn        DateTime    @default(now())
 
-  inspecciones  InspeccionCalidad[]
+  inspecciones    InspeccionCalidad[]
 }
 
 // =====================
@@ -305,19 +539,19 @@ enum ResultadoInspeccion {
 }
 
 model InspeccionCalidad {
-  id           String              @id @default(cuid())
-  rolloId      String?
-  rollo        Rollo?              @relation(fields: [rolloId], references: [id])
-  inspectorId  String
-  inspector    Usuario             @relation(fields: [inspectorId], references: [id])
-  fecha        DateTime            @default(now())
-  resultado    ResultadoInspeccion
-  defectos     String              @default("[]") // JSON: lista de defectos
+  id            String              @id @default(cuid())
+  rolloId       String?
+  rollo         Rollo?              @relation(fields: [rolloId], references: [id])
+  inspectorId   String
+  inspector     Usuario             @relation(fields: [inspectorId], references: [id])
+  fecha         DateTime            @default(now())
+  resultado     ResultadoInspeccion
+  defectos      String              @default("[]")
   observaciones String?
 }
 
 // =====================
-// Inventario
+// Inventario y almacenes
 // =====================
 enum TipoMovimiento {
   ENTRADA
@@ -325,13 +559,14 @@ enum TipoMovimiento {
   TRASPASO
   MERMA
   AJUSTE
+  DEVOLUCION
 }
 
 model Almacen {
   id          String   @id @default(cuid())
   codigo      String   @unique
   nombre      String
-  tipo        String   // MATERIA_PRIMA, PRODUCTO_PROCESO, PRODUCTO_TERMINADO
+  tipo        String     // MATERIA_PRIMA / PRODUCTO_PROCESO / PRODUCTO_TERMINADO
   ubicacion   String?
   activo      Boolean  @default(true)
 
@@ -349,7 +584,79 @@ model MovimientoStock {
   tipo            TipoMovimiento
   cantidad        Float
   unidad          UnidadMedida
-  referencia      String?        // folio OP, pedido, etc.
+  referencia      String?
   fecha           DateTime       @default(now())
   notas           String?
+}
+
+// =====================
+// Activos y mantenimiento (Check List diario montacargas)
+// =====================
+model Activo {
+  id        String   @id @default(cuid())
+  numeroEco String   @unique           // No. económico
+  modelo    String?
+  serie     String?
+  tipo      String                     // "montacargas", "extrusora", etc.
+  activo    Boolean  @default(true)
+
+  inspecciones InspeccionMontacargas[]
+}
+
+/// Check List diario de Montacargas (formato corporativo Mallatex)
+model InspeccionMontacargas {
+  id              String   @id @default(cuid())
+  activoId        String
+  activo          Activo   @relation(fields: [activoId], references: [id])
+  operadorId      String
+  operador        Usuario  @relation("ChecklistOperador", fields: [operadorId], references: [id])
+  supervisorId    String?
+  supervisor      Usuario? @relation("ChecklistSupervisor", fields: [supervisorId], references: [id])
+  fecha           DateTime
+  turno           Turno
+  horas           Int?      // horómetro
+  // JSON con resultado por sección/punto (visual y operacional)
+  // [{ "seccion": "Ruedas", "punto": "Sin daños", "estado": "OK"|"R"|"N/A" }, ...]
+  resultados      String    @default("[]")
+  observaciones   String?
+  conRevision     Boolean   @default(false)     // true si algún punto está R
+  creadoEn        DateTime  @default(now())
+}
+
+// =====================
+// Insumos auxiliares (cintas, hilo, agujas)
+// =====================
+enum TipoInsumoAux {
+  CINTA_TRANSPARENTE
+  CINTA_MALLATEX
+  HILO
+  AGUJAS_OVER
+  AGUJAS_RECTA
+  OTRO
+}
+
+model InsumoAuxiliar {
+  id          String        @id @default(cuid())
+  codigo      String        @unique
+  nombre      String
+  tipo        TipoInsumoAux
+  unidad      UnidadMedida  @default(PIEZA)
+  stockMinimo Float         @default(0)
+
+  consumos    ConsumoInsumoAux[]
+}
+
+/// Consumo diario de insumo auxiliar por empleado (formato calendario mensual)
+model ConsumoInsumoAux {
+  id          String         @id @default(cuid())
+  insumoId    String
+  insumo      InsumoAuxiliar @relation(fields: [insumoId], references: [id])
+  empleadoId  String
+  empleado    Usuario        @relation(fields: [empleadoId], references: [id])
+  fecha       DateTime
+  cantidad    Float
+  notas       String?
+
+  @@index([fecha])
+  @@index([empleadoId, fecha])
 }

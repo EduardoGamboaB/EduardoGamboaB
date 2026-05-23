@@ -7,24 +7,25 @@ export const metadata = { title: 'Inventario' }
 
 export default function InventarioPage() {
   const almacenes = [
-    { codigo: 'ALM-MP', nombre: 'Materia prima', items: 12, valorMxn: 845_000 },
-    { codigo: 'ALM-PP', nombre: 'Producto en proceso', items: 28, valorMxn: 312_000 },
-    { codigo: 'ALM-PT', nombre: 'Producto terminado', items: 47, valorMxn: 1_240_000 },
+    { codigo: 'ALM-MP', nombre: 'Materia prima',         items: 12, valorMxn: 845_000 },
+    { codigo: 'ALM-PP', nombre: 'Producto en proceso',   items: 28, valorMxn: 312_000 },
+    { codigo: 'ALM-PT', nombre: 'Producto terminado',    items: 47, valorMxn: 1_240_000 },
   ]
 
   const materias = [
-    { codigo: 'MP-HDPE-V', nombre: 'HDPE virgen', stock: 1850, min: 2000, unidad: 'kg' },
-    { codigo: 'MP-PP-V', nombre: 'Polipropileno virgen', stock: 2400, min: 1500, unidad: 'kg' },
-    { codigo: 'MP-UV', nombre: 'Aditivo UV', stock: 140, min: 200, unidad: 'kg' },
-    { codigo: 'MP-MB-N', nombre: 'Masterbatch negro', stock: 480, min: 300, unidad: 'kg' },
-    { codigo: 'MP-MB-V', nombre: 'Masterbatch verde', stock: 95, min: 150, unidad: 'kg' },
+    { codigo: 'MP-HDPE-V', nombre: 'HDPE virgen',          stock: 1850, min: 2000, unidad: 'kg' },
+    { codigo: 'MP-PP-V',   nombre: 'Polipropileno virgen', stock: 2400, min: 1500, unidad: 'kg' },
+    { codigo: 'MP-UV',     nombre: 'Aditivo UV',           stock: 140,  min: 200,  unidad: 'kg' },
+    { codigo: 'MP-MB-N',   nombre: 'Masterbatch negro',    stock: 480,  min: 300,  unidad: 'kg' },
+    { codigo: 'MP-MB-V',   nombre: 'Masterbatch verde',    stock: 95,   min: 150,  unidad: 'kg' },
   ]
 
   const terminados = [
-    { sku: 'MS-50-N-420', nombre: 'Malla sombra 50% negra 4.20m', rollos: 42, metros: 12_600 },
-    { sku: 'MA-50x25-B-300', nombre: 'Antiáfidos 50x25 cristal 3.00m', rollos: 18, metros: 5_400 },
-    { sku: 'CS-100-N-420', nombre: 'Cubre suelos 100g 4.20m', rollos: 23, metros: 9_200 },
-    { sku: 'MT-17-B-420', nombre: 'Manta térmica 17g blanca 4.20m', rollos: 31, metros: 15_500 },
+    { sku: 'CUNEGRO105GR',         nombre: 'Cubresuelo Negro 105 GR 7.70×100',   rollos: 178, metros: 137060, lote: '6619' },
+    { sku: 'CUAZORR105P70',        nombre: 'Cubresuelo Azorrillado 1.80×500',     rollos:  23, metros:  11500, lote: '4368' },
+    { sku: 'RASCHEL35BLANCA',      nombre: 'Raschel 35% blanca 4.10×74',          rollos:  42, metros:   3108, lote: '4153' },
+    { sku: 'ANTIGRANIZONEGRA',     nombre: 'Antigranizo negra 2.08×46.5',         rollos:  18, metros:    837, lote: '3049' },
+    { sku: 'ANTIAFIDO12X22CRISTAL',nombre: 'Antiáfido 12×22 cristal 5.20×6',      rollos:  12, metros:     72, lote: '2731' },
   ]
 
   return (
@@ -32,7 +33,7 @@ export default function InventarioPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title">Inventario</h1>
-          <p className="page-subtitle">Stock de materia prima, proceso y producto terminado.</p>
+          <p className="page-subtitle">MP por lote, producto en proceso y producto terminado.</p>
         </div>
         <div className="flex gap-2">
           <button className="btn-secondary">
@@ -44,7 +45,6 @@ export default function InventarioPage() {
         </div>
       </div>
 
-      {/* Almacenes */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {almacenes.map((a) => (
           <Card key={a.codigo}>
@@ -68,9 +68,8 @@ export default function InventarioPage() {
         ))}
       </div>
 
-      {/* Materia prima */}
       <Card>
-        <CardHeader title="Materia prima" subtitle="Stock vs. nivel mínimo" />
+        <CardHeader title="Materia prima por lote" subtitle="Stock vs. nivel mínimo · trazabilidad por lote" />
         <div className="space-y-3">
           {materias.map((m) => {
             const ratio = (m.stock / m.min) * 100
@@ -88,10 +87,7 @@ export default function InventarioPage() {
                   </span>
                 </div>
                 <div className="mt-1 h-1.5 rounded-full bg-mallatex-soil-100 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${critico ? 'bg-red-500' : 'bg-mallatex-green-600'}`}
-                    style={{ width: `${Math.min(ratio, 100)}%` }}
-                  />
+                  <div className={`h-full rounded-full ${critico ? 'bg-red-500' : 'bg-mallatex-green-600'}`} style={{ width: `${Math.min(ratio, 100)}%` }} />
                 </div>
               </div>
             )
@@ -99,17 +95,17 @@ export default function InventarioPage() {
         </div>
       </Card>
 
-      {/* Producto terminado */}
       <Card className="p-0 overflow-hidden">
-        <CardHeader title="Producto terminado" subtitle="Listo para entregar" />
+        <CardHeader title="Producto terminado por lote" subtitle="Disponible para entrega" />
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase tracking-wider text-mallatex-soil-500">
               <tr className="border-b border-mallatex-soil-200">
                 <th className="px-5 py-2 font-medium">SKU</th>
                 <th className="px-5 py-2 font-medium">Producto</th>
+                <th className="px-5 py-2 font-medium">Lote</th>
                 <th className="px-5 py-2 font-medium text-right">Rollos</th>
-                <th className="px-5 py-2 font-medium text-right">Metros</th>
+                <th className="px-5 py-2 font-medium text-right">m / m²</th>
                 <th className="px-5 py-2 font-medium">Estado</th>
               </tr>
             </thead>
@@ -118,8 +114,9 @@ export default function InventarioPage() {
                 <tr key={t.sku} className="border-b border-mallatex-soil-200/60 last:border-0">
                   <td className="px-5 py-3 font-mono text-xs">{t.sku}</td>
                   <td className="px-5 py-3 font-medium">{t.nombre}</td>
+                  <td className="px-5 py-3 font-mono text-xs">{t.lote}</td>
                   <td className="px-5 py-3 text-right">{t.rollos}</td>
-                  <td className="px-5 py-3 text-right font-semibold">{formatNumber(t.metros)} m</td>
+                  <td className="px-5 py-3 text-right font-semibold">{formatNumber(t.metros)}</td>
                   <td className="px-5 py-3">
                     <Badge className="bg-mallatex-green-100 text-mallatex-green-800">Disponible</Badge>
                   </td>

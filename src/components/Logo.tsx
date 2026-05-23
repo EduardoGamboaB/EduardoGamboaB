@@ -50,19 +50,19 @@ export function Logo({ className, variant = 'full', inverse = false }: LogoProps
         <div className="leading-tight">
           <div
             className={cn(
-              'text-base font-bold tracking-tight',
+              'text-base font-extrabold tracking-tight uppercase',
               inverse ? 'text-white' : 'text-mallatex-green-800',
             )}
           >
-            Mallatex
+            MALLATEX
           </div>
           <div
             className={cn(
-              'text-[10px] uppercase tracking-[0.18em]',
+              'text-[9px] uppercase tracking-[0.18em] font-semibold',
               inverse ? 'text-mallatex-green-100' : 'text-mallatex-soil-500',
             )}
           >
-            Production Suite
+            Protegemos lo que siembras
           </div>
         </div>
       )}

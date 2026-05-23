@@ -9,25 +9,32 @@ export default function LoginPage() {
           <Logo inverse />
         </div>
         <div className="relative z-10">
-          <h1 className="text-4xl font-bold leading-tight">
-            Producción confiable para la agricultura protegida.
+          <p className="text-xs font-semibold uppercase tracking-widest text-mallatex-sun-300">
+            Tejidos Técnicos Mallatex
+          </p>
+          <h1 className="mt-2 text-4xl font-bold leading-tight">
+            Protegemos lo que siembras.
           </h1>
           <p className="mt-3 text-mallatex-green-100/90 max-w-md">
-            Controla pedidos de mallas agrícolas, cubre suelos, mallas antiáfidos y
-            agrotextiles desde la planta hasta la entrega.
+            Control de producción de cubresuelo, antiáfido, antigranizo,
+            raschel, manta térmica y agrotextiles para agricultura protegida.
           </p>
           <ul className="mt-8 space-y-2 text-sm text-mallatex-green-100/90">
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-mallatex-sun-500" />
-              Trazabilidad rollo a rollo
+              Líneas LC1 · LC2 · LC3 · LK · LP en tiempo real
             </li>
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-mallatex-sun-500" />
-              Registro de producción desde móvil
+              Folios reales (VFGC, VEG, EZE, P.FEL, 6 dígitos)
             </li>
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-mallatex-sun-500" />
-              OEE, mermas y paros en tiempo real
+              Trazabilidad rollo, lote MP y QR de etiqueta
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-mallatex-sun-500" />
+              MT-DT-003 · 004 · 005 · 006 digitalizados
             </li>
           </ul>
         </div>

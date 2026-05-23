@@ -5,7 +5,6 @@ import { db } from '@/lib/db'
 const registroSchema = z.object({
   ordenId: z.string(),
   operarioId: z.string(),
-  maquinaId: z.string().optional(),
   turno: z.enum(['MATUTINO', 'VESPERTINO', 'NOCTURNO']),
   inicio: z.string().datetime(),
   fin: z.string().datetime().optional(),
@@ -29,7 +28,6 @@ export async function POST(req: Request) {
     data: {
       ordenId: data.ordenId,
       operarioId: data.operarioId,
-      maquinaId: data.maquinaId,
       turno: data.turno,
       inicio: new Date(data.inicio),
       fin: data.fin ? new Date(data.fin) : null,

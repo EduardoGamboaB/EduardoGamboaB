@@ -6,51 +6,68 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 
 export const metadata = { title: 'Pedidos' }
 
-// Datos demo — en producción: const pedidos = await db.pedido.findMany(...)
 const PEDIDOS = [
   {
-    folio: 'PED-2026-00001',
-    cliente: 'Invernaderos del Bajío',
-    productos: 'Malla sombra 50% · 1000 m',
+    folio: 'VFGC-872',
+    cliente: 'Viveros Forestales García (VFGC)',
+    productos: 'Raschel 35% Blanca 4.10×74',
     fechaCompromiso: new Date('2026-06-05'),
     estado: 'EN_PRODUCCION',
     total: 18500,
-    avance: 42,
+    avance: 72,
   },
   {
-    folio: 'PED-2026-00002',
-    cliente: 'Agrícola Hortícola Culiacán',
-    productos: 'Antiáfidos 50x25 · 2400 m · Manta térmica · 800 m',
+    folio: '183674',
+    cliente: 'Cliente Mostrador (interno)',
+    productos: 'Cubresuelo Negro 105 GR 7.70×100 · 178 rollos · 137,060 m²',
     fechaCompromiso: new Date('2026-06-12'),
-    estado: 'CONFIRMADO',
-    total: 116640,
-    avance: 0,
+    estado: 'EN_PRODUCCION',
+    total: 1_850_310,
+    avance: 41,
   },
   {
-    folio: 'PED-2026-00003',
-    cliente: 'Berries La Montaña',
-    productos: 'Cubre suelos 100 g · 5200 m²',
+    folio: 'EZE-503',
+    cliente: 'Eze Agrícola del Pacífico',
+    productos: 'Antigranizo Negra 2.08×46.5 · 12 rollos',
     fechaCompromiso: new Date('2026-05-30'),
     estado: 'EN_PRODUCCION',
     total: 65000,
-    avance: 78,
+    avance: 56,
   },
   {
-    folio: 'PED-2026-00004',
-    cliente: 'Invernaderos del Bajío',
-    productos: 'Antigranizo 12g · 1800 m',
-    fechaCompromiso: new Date('2026-06-20'),
-    estado: 'BORRADOR',
-    total: 57600,
+    folio: 'P.FEL-10',
+    cliente: 'Productores Felices',
+    productos: 'Antiáfido 22/12 cristal 4.50×587 · 1 rollo (devolución)',
+    fechaCompromiso: new Date('2026-06-08'),
+    estado: 'CONFIRMADO',
+    total: 24600,
     avance: 0,
   },
   {
-    folio: 'PED-2025-01987',
-    cliente: 'Agrícola Hortícola Culiacán',
-    productos: 'Malla sombra 70% · 3500 m',
-    fechaCompromiso: new Date('2026-05-10'),
+    folio: 'VEG-1082',
+    cliente: 'Viveros El Granjero',
+    productos: 'Cubresuelo Azorrillado 1.80×500 perforado 70cm',
+    fechaCompromiso: new Date('2026-06-20'),
+    estado: 'EN_PRODUCCION',
+    total: 88200,
+    avance: 24,
+  },
+  {
+    folio: 'VFGC-861',
+    cliente: 'Viveros Forestales García (VFGC)',
+    productos: 'Cubresuelo Negro 1.30×160 · embobinar',
+    fechaCompromiso: new Date('2026-05-25'),
+    estado: 'TERMINADO',
+    total: 32400,
+    avance: 100,
+  },
+  {
+    folio: 'VEG-1057',
+    cliente: 'Viveros El Granjero',
+    productos: 'Cubresuelo Negro 2.50×200 + Raschel 8.40×102',
+    fechaCompromiso: new Date('2026-05-22'),
     estado: 'ENTREGADO',
-    total: 84000,
+    total: 156800,
     avance: 100,
   },
 ]
@@ -58,11 +75,12 @@ const PEDIDOS = [
 export default function PedidosPage() {
   return (
     <div className="space-y-5">
-      {/* Encabezado */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title">Pedidos</h1>
-          <p className="page-subtitle">Gestiona los pedidos de agrotextiles de tus clientes.</p>
+          <p className="page-subtitle">
+            Folio por cliente (VFGC, VEG, EZE, P.FEL) o interno de 6 dígitos.
+          </p>
         </div>
         <Link href="/pedidos/nuevo" className="btn-primary">
           <Plus className="h-4 w-4" />
@@ -70,14 +88,13 @@ export default function PedidosPage() {
         </Link>
       </div>
 
-      {/* Filtros */}
       <Card className="p-3 sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-mallatex-soil-500" />
             <input
               type="search"
-              placeholder="Buscar por folio, cliente o producto…"
+              placeholder="Buscar por folio (VFGC-872, 183674), cliente o producto…"
               className="input pl-10"
             />
           </div>
@@ -104,9 +121,8 @@ export default function PedidosPage() {
         </div>
       </Card>
 
-      {/* Lista — tabla en desktop, cards en móvil */}
       <Card className="p-0 overflow-hidden">
-        {/* Vista tabla (lg+) — en tablet usamos la vista de cards porque la tabla es ancha */}
+        {/* Vista tabla (lg+) */}
         <div className="hidden lg:block">
           <table className="w-full text-sm">
             <thead className="bg-mallatex-soil-50 text-left text-xs uppercase tracking-wider text-mallatex-soil-500">
@@ -129,7 +145,7 @@ export default function PedidosPage() {
                   <td className="px-5 py-3">
                     <Link
                       href={`/pedidos/${p.folio}`}
-                      className="font-mono text-xs text-mallatex-green-700 hover:underline"
+                      className="font-mono text-xs text-mallatex-green-700 hover:underline font-semibold"
                     >
                       {p.folio}
                     </Link>
@@ -144,10 +160,7 @@ export default function PedidosPage() {
                   <td className="px-5 py-3 w-40">
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-1.5 rounded-full bg-mallatex-soil-100 overflow-hidden">
-                        <div
-                          className="h-full bg-mallatex-green-600"
-                          style={{ width: `${p.avance}%` }}
-                        />
+                        <div className="h-full bg-mallatex-green-600" style={{ width: `${p.avance}%` }} />
                       </div>
                       <span className="text-xs text-mallatex-soil-500 w-9 text-right">{p.avance}%</span>
                     </div>
@@ -162,13 +175,10 @@ export default function PedidosPage() {
         <ul className="lg:hidden divide-y divide-mallatex-soil-200/60">
           {PEDIDOS.map((p) => (
             <li key={p.folio}>
-              <Link
-                href={`/pedidos/${p.folio}`}
-                className="block p-4 active:bg-mallatex-soil-100"
-              >
+              <Link href={`/pedidos/${p.folio}`} className="block p-4 active:bg-mallatex-soil-100">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="font-mono text-xs text-mallatex-green-700">{p.folio}</div>
+                    <div className="font-mono text-xs font-semibold text-mallatex-green-700">{p.folio}</div>
                     <div className="font-medium text-mallatex-soil-900 truncate">{p.cliente}</div>
                     <div className="mt-1 text-xs text-mallatex-soil-500 line-clamp-2">{p.productos}</div>
                   </div>

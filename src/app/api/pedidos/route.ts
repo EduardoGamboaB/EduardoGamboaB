@@ -54,6 +54,7 @@ export async function POST(req: Request) {
   const pedido = await db.pedido.create({
     data: {
       folio,
+      numeroInterno: count + 1,
       clienteId,
       comercialId,
       notas,
