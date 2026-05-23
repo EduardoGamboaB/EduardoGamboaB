@@ -1,0 +1,355 @@
+// Mallatex Production Suite - Modelo de datos
+// Cubre: catálogo, pedidos, producción, inventario, calidad, trazabilidad
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // cambia a "postgresql" en producción
+  url      = env("DATABASE_URL")
+}
+
+// =====================
+// Identidad y accesos
+// =====================
+enum Rol {
+  ADMIN
+  SUPERVISOR
+  OPERARIO
+  COMERCIAL
+  CALIDAD
+}
+
+model Usuario {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  nombre        String
+  passwordHash  String
+  rol           Rol      @default(OPERARIO)
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  ordenesCreadas    OrdenProduccion[] @relation("OrdenCreador")
+  registros         RegistroProduccion[]
+  inspecciones      InspeccionCalidad[]
+  pedidosComerciales Pedido[]         @relation("PedidoComercial")
+}
+
+// =====================
+// Catálogo
+// =====================
+enum FamiliaProducto {
+  MALLA_SOMBRA
+  MALLA_ANTIGRANIZO
+  MALLA_ANTIPAJAROS
+  MALLA_ANTIAFIDOS
+  MALLA_TUTOR
+  CUBRE_SUELOS
+  MANTA_TERMICA
+  RAFIA
+  GEOTEXTIL
+  OTRO
+}
+
+enum UnidadMedida {
+  METRO_LINEAL
+  METRO_CUADRADO
+  KILOGRAMO
+  ROLLO
+  PIEZA
+}
+
+model Producto {
+  id            String          @id @default(cuid())
+  sku           String          @unique
+  nombre        String
+  familia       FamiliaProducto
+  descripcion   String?
+  unidad        UnidadMedida    @default(METRO_LINEAL)
+  // Especificaciones técnicas (JSON serializado para flexibilidad por familia)
+  // Ej.: { "anchoMetros": 4.2, "gramaje": 80, "porcentajeSombra": 50, "color": "negro", "uvProtegido": true }
+  especificaciones String       @default("{}")
+  precioBase    Float           @default(0)
+  activo        Boolean         @default(true)
+  creadoEn      DateTime        @default(now())
+
+  itemsPedido      ItemPedido[]
+  ordenes          OrdenProduccion[]
+  movimientosStock MovimientoStock[]
+}
+
+model Cliente {
+  id           String   @id @default(cuid())
+  rfc          String?  @unique
+  razonSocial  String
+  contacto     String?
+  email        String?
+  telefono     String?
+  direccion    String?
+  ciudad       String?
+  estado       String?
+  notas        String?
+  activo       Boolean  @default(true)
+  creadoEn     DateTime @default(now())
+
+  pedidos      Pedido[]
+}
+
+model MateriaPrima {
+  id           String   @id @default(cuid())
+  codigo       String   @unique
+  nombre       String   // HDPE virgen, polipropileno, aditivo UV, masterbatch negro...
+  unidad       UnidadMedida @default(KILOGRAMO)
+  stockMinimo  Float    @default(0)
+  proveedor    String?
+  creadoEn     DateTime @default(now())
+
+  movimientos  MovimientoStock[]
+  consumos     ConsumoMateriaPrima[]
+}
+
+// =====================
+// Pedidos
+// =====================
+enum EstadoPedido {
+  BORRADOR
+  CONFIRMADO
+  EN_PRODUCCION
+  TERMINADO
+  ENTREGADO
+  CANCELADO
+}
+
+model Pedido {
+  id              String       @id @default(cuid())
+  folio           String       @unique          // PED-2026-00001
+  clienteId       String
+  cliente         Cliente      @relation(fields: [clienteId], references: [id])
+  comercialId     String?
+  comercial       Usuario?     @relation("PedidoComercial", fields: [comercialId], references: [id])
+  fechaPedido     DateTime     @default(now())
+  fechaCompromiso DateTime
+  estado          EstadoPedido @default(BORRADOR)
+  notas           String?
+  totalEstimado   Float        @default(0)
+  creadoEn        DateTime     @default(now())
+  actualizadoEn   DateTime     @updatedAt
+
+  items           ItemPedido[]
+  ordenes         OrdenProduccion[]
+}
+
+model ItemPedido {
+  id              String   @id @default(cuid())
+  pedidoId        String
+  pedido          Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  productoId      String
+  producto        Producto @relation(fields: [productoId], references: [id])
+  cantidad        Float
+  unidad          UnidadMedida
+  // Espec. personalizada para este pedido (sobrescribe la del producto)
+  especificacionesItem String @default("{}")
+  precioUnitario  Float    @default(0)
+  // metros producidos / kg producidos a la fecha
+  cantidadProducida Float  @default(0)
+}
+
+// =====================
+// Producción
+// =====================
+enum EstadoOrdenProduccion {
+  PENDIENTE
+  EN_PROCESO
+  PAUSADA
+  TERMINADA
+  CANCELADA
+}
+
+enum Turno {
+  MATUTINO
+  VESPERTINO
+  NOCTURNO
+}
+
+model Maquina {
+  id              String   @id @default(cuid())
+  codigo          String   @unique             // TEL-01, EXT-02
+  nombre          String                       // Telar Karl Mayer 01
+  tipo            String                       // telar, extrusora, recubridora, cortadora
+  capacidadHora   Float    @default(0)         // unidades por hora
+  activa          Boolean  @default(true)
+  creadoEn        DateTime @default(now())
+
+  ordenes         OrdenProduccion[]
+  registros       RegistroProduccion[]
+  paros           ParoProduccion[]
+}
+
+model OrdenProduccion {
+  id            String                @id @default(cuid())
+  folio         String                @unique  // OP-2026-00001
+  pedidoId      String?
+  pedido        Pedido?               @relation(fields: [pedidoId], references: [id])
+  productoId    String
+  producto      Producto              @relation(fields: [productoId], references: [id])
+  maquinaId     String?
+  maquina       Maquina?              @relation(fields: [maquinaId], references: [id])
+  creadorId     String
+  creador       Usuario               @relation("OrdenCreador", fields: [creadorId], references: [id])
+  cantidadPlan  Float                 // unidades a producir
+  unidad        UnidadMedida
+  estado        EstadoOrdenProduccion @default(PENDIENTE)
+  prioridad     Int                   @default(3) // 1=urgente, 5=baja
+  fechaPlan     DateTime
+  fechaInicio   DateTime?
+  fechaFin      DateTime?
+  notas         String?
+  creadoEn      DateTime              @default(now())
+
+  registros     RegistroProduccion[]
+  paros         ParoProduccion[]
+  consumos      ConsumoMateriaPrima[]
+  rollos        Rollo[]
+}
+
+model RegistroProduccion {
+  id              String           @id @default(cuid())
+  ordenId         String
+  orden           OrdenProduccion  @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  operarioId      String
+  operario        Usuario          @relation(fields: [operarioId], references: [id])
+  maquinaId       String?
+  maquina         Maquina?         @relation(fields: [maquinaId], references: [id])
+  turno           Turno
+  inicio          DateTime
+  fin             DateTime?
+  cantidadOk      Float            @default(0)
+  cantidadMerma   Float            @default(0)
+  notas           String?
+  creadoEn        DateTime         @default(now())
+}
+
+enum MotivoParo {
+  CAMBIO_MOLDE
+  MANTENIMIENTO
+  FALLA_MAQUINA
+  FALTA_MATERIA_PRIMA
+  CAMBIO_TURNO
+  CALIDAD
+  ENERGIA
+  OTRO
+}
+
+model ParoProduccion {
+  id          String          @id @default(cuid())
+  ordenId     String?
+  orden       OrdenProduccion? @relation(fields: [ordenId], references: [id])
+  maquinaId   String
+  maquina     Maquina         @relation(fields: [maquinaId], references: [id])
+  motivo      MotivoParo
+  inicio      DateTime
+  fin         DateTime?
+  duracionMin Int?
+  descripcion String?
+  creadoEn    DateTime        @default(now())
+}
+
+model ConsumoMateriaPrima {
+  id              String       @id @default(cuid())
+  ordenId         String
+  orden           OrdenProduccion @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  materiaPrimaId  String
+  materiaPrima    MateriaPrima @relation(fields: [materiaPrimaId], references: [id])
+  cantidad        Float
+  unidad          UnidadMedida
+  fecha           DateTime     @default(now())
+}
+
+// =====================
+// Trazabilidad (rollos individuales)
+// =====================
+enum EstadoRollo {
+  EN_PROCESO
+  TERMINADO
+  EN_INSPECCION
+  LIBERADO
+  RECHAZADO
+  ENTREGADO
+}
+
+model Rollo {
+  id            String      @id @default(cuid())
+  codigo        String      @unique           // R-2026-00001
+  ordenId       String
+  orden         OrdenProduccion @relation(fields: [ordenId], references: [id])
+  metros        Float
+  peso          Float?
+  anchoMetros   Float?
+  qrPayload     String                        // contenido del QR (incluye codigo + hash)
+  estado        EstadoRollo @default(EN_PROCESO)
+  ubicacion     String?                       // almacén / racks
+  creadoEn      DateTime    @default(now())
+
+  inspecciones  InspeccionCalidad[]
+}
+
+// =====================
+// Calidad
+// =====================
+enum ResultadoInspeccion {
+  APROBADO
+  RECHAZADO
+  RETRABAJO
+}
+
+model InspeccionCalidad {
+  id           String              @id @default(cuid())
+  rolloId      String?
+  rollo        Rollo?              @relation(fields: [rolloId], references: [id])
+  inspectorId  String
+  inspector    Usuario             @relation(fields: [inspectorId], references: [id])
+  fecha        DateTime            @default(now())
+  resultado    ResultadoInspeccion
+  defectos     String              @default("[]") // JSON: lista de defectos
+  observaciones String?
+}
+
+// =====================
+// Inventario
+// =====================
+enum TipoMovimiento {
+  ENTRADA
+  SALIDA
+  TRASPASO
+  MERMA
+  AJUSTE
+}
+
+model Almacen {
+  id          String   @id @default(cuid())
+  codigo      String   @unique
+  nombre      String
+  tipo        String   // MATERIA_PRIMA, PRODUCTO_PROCESO, PRODUCTO_TERMINADO
+  ubicacion   String?
+  activo      Boolean  @default(true)
+
+  movimientos MovimientoStock[]
+}
+
+model MovimientoStock {
+  id              String         @id @default(cuid())
+  almacenId       String
+  almacen         Almacen        @relation(fields: [almacenId], references: [id])
+  productoId      String?
+  producto        Producto?      @relation(fields: [productoId], references: [id])
+  materiaPrimaId  String?
+  materiaPrima    MateriaPrima?  @relation(fields: [materiaPrimaId], references: [id])
+  tipo            TipoMovimiento
+  cantidad        Float
+  unidad          UnidadMedida
+  referencia      String?        // folio OP, pedido, etc.
+  fecha           DateTime       @default(now())
+  notas           String?
+}
