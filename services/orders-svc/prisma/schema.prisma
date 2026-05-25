@@ -1,0 +1,105 @@
+// orders-svc — pedidos del cliente, liberación por cobranza
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["orders"]
+}
+
+enum EstadoPedido {
+  cobranza_pendiente
+  liberado
+  stock_faltante
+  compra_pendiente
+  material_egresado
+  en_produccion
+  terminado
+  entregado
+  detenido
+  cancelado
+
+  @@schema("orders")
+}
+
+enum FormaEntrega {
+  ALMACEN
+  MALLATEX
+  MALLATEX_envia_campo
+  PAQUETERIA
+  TRES_GUERRAS
+
+  @@schema("orders")
+}
+
+model Pedido {
+  /// Folio Mallatex: "VFGC 872" o "183674" — único y visible al cliente
+  id               String       @id
+  cliente          String
+  material         String
+  medida           String
+  ancho            Float
+  largo            Float
+  rollos           Int
+  m2               Float
+  procesos         String[]                         // ['costura','embobinado']
+  procesoActual    String?
+  linea            String?                          // LC1..LE
+  operadorIds      Int[]                            // FK lógico a identity-svc
+  meta             Int
+  hechas           Int          @default(0)
+  terminados       Int          @default(0)
+  entregados       Int          @default(0)
+  pendientes       Int
+  enPiso           Int          @default(0)
+  fechaPedido      DateTime
+  compromiso       DateTime
+  formaEntrega     FormaEntrega
+  estado           EstadoPedido @default(cobranza_pendiente)
+  pagoConfirmado   Boolean      @default(false)
+  materialEgresado Boolean      @default(false)
+  observaciones    String?
+  subPedidos       String[]                         // ['Egipto','San Francisco', ...]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  liberaciones     LiberacionPedido[]
+  bitacora         BitacoraEvento[]
+
+  @@index([estado])
+  @@index([cliente])
+  @@index([compromiso])
+  @@schema("orders")
+}
+
+/// Registro de liberación por cobranza (auditoría)
+model LiberacionPedido {
+  id          String   @id @default(cuid())
+  pedidoId    String
+  pedido      Pedido   @relation(fields: [pedidoId], references: [id])
+  responsable String                                  // userId de Cobranza
+  tipo        String                                  // LIQUIDACION | CREDITO
+  monto       Float?
+  notas       String?
+  createdAt   DateTime @default(now())
+
+  @@index([pedidoId])
+  @@schema("orders")
+}
+
+/// Bitácora de cambios de estado para trazabilidad
+model BitacoraEvento {
+  id            String   @id @default(cuid())
+  pedidoId      String
+  pedido        Pedido   @relation(fields: [pedidoId], references: [id])
+  fromEstado    String?
+  toEstado      String
+  changedBy     String
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  @@index([pedidoId, createdAt])
+  @@schema("orders")
+}

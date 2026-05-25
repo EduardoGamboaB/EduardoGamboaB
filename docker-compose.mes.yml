@@ -1,0 +1,121 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mes-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mes
+      POSTGRES_USER: mes
+      POSTGRES_PASSWORD: mes
+    ports: ['5432:5432']
+    volumes:
+      - mes_pgdata:/var/lib/postgresql/data
+      - ./services/_shared/init-schemas.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'mes']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: mes-redis
+    restart: unless-stopped
+    ports: ['6379:6379']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      retries: 5
+
+  orders-svc:
+    build: { context: ./services/orders-svc }
+    container_name: mes-orders
+    restart: unless-stopped
+    depends_on:
+      db:    { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      PORT: 3001
+      NODE_ENV: production
+      DATABASE_URL: postgresql://mes:mes@db:5432/mes?schema=orders
+      REDIS_URL: redis://redis:6379
+    ports: ['3001:3001']
+
+  inventory-svc:
+    build: { context: ./services/inventory-svc }
+    container_name: mes-inventory
+    restart: unless-stopped
+    depends_on:
+      db:    { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      PORT: 3002
+      NODE_ENV: production
+      DATABASE_URL: postgresql://mes:mes@db:5432/mes?schema=inventory
+      REDIS_URL: redis://redis:6379
+    ports: ['3002:3002']
+
+  production-svc:
+    build: { context: ./services/production-svc }
+    container_name: mes-production
+    restart: unless-stopped
+    depends_on:
+      db:    { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      PORT: 3003
+      NODE_ENV: production
+      DATABASE_URL: postgresql://mes:mes@db:5432/mes?schema=production
+      REDIS_URL: redis://redis:6379
+    ports: ['3003:3003']
+
+  identity-svc:
+    build: { context: ./services/identity-svc }
+    container_name: mes-identity
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PORT: 3004
+      NODE_ENV: production
+      DATABASE_URL: postgresql://mes:mes@db:5432/mes?schema=identity
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-please-change-in-prod}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-please-change-in-prod}
+    ports: ['3004:3004']
+
+  sae-bridge:
+    build: { context: ./services/sae-bridge }
+    container_name: mes-sae
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    environment:
+      PORT: 3005
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+      SAE_API_URL: ${SAE_API_URL:-http://sae-mock:8080}
+      SAE_API_TOKEN: ${SAE_API_TOKEN:-dev-token}
+      SAE_DRY_RUN: ${SAE_DRY_RUN:-1}
+    ports: ['3005:3005']
+
+  web:
+    build: { context: . }
+    container_name: mes-web
+    restart: unless-stopped
+    depends_on:
+      orders-svc:     { condition: service_started }
+      inventory-svc:  { condition: service_started }
+      production-svc: { condition: service_started }
+      identity-svc:   { condition: service_started }
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      ORDERS_SVC_URL: http://orders-svc:3001
+      INVENTORY_SVC_URL: http://inventory-svc:3002
+      PRODUCTION_SVC_URL: http://production-svc:3003
+      IDENTITY_SVC_URL: http://identity-svc:3004
+      SAE_BRIDGE_URL: http://sae-bridge:3005
+    ports: ['3000:3000']
+
+volumes:
+  mes_pgdata:

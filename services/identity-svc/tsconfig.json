@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "esnext", "moduleResolution": "bundler",
+    "strict": true, "esModuleInterop": true, "skipLibCheck": true,
+    "resolveJsonModule": true, "outDir": "dist", "rootDir": "src",
+    "baseUrl": ".",
+    "paths": { "@mallatex/shared-types": ["../../packages/shared-types/src"] }
+  },
+  "include": ["src/**/*"]
+}
