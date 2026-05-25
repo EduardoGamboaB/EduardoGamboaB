@@ -19,7 +19,7 @@ import { Table } from '@/components/ui/Table'
 import { Badge } from '@/components/ui/Badge'
 import { OrderStatusPill } from '@/components/ui/OrderStatusPill'
 
-export function DirectorApp() {
+export function DirectorApp({ iaOpenTab }) {
   const [view, setView] = useState('ejecutivo')
   const [period, setPeriod] = useState('semana')
   const { orders, productosTerminados, egresos, productividad, operators } = useApp()
@@ -37,7 +37,7 @@ export function DirectorApp() {
   ]
 
   return (
-    <WebShell perfil="Dirección" profileData={ROLE_PROFILES.director} currentView={view} onChangeView={setView} menuItems={menuItems}>
+    <WebShell iaOpenTab={iaOpenTab} perfil="Dirección" profileData={ROLE_PROFILES.director} currentView={view} onChangeView={setView} menuItems={menuItems}>
       {view === 'ejecutivo' && (
         <>
           <Topbar crumbs="Dirección / Tablero ejecutivo" title="Semana 21 · Mayo 2026"

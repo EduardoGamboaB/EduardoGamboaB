@@ -6,6 +6,9 @@ import {
   initialRecepciones, initialEgresos, initialProductosTerminados, initialProductividad,
 } from './data'
 import {
+  initialAiConversations, initialAiAlerts, initialAiInsights, initialAiForecasts,
+} from './data-ia'
+import {
   loadFromStorage, saveToStorage, clearAllStorage, getStorageMeta, isStorageAvailable,
 } from './storage'
 
@@ -45,6 +48,12 @@ export function AppProvider({ children }) {
   const [operators] = useState(initialOperators)
   const [currentTime, setCurrentTime] = useState(new Date())
 
+  // ---- Módulo IA Pro (Fase 4) — slices del demo ----
+  const [aiConversations, setAiConversations] = useState(initialAiConversations)
+  const [aiAlerts, setAiAlerts] = useState(initialAiAlerts)
+  const [aiInsights, setAiInsights] = useState(initialAiInsights)
+  const [aiForecasts, setAiForecasts] = useState(initialAiForecasts)
+
   const [hydrated, setHydrated] = useState(false)
   const [hadStoredData, setHadStoredData] = useState(false)
   const [lastUpdate, setLastUpdate] = useState(null)
@@ -64,6 +73,10 @@ export function AppProvider({ children }) {
     setEgresos(loadFromStorage('egresos', initialEgresos))
     setProductosTerminados(loadFromStorage('productosTerminados', initialProductosTerminados))
     setProductividad(loadFromStorage('productividad', initialProductividad))
+    setAiConversations(loadFromStorage('aiConversations', initialAiConversations))
+    setAiAlerts(loadFromStorage('aiAlerts', initialAiAlerts))
+    setAiInsights(loadFromStorage('aiInsights', initialAiInsights))
+    setAiForecasts(loadFromStorage('aiForecasts', initialAiForecasts))
     setHydrated(true)
   }, [])
 
@@ -82,6 +95,10 @@ export function AppProvider({ children }) {
   useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('egresos',             egresos),             SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [egresos, hydrated])
   useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('productosTerminados', productosTerminados), SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [productosTerminados, hydrated])
   useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('productividad',       productividad),       SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [productividad, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('aiConversations',     aiConversations),     SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [aiConversations, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('aiAlerts',            aiAlerts),            SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [aiAlerts, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('aiInsights',          aiInsights),          SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [aiInsights, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('aiForecasts',         aiForecasts),         SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [aiForecasts, hydrated])
 
   // ----- Mutadores -----
   const updateOrder = (id, patch) =>
@@ -103,6 +120,14 @@ export function AppProvider({ children }) {
   // Cobranza libera pedido
   const liberarPedido = (id) => updateOrder(id, { pagoConfirmado: true, estado: 'liberado' })
 
+  // ---- IA Pro: mutadores demo ----
+  const dismissAiAlert = (id) =>
+    setAiAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, dismissed: true } : a)))
+  const addAiMessage = (convId, msg) =>
+    setAiConversations((prev) => prev.map((c) =>
+      c.id === convId ? { ...c, messages: [...c.messages, { ...msg, ts: new Date().toISOString() }], updatedAt: new Date().toISOString() } : c,
+    ))
+
   // Reset demo — limpia localStorage y recarga
   const resetDemo = () => {
     clearAllStorage()
@@ -118,6 +143,9 @@ export function AppProvider({ children }) {
       // persistencia
       hydrated, hadStoredData, lastUpdate, resetDemo,
       storageAvailable: typeof window === 'undefined' ? false : isStorageAvailable(),
+      // IA Pro (Fase 4 demo)
+      aiConversations, aiAlerts, aiInsights, aiForecasts,
+      dismissAiAlert, addAiMessage,
     }}>
       {children}
     </AppContext.Provider>

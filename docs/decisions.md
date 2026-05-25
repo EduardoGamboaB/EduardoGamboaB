@@ -303,6 +303,50 @@ sistema es la única app.
 
 ---
 
+## 2026-05 · ADR-012: Módulo IA Pro como mockup de demo (anticipo de Fase 4)
+
+**Contexto:** Dirección pide ver el módulo IA Pro en una demo presentable
+para tomar decisión sobre Fase 4. ADR-011 dejó la Fase 4 documentada sin
+implementar para no repetir el error de ADR-008 (saltar al backlog antes
+del MVP).
+
+**Decisión:** Construir el módulo como **mockup visual interactivo sin
+LLM real**. Cero dependencias nuevas. Datos hardcoded en
+`src/lib/data-ia.js`. Mensajes de "respuesta IA" pregrabados; el input
+del chat sí funciona pero responde con "Modo demo".
+
+**Por qué:**
+
+- Permite vender la visión y conseguir aprobación sin invertir en
+  Claude API ni en arquitectura definitiva
+- Cero riesgo de fugar datos del cliente a un LLM externo en esta etapa
+- Mantiene la promesa de ADR-008 (sin saltarse al backlog real)
+- Demuestra el branding `PRO`, la UX del drawer, el patrón de
+  "recomendaciones accionables" y los 4 tabs (Chat / Alertas / Insights
+  / Pronósticos)
+- Cuando dirección autorice Fase 4, los componentes ya están y solo
+  hay que conectar el backend real al `ChatPane` y mover los mocks a
+  endpoints `/api/ai/*`
+
+**Compromisos:**
+
+- Mensaje claro en el header del drawer: "Demo · Fase 4 · sin LLM
+  conectado" para evitar que alguien crea que la IA ya está viva
+- Las respuestas del chat son las del spec; si dirección pide "hazle
+  esta otra pregunta", responder con "Modo demo" no impresiona — el
+  cierre debe enfocarse en la visión y arquitectura, no en jugar con
+  el chat
+- Persistencia en localStorage (mismo patrón PROMPT 2) — si el demo
+  acumula muchas conversaciones falsas, hay que limpiar con Reset
+
+**Si cambiamos en el futuro:** cuando se ejecute Fase 4 real (sub-prompts
+4.1 a 4.7), reutilizar los componentes `AssistantBubble`,
+`AssistantDrawer`, `ChatPane`, `AlertsPane`, `InsightsPane`,
+`ForecastsPane` tal cual están — solo cambiar la fuente de datos del
+`useApp().ai*` por `useSWR('/api/ai/...')` o equivalente.
+
+---
+
 ## Template para agregar nueva decisión
 
 ```markdown

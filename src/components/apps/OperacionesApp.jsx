@@ -18,7 +18,7 @@ import { Table } from '@/components/ui/Table'
 import { Badge } from '@/components/ui/Badge'
 import { ProcessTag } from '@/components/ui/ProcessTag'
 
-export function OperacionesApp() {
+export function OperacionesApp({ iaOpenTab }) {
   const [view, setView] = useState('panel')
   const { orders, recepciones, egresos } = useApp()
 
@@ -35,7 +35,7 @@ export function OperacionesApp() {
   ]
 
   return (
-    <WebShell perfil="Operaciones" profileData={ROLE_PROFILES.operaciones} currentView={view} onChangeView={setView} menuItems={menuItems}>
+    <WebShell iaOpenTab={iaOpenTab} perfil="Operaciones" profileData={ROLE_PROFILES.operaciones} currentView={view} onChangeView={setView} menuItems={menuItems}>
       {view === 'panel' && (
         <>
           <Topbar crumbs="Operaciones / Panel" title="Coordinador de Operaciones"

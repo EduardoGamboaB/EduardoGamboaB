@@ -1,7 +1,5 @@
-'use client'
-
 import { OperacionesApp } from '@/components/apps/OperacionesApp'
 
-export default function OperacionesPage() {
-  return <OperacionesApp />
+export default function OperacionesPage({ searchParams }) {
+  return <OperacionesApp iaOpenTab={searchParams?.ia} />
 }

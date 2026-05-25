@@ -17,7 +17,7 @@ import { Panel } from '@/components/ui/Panel'
 import { Table } from '@/components/ui/Table'
 import { Badge } from '@/components/ui/Badge'
 
-export function AlmacenApp() {
+export function AlmacenApp({ iaOpenTab }) {
   const [view, setView] = useState('panel')
   const { rolls, orders, recepciones, egresos, addEgreso, updateOrder } = useApp()
 
@@ -36,7 +36,7 @@ export function AlmacenApp() {
   const hoy = new Date().toISOString().slice(0, 10)
 
   return (
-    <WebShell perfil="Almacén" profileData={ROLE_PROFILES.almacen} currentView={view} onChangeView={setView} menuItems={menuItems}>
+    <WebShell iaOpenTab={iaOpenTab} perfil="Almacén" profileData={ROLE_PROFILES.almacen} currentView={view} onChangeView={setView} menuItems={menuItems}>
       {view === 'panel' && (
         <>
           <Topbar crumbs="Almacén / Panel" title="Logística de almacén"

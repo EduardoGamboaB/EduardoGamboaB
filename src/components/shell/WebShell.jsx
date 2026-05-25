@@ -6,8 +6,9 @@ import { brand, fontBody, fontDisplay } from '@/lib/brand'
 import { MallatexMESLogo } from '@/components/logos/MallatexMESLogo'
 import { ProfileHeader } from '@/components/ui/ProfileHeader'
 import { BentoCard, BentoSection } from '@/components/ui/BentoCard'
+import { AssistantBubble } from '@/components/ia/AssistantBubble'
 
-export function WebShell({ children, perfil, profileData, currentView, onChangeView, menuItems }) {
+export function WebShell({ children, perfil, profileData, currentView, onChangeView, menuItems, iaOpenTab }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: brand.paper, ...fontBody }}>
       <aside style={{
@@ -58,6 +59,8 @@ export function WebShell({ children, perfil, profileData, currentView, onChangeV
         </Link>
       </aside>
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>{children}</main>
+      {/* Módulo IA Pro · Fase 4 demo · CLAUDE.md §10 + ADR-012 */}
+      <AssistantBubble openTab={iaOpenTab} />
     </div>
   )
 }

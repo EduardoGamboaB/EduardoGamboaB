@@ -15,7 +15,7 @@ import { Table } from '@/components/ui/Table'
 import { Badge } from '@/components/ui/Badge'
 import { OrderStatusPill } from '@/components/ui/OrderStatusPill'
 
-export function CobranzaApp() {
+export function CobranzaApp({ iaOpenTab }) {
   const [view, setView] = useState('panel')
   const { orders, liberarPedido } = useApp()
 
@@ -27,7 +27,7 @@ export function CobranzaApp() {
   ]
 
   return (
-    <WebShell perfil="Cobranza" profileData={ROLE_PROFILES.cobranza} currentView={view} onChangeView={setView} menuItems={menuItems}>
+    <WebShell iaOpenTab={iaOpenTab} perfil="Cobranza" profileData={ROLE_PROFILES.cobranza} currentView={view} onChangeView={setView} menuItems={menuItems}>
       {view === 'panel' && (
         <>
           <Topbar crumbs="Cobranza / Panel" title="Cobranza y Facturación"

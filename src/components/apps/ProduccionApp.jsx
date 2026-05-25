@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/Badge'
 import { OrderStatusPill } from '@/components/ui/OrderStatusPill'
 import { ProcessTag } from '@/components/ui/ProcessTag'
 
-export function ProduccionApp() {
+export function ProduccionApp({ iaOpenTab }) {
   const [view, setView] = useState('tablero')
   const { orders, avisos, operators, mermas, productosTerminados, productividad, updateOrder } = useApp()
 
@@ -44,7 +44,7 @@ export function ProduccionApp() {
   ]
 
   return (
-    <WebShell perfil="Producción" profileData={ROLE_PROFILES.produccion} currentView={view} onChangeView={setView} menuItems={menuItems}>
+    <WebShell perfil="Producción" profileData={ROLE_PROFILES.produccion} currentView={view} onChangeView={setView} menuItems={menuItems} iaOpenTab={iaOpenTab}>
       {view === 'tablero' && (
         <>
           <Topbar crumbs="Producción / Tablero" title="Jefe de Producción" processCode="MT-PC-003"

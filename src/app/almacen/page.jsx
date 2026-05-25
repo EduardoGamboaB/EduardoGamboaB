@@ -1,7 +1,5 @@
-'use client'
-
 import { AlmacenApp } from '@/components/apps/AlmacenApp'
 
-export default function AlmacenPage() {
-  return <AlmacenApp />
+export default function AlmacenPage({ searchParams }) {
+  return <AlmacenApp iaOpenTab={searchParams?.ia} />
 }
