@@ -325,33 +325,54 @@ El diseño actual implementa varios principios que **NO degradar** en refactor:
 
 ## 10. Roadmap actual (donde estamos hoy)
 
-**Hecho:**
+El roadmap se organiza en **4 fases** explícitas. Fase 4 es premium /
+monetizable y arranca **después** de validar el MVP en planta.
+
+**Fase 1 — Hecho:**
 
 - ✅ Análisis del Manual de Organización y los 3 procesos formales
 - ✅ Extracción de datos reales de los 3 Excel del cliente
 - ✅ Diseño UX/UI aplicado a los 6 perfiles
 - ✅ Prototipo navegable en archivo monolítico `app/page.jsx` (2,631 líneas)
 - ✅ Migración a Claude Code
+- ✅ Refactor a estructura modular (PROMPT 1)
 
-**Inmediato (esta semana):**
+**Fase 2 — Inmediato (esta semana):**
 
-1. Refactor del monolito en estructura modular
-2. Persistencia en localStorage
-3. Demo presentable a dirección con datos reales
+1. Persistencia en localStorage (PROMPT 2)
+2. Demo presentable a dirección con datos reales
 
-**Próximas 2-3 semanas:**
+**Fase 3 — MVP funcional (próximas 2-3 semanas):**
 
-4. Hoja de propuesta formal a dirección (cotización por fases, ROI)
-5. Plantillas docx de los 6 documentos MT-DT (formatos físicos)
-6. Wireframes navegables HTML estáticos para presentación
+3. Vista de detalle de pedido editable (PROMPT 3.1)
+4. Flujo end-to-end de un pedido nuevo (PROMPT 3.2)
+5. Notificaciones internas entre perfiles (PROMPT 3.3)
+6. Exportar/importar Excel del cliente (PROMPT 3.4)
+7. PDF de los 6 documentos MT-DT (PROMPT 3.5)
+8. Hoja de propuesta formal a dirección (cotización por fases, ROI)
+9. Plantillas docx de los 6 documentos MT-DT (formatos físicos)
+10. Wireframes navegables HTML estáticos para presentación
 
-**Backlog:**
+**Fase 4 — Capa premium (después de validar el MVP en planta):**
+
+> Add-on monetizable. Requiere LLM API (Claude/OpenAI) → costo por
+> consulta. Solo se construye con dirección autorizando + MVP estable
+> + datos reales fluyendo. Spec completo en
+> `docs/modulo-ia-consultiva.md` y ADR-011.
+
+11. **Módulo de IA consultiva Pro** — copiloto MES que combina:
+    - **Chat conversacional** con tool use sobre datos del MES
+    - **Alertas automáticas** proactivas (atrasos, paros recurrentes, anomalías)
+    - **Insights semanales** (carta del IA cada lunes 06:00)
+    - **Recomendaciones accionables** (sugerencia + botón "Aplicar")
+    - **Pronósticos** (cumplimiento, OEE, demanda, carga por operador)
+
+**Backlog (sin fase asignada):**
 
 - Sincronización con SAE de Aspel (la pieza más importante a futuro)
 - Sistema de autenticación real (hoy es selector de perfil)
 - Auditoría/log de cambios
-- Notificaciones push entre perfiles (operador → producción → almacén)
-- Reportes exportables (PDF/Excel) por perfil
+- Reportes exportables PDF/Excel adicionales por perfil
 - Multi-planta (sucursal Ensenada)
 - App nativa para tablets (PWA primero, nativa después si justifica)
 

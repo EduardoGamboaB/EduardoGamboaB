@@ -246,6 +246,63 @@ sistema es la única app.
 
 ---
 
+## 2026-05 · ADR-011: Fase 4 — Módulo de IA Consultiva Pro (planificado, no implementado)
+
+**Contexto:** Se evalúa agregar una capa premium de IA al MES con chat
+conversacional, alertas proactivas, insights semanales, recomendaciones
+accionables y pronósticos. El roadmap del CLAUDE.md §10 solo tenía
+3 fases y un backlog.
+
+**Decisión:** Crear una **Fase 4 explícita** en el roadmap. Documentar el
+módulo completo en `docs/modulo-ia-consultiva.md` (capacidades,
+arquitectura, costos, riesgos, criterios de arranque). **NO implementar
+nada todavía.**
+
+**Por qué:**
+
+- ADR-008 ya enseñó la lección de saltarse al backlog antes del MVP. La
+  Fase 4 es premium y requiere MVP estable + datos reales fluyendo en
+  planta antes de tener sentido económico
+- Dejarlo documentado da claridad al equipo y al cliente sobre la
+  visión del producto sin comprometer trabajo prematuro
+- El spec ya define el badge `PRO`, las rutas API, el modelo de costos
+  y los criterios de "ready to start" — cuando llegue el momento, se
+  arranca sin re-deliberar
+- Las dependencias nuevas (`@anthropic-ai/sdk`, `zod`) están listadas
+  pero NO se instalan; CLAUDE.md §8 exige aprobación previa
+
+**Compromisos:**
+
+- Si el cliente quiere "ya el chat de IA", hay que rechazar y mostrar
+  los criterios de la sección 8 del doc
+- Documentación que puede quedarse desactualizada si los precios de
+  Claude API cambian; revisar antes de arrancar Fase 4
+
+**Si cambiamos en el futuro:** cuando se autorice Fase 4, partir del
+sub-roadmap 4.1 al 4.7 del doc. Si emerge un competidor open-source de
+Claude API que valga la pena, considerar swap en el `_shared/ai.js`.
+
+**Contexto:** Las rutas previas estaban bajo `/mes/produccion`,
+`/mes/almacen`, `/mes/director`, etc. PROMPT 1 y CLAUDE.md §4 las
+ubican al raíz: `/produccion`, `/almacen`, `/direccion`, etc.
+
+**Decisión:** Migrar a la convención del PROMPT 1: rutas al raíz, sin
+`/mes/` y `/direccion` en lugar de `/director`.
+
+**Por qué:**
+
+- Es la convención formal del manual
+- Más cortas → mejor UX al teclear/compartir URLs
+- El sistema es 100 % MES — el prefijo `/mes/` era redundante
+- `/direccion` es español, coherente con el resto de rutas (cobranza,
+  almacen, operaciones)
+
+**Compromisos:** Si en el futuro este MES coexiste con otra app en el
+mismo dominio, habrá que mover todo bajo `/mes/`. Mientras tanto, el
+sistema es la única app.
+
+---
+
 ## Template para agregar nueva decisión
 
 ```markdown
