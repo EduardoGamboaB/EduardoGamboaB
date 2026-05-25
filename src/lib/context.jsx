@@ -5,6 +5,9 @@ import {
   initialOperators, initialOrders, initialRolls, initialAvisos, initialMermas,
   initialRecepciones, initialEgresos, initialProductosTerminados, initialProductividad,
 } from './data'
+import {
+  loadFromStorage, saveToStorage, clearAllStorage, getStorageMeta, isStorageAvailable,
+} from './storage'
 
 const AppContext = createContext(null)
 export const useApp = () => {
@@ -20,7 +23,17 @@ export const formatDate = (d) => {
   return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`
 }
 
+// Slices que se persisten en localStorage.
+// `operators` NO se persiste (catálogo estático), `currentTime` tampoco (se regenera).
+const PERSISTED_SLICES = [
+  'orders', 'rolls', 'avisos', 'mermas',
+  'recepciones', 'egresos', 'productosTerminados', 'productividad',
+]
+const SAVE_DEBOUNCE_MS = 300
+
 export function AppProvider({ children }) {
+  // Estado: arranca con initial* (server-safe) y se rehidrata en el cliente
+  // tras el primer useEffect. Patrón anti-Hydration-mismatch.
   const [orders, setOrders] = useState(initialOrders)
   const [rolls, setRolls] = useState(initialRolls)
   const [avisos, setAvisos] = useState(initialAvisos)
@@ -32,11 +45,45 @@ export function AppProvider({ children }) {
   const [operators] = useState(initialOperators)
   const [currentTime, setCurrentTime] = useState(new Date())
 
+  const [hydrated, setHydrated] = useState(false)
+  const [hadStoredData, setHadStoredData] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState(null)
+
+  // ----- Hidratación inicial (solo cliente) -----
+  useEffect(() => {
+    const meta = getStorageMeta()
+    if (meta?.lastUpdate) {
+      setHadStoredData(true)
+      setLastUpdate(meta.lastUpdate)
+    }
+    setOrders(loadFromStorage('orders', initialOrders))
+    setRolls(loadFromStorage('rolls', initialRolls))
+    setAvisos(loadFromStorage('avisos', initialAvisos))
+    setMermas(loadFromStorage('mermas', initialMermas))
+    setRecepciones(loadFromStorage('recepciones', initialRecepciones))
+    setEgresos(loadFromStorage('egresos', initialEgresos))
+    setProductosTerminados(loadFromStorage('productosTerminados', initialProductosTerminados))
+    setProductividad(loadFromStorage('productividad', initialProductividad))
+    setHydrated(true)
+  }, [])
+
+  // ----- Reloj de la tablet (no se persiste) -----
   useEffect(() => {
     const t = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(t)
   }, [])
 
+  // ----- Auto-guardado con debounce 300ms (un useEffect por slice) -----
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('orders',              orders),              SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [orders, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('rolls',               rolls),               SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [rolls, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('avisos',              avisos),              SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [avisos, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('mermas',              mermas),              SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [mermas, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('recepciones',         recepciones),         SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [recepciones, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('egresos',             egresos),             SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [egresos, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('productosTerminados', productosTerminados), SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [productosTerminados, hydrated])
+  useEffect(() => { if (!hydrated) return; const t = setTimeout(() => saveToStorage('productividad',       productividad),       SAVE_DEBOUNCE_MS); return () => clearTimeout(t) }, [productividad, hydrated])
+
+  // ----- Mutadores -----
   const updateOrder = (id, patch) =>
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)))
   const updateRoll = (id, patch) =>
@@ -56,10 +103,21 @@ export function AppProvider({ children }) {
   // Cobranza libera pedido
   const liberarPedido = (id) => updateOrder(id, { pagoConfirmado: true, estado: 'liberado' })
 
+  // Reset demo — limpia localStorage y recarga
+  const resetDemo = () => {
+    clearAllStorage()
+    if (typeof window !== 'undefined') window.location.reload()
+  }
+
   return (
     <AppContext.Provider value={{
+      // datos
       orders, rolls, avisos, mermas, recepciones, egresos, productosTerminados, productividad, operators, currentTime,
+      // mutadores
       updateOrder, updateRoll, addAviso, addMerma, addRecepcion, addEgreso, addProductoTerminado, addProductividad, liberarPedido,
+      // persistencia
+      hydrated, hadStoredData, lastUpdate, resetDemo,
+      storageAvailable: typeof window === 'undefined' ? false : isStorageAvailable(),
     }}>
       {children}
     </AppContext.Provider>

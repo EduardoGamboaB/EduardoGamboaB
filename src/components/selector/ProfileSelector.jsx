@@ -1,11 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, RotateCcw, Database } from 'lucide-react'
 import { brand, fontDisplay, fontDisplayItalic, fontBody, fontMono } from '@/lib/brand'
 import { MallatexMESLogo } from '@/components/logos/MallatexMESLogo'
 import { MallatexLogo } from '@/components/logos/MallatexLogo'
 import { ProcessTag } from '@/components/ui/ProcessTag'
+import { useApp } from '@/lib/context'
+import { relativeTime } from '@/lib/storage'
 
 // PROMPT 1 §7 — cada tarjeta navega a su ruta con <Link>.
 // CLAUDE.md §4 — exactamente 6 perfiles. /direccion (no /director).
@@ -27,12 +29,42 @@ const VALORES = [
 ]
 
 export function ProfileSelector() {
+  const { hadStoredData, lastUpdate, resetDemo, storageAvailable } = useApp()
+
+  const handleReset = () => {
+    if (window.confirm('¿Limpiar todos los datos del demo y volver al estado inicial?\n\nEsto NO se puede deshacer.')) {
+      resetDemo()
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: brand.paper }}>
       <nav style={{ padding: '18px 32px', background: brand.white, borderBottom: `1px solid ${brand.line}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <MallatexMESLogo size={42} />
         <div style={{ ...fontMono, fontSize: 10, letterSpacing: '0.25em', color: '#888', textTransform: 'uppercase' }}>Planta Zapopan · Jal.</div>
       </nav>
+
+      {/* Banner de hidratación — solo si hay datos previos en localStorage */}
+      {hadStoredData && lastUpdate && (
+        <div style={{
+          padding: '10px 32px', background: brand.redLight, borderBottom: `1px solid ${brand.red}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+          ...fontMono, fontSize: 12, color: brand.redDark, fontWeight: 600, letterSpacing: '0.02em',
+        }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Database size={14} />
+            Datos del demo guardados localmente · Última sesión: <b>{relativeTime(lastUpdate)}</b>
+          </span>
+          <button onClick={handleReset} style={{
+            ...fontMono, fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+            background: 'transparent', color: brand.red, border: `1px solid ${brand.red}`,
+            padding: '4px 10px', borderRadius: 4, cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}>
+            <RotateCcw size={12} /> Reset
+          </button>
+        </div>
+      )}
 
       <div style={{ position: 'relative', height: 8, background: brand.red, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${brand.red} 0%, ${brand.redDark} 50%, ${brand.red} 100%)` }} />
@@ -158,6 +190,21 @@ export function ProfileSelector() {
             Av. El Colli #5210 · Col. Colli Urbano · C.P. 45070 · Zapopan, Jalisco
           </div>
         </div>
+        {/* Reset demo · minimal · solo si el navegador soporta localStorage */}
+        {storageAvailable && (
+          <div style={{ maxWidth: 1280, margin: '14px auto 0', textAlign: 'right' }}>
+            <button onClick={handleReset} style={{
+              ...fontMono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
+              background: 'transparent', color: 'rgba(255,255,255,0.6)', border: 'none',
+              cursor: 'pointer', padding: '4px 8px', fontWeight: 600,
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'white')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>
+              <RotateCcw size={12} /> Reset demo
+            </button>
+          </div>
+        )}
       </footer>
     </div>
   )
