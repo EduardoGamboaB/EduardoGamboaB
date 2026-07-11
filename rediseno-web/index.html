@@ -1,0 +1,1457 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mallatex · Protegemos lo que siembras</title>
+<meta name="description" content="Tejidos Técnicos Mallatex — fabricante mexicano de mallas agrotextiles a la medida. Zapopan, Jal. · Ensenada, B.C." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" />
+<style>
+  /* ============================================================
+     Tokens — neutros con tinte cálido (no grises genéricos).
+     Rojo Mallatex #E30613 es intocable (CLAUDE.md §3).
+     Single-theme por decisión: la marca vive en blanco+rojo.
+     ============================================================ */
+  :root {
+    --red: #E30613;
+    --red-dark: #B30410;
+    --red-tint: #FBE9EA;
+    --ink: #171412;
+    --ink-2: #57534e;
+    --ink-3: #a8a29e;
+    --paper: #faf7f4;
+    --paper-2: #f3ede6;
+    --line: #e6e2df;
+    --white: #ffffff;
+
+    --f-display: 'Barlow Condensed', 'Oswald', 'Arial Narrow', 'Impact', sans-serif;
+    --f-body: 'Barlow', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --f-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--f-body);
+    color: var(--ink);
+    background: var(--white);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; text-decoration: none; }
+  button, input, select, textarea { font-family: inherit; }
+  button { cursor: pointer; }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+  @media (max-width: 720px) { .wrap { padding: 0 20px; } }
+
+  /* Utility · eyebrow (etiqueta corta) */
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em;
+    color: var(--red); font-weight: 700; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .eyebrow::before {
+    content: ''; width: 22px; height: 2px; background: var(--red);
+  }
+
+  /* Utility · headline con italic Barlow Condensed */
+  .h-display {
+    font-family: var(--f-display); font-weight: 900;
+    line-height: 0.92; letter-spacing: -0.01em; text-transform: uppercase;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .h-display em { font-style: italic; color: var(--red); font-weight: 900; }
+
+  /* ============================================================
+     TOPBAR
+     ============================================================ */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 32px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: saturate(1.4) blur(8px);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 40;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { display: block; }
+  .brand-name {
+    font-family: var(--f-display); font-weight: 900;
+    font-size: 22px; letter-spacing: 0.02em; text-transform: uppercase;
+    line-height: 1; color: var(--ink);
+  }
+  .brand-name em {
+    font-style: normal; color: var(--red);
+  }
+  .nav { display: flex; gap: 28px; align-items: center; }
+  .nav a {
+    font-family: var(--f-display); font-weight: 700; font-size: 13px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 6px 2px; border-bottom: 2px solid transparent;
+    transition: border-color .18s ease, color .18s ease;
+  }
+  .nav a:hover { color: var(--red); border-bottom-color: var(--red); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 20px;
+    font-family: var(--f-display); font-weight: 800; font-size: 13px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--red); color: var(--white);
+    border: 1.5px solid var(--red);
+    border-radius: 4px;
+    transition: background .18s ease, transform .18s ease;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--red-dark); border-color: var(--red-dark); transform: translateY(-1px); }
+  .btn.ghost { background: transparent; color: var(--red); }
+  .btn.ghost:hover { background: var(--red-tint); color: var(--red-dark); }
+  .btn.big { padding: 16px 24px; font-size: 14px; }
+  .btn.inverse { background: var(--white); color: var(--ink); border-color: var(--white); }
+  .btn.inverse:hover { background: var(--paper); }
+
+  .menu-btn { display: none; }
+  @media (max-width: 940px) {
+    .nav, .topbar-cta { display: none; }
+    .menu-btn {
+      display: grid; place-items: center;
+      width: 42px; height: 42px;
+      background: transparent; border: 1.5px solid var(--line);
+      border-radius: 4px; color: var(--ink);
+    }
+  }
+
+  /* ============================================================
+     HERO — headline masivo + patrón malla + KPIs micro
+     Layout asimétrico 1.2 : 1 en desktop
+     ============================================================ */
+  .hero {
+    position: relative;
+    padding: 80px 0 100px;
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .hero::after {
+    content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 40%;
+    background:
+      radial-gradient(ellipse at 70% 40%, rgba(227,6,19,0.06), transparent 65%),
+      repeating-linear-gradient(45deg, transparent 0 22px, rgba(227,6,19,0.035) 22px 23px);
+    pointer-events: none;
+  }
+  .hero .wrap { position: relative; display: grid; grid-template-columns: 1.25fr 1fr; gap: 60px; align-items: end; }
+  @media (max-width: 940px) { .hero { padding: 60px 0; } .hero .wrap { grid-template-columns: 1fr; gap: 40px; } }
+
+  h1.hero-title {
+    font-family: var(--f-display); font-weight: 900;
+    font-size: clamp(52px, 7.6vw, 108px);
+    line-height: 0.88; letter-spacing: -0.015em; text-transform: uppercase;
+    text-wrap: balance;
+    margin: 0 0 26px;
+  }
+  h1.hero-title em { font-style: italic; color: var(--red); font-weight: 900; }
+  .hero-lead {
+    font-size: clamp(16px, 1.35vw, 19px);
+    color: var(--ink-2);
+    max-width: 540px;
+    line-height: 1.6;
+    margin: 0 0 34px;
+  }
+  .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 44px; }
+
+  .hero-kpis {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    max-width: 560px;
+    padding-top: 26px;
+    border-top: 1px solid var(--line);
+  }
+  .hero-kpi {
+    /* sin borde ni línea izquierda — sólo tipografía */
+  }
+  .hero-kpi-value {
+    font-family: var(--f-display); font-weight: 900;
+    font-size: clamp(30px, 3.4vw, 44px);
+    line-height: 1; margin: 0;
+  }
+  .hero-kpi-value sup {
+    font-size: 0.55em; color: var(--red); font-weight: 900; margin-left: 2px;
+    vertical-align: super; line-height: 1;
+  }
+  .hero-kpi-label {
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em;
+    color: var(--ink-2); text-transform: uppercase; margin-top: 8px; font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* Hero visual — patrón de malla tejida hecha con SVG */
+  .hero-visual {
+    position: relative;
+    height: clamp(360px, 44vw, 560px);
+    background: linear-gradient(155deg, var(--red) 0%, var(--red-dark) 100%);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px -30px rgba(227,6,19,0.4);
+    align-self: stretch;
+  }
+  .hero-visual svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero-visual-tag {
+    position: absolute; left: 22px; right: 22px; bottom: 22px;
+    background: rgba(255,255,255,0.96);
+    padding: 14px 16px; border-radius: 4px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero-visual-tag-dot {
+    flex-shrink: 0; width: 10px; height: 10px;
+    background: #1e8a3c; border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(30,138,60,0.18);
+  }
+  .hero-visual-tag-text {
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.14em; color: var(--ink);
+    text-transform: uppercase; font-weight: 700;
+    line-height: 1.35;
+  }
+  .hero-visual-tag-text small {
+    display: block; color: var(--ink-2); font-weight: 500;
+    font-size: 10px; letter-spacing: 0.1em; margin-top: 4px;
+  }
+
+  /* ============================================================
+     CLIENTES — barra de confianza
+     Cliente reales del CLAUDE.md §5
+     ============================================================ */
+  .clients {
+    padding: 44px 0;
+    background: var(--white);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .clients-title {
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.3em;
+    color: var(--ink-2); text-transform: uppercase; font-weight: 700;
+    text-align: center; margin-bottom: 26px;
+  }
+  .clients-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0;
+    border-left: 1px solid var(--line);
+  }
+  .client {
+    padding: 18px 12px;
+    text-align: center;
+    font-family: var(--f-display); font-weight: 800; font-size: 15px;
+    letter-spacing: 0.02em; text-transform: uppercase;
+    color: var(--ink-2);
+    border-right: 1px solid var(--line);
+    transition: color .18s, background .18s;
+  }
+  .client:hover { color: var(--red); background: var(--paper); }
+
+  /* ============================================================
+     SECTION common
+     ============================================================ */
+  section { padding: 110px 0; }
+  @media (max-width: 720px) { section { padding: 72px 0; } }
+  .section-head { max-width: 780px; margin: 0 auto 64px; text-align: center; }
+  .section-head.left { text-align: left; margin-left: 0; margin-right: 0; }
+  .section-title {
+    font-family: var(--f-display); font-weight: 900;
+    font-size: clamp(38px, 4.6vw, 60px); line-height: 0.94;
+    letter-spacing: -0.005em; text-transform: uppercase;
+    text-wrap: balance;
+    margin: 10px 0 18px;
+  }
+  .section-title em { font-style: italic; color: var(--red); }
+  .section-lead {
+    color: var(--ink-2); font-size: 17px; line-height: 1.6; max-width: 620px;
+  }
+  .section-head:not(.left) .section-lead { margin-left: auto; margin-right: auto; }
+
+  /* ============================================================
+     CULTIVOS — segmentado por cultivo real del productor
+     SVG icons especializados, no emoji
+     ============================================================ */
+  .cultivos-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    border: 1px solid var(--line);
+  }
+  @media (max-width: 900px) { .cultivos-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .cultivos-grid { grid-template-columns: 1fr; } }
+  .cultivo {
+    padding: 32px 28px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--white);
+    position: relative;
+    transition: background .18s;
+  }
+  .cultivo:hover { background: var(--paper); }
+  .cultivo:hover::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: var(--red);
+  }
+  .cultivo-icon {
+    width: 42px; height: 42px; color: var(--red);
+    margin-bottom: 20px;
+  }
+  .cultivo-icon svg { width: 100%; height: 100%; display: block; }
+  .cultivo-title {
+    font-family: var(--f-display); font-weight: 800;
+    font-size: 24px; line-height: 1.05;
+    text-transform: uppercase; letter-spacing: 0.005em;
+    margin: 0 0 10px;
+  }
+  .cultivo-desc {
+    color: var(--ink-2); font-size: 14px; line-height: 1.6;
+    margin: 0 0 18px;
+  }
+  .cultivo-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .cultivo-tag {
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.08em;
+    color: var(--red); text-transform: uppercase; font-weight: 700;
+    padding: 4px 8px; background: var(--red-tint); border-radius: 3px;
+  }
+
+  /* ============================================================
+     MANIFESTO — momento editorial tipográfico
+     ============================================================ */
+  .manifesto {
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 130px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .manifesto::before {
+    content: 'A la medida';
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--f-display); font-weight: 900; font-style: italic;
+    font-size: clamp(180px, 30vw, 460px);
+    line-height: 0.85;
+    color: rgba(227,6,19,0.07);
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .manifesto .wrap { position: relative; z-index: 1; text-align: center; }
+  .manifesto-eyebrow {
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.28em;
+    color: var(--red); text-transform: uppercase; font-weight: 700;
+    display: block; margin-bottom: 24px;
+  }
+  .manifesto-quote {
+    font-family: var(--f-display); font-weight: 800; font-style: italic;
+    font-size: clamp(32px, 4vw, 56px);
+    line-height: 1.08; letter-spacing: -0.005em;
+    color: var(--ink);
+    max-width: 900px; margin: 0 auto 32px;
+    text-wrap: balance;
+  }
+  .manifesto-quote strong {
+    font-weight: 900; font-style: normal; color: var(--red);
+  }
+  .manifesto-attr {
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em;
+    color: var(--ink-2); text-transform: uppercase; font-weight: 700;
+  }
+
+  /* ============================================================
+     PRODUCTOS — catálogo técnico
+     ============================================================ */
+  .productos-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 0;
+    border: 1px solid var(--line);
+    border-right: none;
+  }
+  @media (max-width: 780px) { .productos-grid { grid-template-columns: 1fr; border-right: 1px solid var(--line); } }
+  .producto {
+    display: grid; grid-template-columns: 140px 1fr;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--white);
+  }
+  @media (max-width: 500px) { .producto { grid-template-columns: 100px 1fr; } }
+  .producto-visual {
+    position: relative;
+    background: linear-gradient(155deg, var(--red) 0%, var(--red-dark) 100%);
+    display: grid; place-items: center;
+    overflow: hidden;
+  }
+  .producto-visual::after {
+    content: ''; position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 8px, rgba(255,255,255,0.14) 8px 9px),
+      repeating-linear-gradient(90deg, transparent 0 8px, rgba(255,255,255,0.14) 8px 9px);
+  }
+  .producto-visual svg {
+    position: relative; z-index: 1;
+    width: 46px; height: 46px; color: var(--white); opacity: 0.9;
+  }
+  .producto-body { padding: 24px 26px; }
+  .producto-code {
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.2em;
+    color: var(--red); text-transform: uppercase; font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .producto-title {
+    font-family: var(--f-display); font-weight: 800;
+    font-size: 22px; text-transform: uppercase; letter-spacing: 0.005em;
+    line-height: 1.05; margin: 0 0 8px;
+  }
+  .producto-desc {
+    color: var(--ink-2); font-size: 14px; line-height: 1.55;
+    margin: 0 0 14px;
+  }
+  .producto-specs {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    font-family: var(--f-mono); font-size: 10px;
+    color: var(--ink-2); letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 600;
+  }
+  .producto-specs span + span { padding-left: 14px; border-left: 1px solid var(--line); }
+
+  /* ============================================================
+     PROMESA — 4 razones (sin numerales cliché)
+     Ahora en 4 columnas con headline propio y sin "01/02/03/04"
+     ============================================================ */
+  .promesa { background: var(--red); color: var(--white); position: relative; overflow: hidden; }
+  .promesa::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(135deg, transparent 0 60px, rgba(255,255,255,0.06) 60px 61px);
+    pointer-events: none;
+  }
+  .promesa .wrap { position: relative; }
+  .promesa .section-head { text-align: left; margin: 0 0 60px; max-width: 720px; }
+  .promesa .section-title { color: var(--white); }
+  .promesa .section-title em { color: rgba(255,255,255,0.6); }
+  .promesa .section-lead { color: rgba(255,255,255,0.85); }
+  .promesa .eyebrow { color: rgba(255,255,255,0.95); }
+  .promesa .eyebrow::before { background: var(--white); }
+  .promesa-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; }
+  @media (max-width: 900px) { .promesa-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .promesa-grid { grid-template-columns: 1fr; } }
+  .promesa-item { border-top: 2px solid rgba(255,255,255,0.35); padding-top: 22px; }
+  .promesa-item h3 {
+    font-family: var(--f-display); font-weight: 800;
+    font-size: 22px; line-height: 1.1;
+    text-transform: uppercase; letter-spacing: 0.005em;
+    margin: 0 0 12px;
+  }
+  .promesa-item p {
+    color: rgba(255,255,255,0.88);
+    font-size: 14px; line-height: 1.6; margin: 0;
+  }
+
+  /* ============================================================
+     CASE — testimonial / caso real
+     ============================================================ */
+  .case-grid {
+    display: grid; grid-template-columns: 1fr 1.35fr; gap: 60px; align-items: center;
+  }
+  @media (max-width: 900px) { .case-grid { grid-template-columns: 1fr; gap: 44px; } }
+  .case-visual {
+    position: relative;
+    height: clamp(420px, 42vw, 560px);
+    background: var(--paper);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .case-visual svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .case-visual-tag {
+    position: absolute; left: 22px; bottom: 22px;
+    font-family: var(--f-display); font-weight: 900;
+    font-size: 30px; line-height: 0.95;
+    color: var(--ink); text-transform: uppercase;
+  }
+  .case-visual-tag em { font-style: italic; color: var(--red); display: block; }
+  .case-quote {
+    font-family: var(--f-display); font-weight: 700; font-style: italic;
+    font-size: clamp(22px, 2.4vw, 32px); line-height: 1.22;
+    color: var(--ink); margin: 24px 0 32px;
+    text-wrap: balance;
+  }
+  .case-quote::before {
+    content: '“'; display: block;
+    font-family: var(--f-display); font-weight: 900;
+    font-size: 96px; line-height: 0.6;
+    color: var(--red);
+    margin-bottom: 8px;
+  }
+  .case-author {
+    display: flex; align-items: center; gap: 14px;
+    padding-top: 22px; border-top: 1px solid var(--line);
+  }
+  .case-author-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    display: grid; place-items: center;
+    font-family: var(--f-display); font-weight: 900; font-size: 22px;
+  }
+  .case-author-name {
+    font-family: var(--f-display); font-weight: 800;
+    font-size: 15px; text-transform: uppercase; letter-spacing: 0.02em;
+  }
+  .case-author-role {
+    font-family: var(--f-mono); font-size: 10px; color: var(--ink-2);
+    letter-spacing: 0.14em; text-transform: uppercase; margin-top: 4px; font-weight: 600;
+  }
+  .case-kpis {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    padding-top: 30px; margin-top: 30px;
+    border-top: 1px solid var(--line);
+  }
+  .case-kpi-value {
+    font-family: var(--f-display); font-weight: 900;
+    font-size: 34px; color: var(--red); line-height: 1;
+  }
+  .case-kpi-label {
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em;
+    color: var(--ink-2); text-transform: uppercase; font-weight: 600;
+    margin-top: 6px;
+  }
+
+  /* ============================================================
+     COTIZADOR
+     ============================================================ */
+  .cotizador { background: var(--paper); }
+  .cotizador-shell {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 56px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
+  }
+  @media (max-width: 900px) { .cotizador-shell { grid-template-columns: 1fr; padding: 36px; gap: 44px; } }
+  .cotizador-copy h2 { font-size: clamp(32px, 3.4vw, 46px); }
+  .cotizador-steps {
+    list-style: none; padding: 0; margin: 26px 0 0;
+    counter-reset: step;
+  }
+  .cotizador-steps li {
+    counter-increment: step;
+    display: grid; grid-template-columns: 34px 1fr; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid var(--line);
+    font-size: 14px; color: var(--ink-2); line-height: 1.55;
+  }
+  .cotizador-steps li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--f-mono); font-weight: 700;
+    font-size: 12px; letter-spacing: 0.1em;
+    color: var(--red);
+    padding-top: 2px;
+  }
+  .cotizador-form {
+    background: var(--paper);
+    border-radius: 6px;
+    padding: 32px;
+  }
+  .form-row { margin-bottom: 16px; }
+  .form-row label {
+    display: block;
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.18em; color: var(--ink-2);
+    text-transform: uppercase; font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; padding: 12px 14px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-family: var(--f-body); font-size: 14px; color: var(--ink);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(227,6,19,0.15);
+  }
+  .form-row textarea { resize: vertical; min-height: 90px; }
+  .form-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .form-two { grid-template-columns: 1fr; } }
+  .form-submit {
+    width: 100%; padding: 16px;
+    margin-top: 10px;
+    background: var(--red); color: var(--white);
+    border: none; border-radius: 4px;
+    font-family: var(--f-display); font-weight: 800;
+    font-size: 15px; text-transform: uppercase; letter-spacing: 0.08em;
+    transition: background .18s, transform .18s;
+  }
+  .form-submit:hover { background: var(--red-dark); transform: translateY(-1px); }
+  .form-note {
+    text-align: center; margin-top: 12px;
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em;
+    color: var(--ink-2); text-transform: uppercase; font-weight: 600;
+  }
+
+  /* ============================================================
+     COBERTURA
+     ============================================================ */
+  .cobertura-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 60px; align-items: center; }
+  @media (max-width: 900px) { .cobertura-grid { grid-template-columns: 1fr; gap: 44px; } }
+  .plantas { list-style: none; padding: 0; margin: 30px 0 0; }
+  .planta {
+    padding: 22px 0; border-bottom: 1px solid var(--line);
+    display: grid; grid-template-columns: 52px 1fr auto; gap: 18px; align-items: center;
+  }
+  .planta:last-child { border-bottom: none; }
+  .planta-num {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    display: grid; place-items: center;
+    font-family: var(--f-display); font-weight: 900; font-size: 22px;
+    line-height: 1;
+  }
+  .planta-name {
+    font-family: var(--f-display); font-weight: 800;
+    font-size: 20px; text-transform: uppercase; letter-spacing: 0.01em;
+    margin: 0;
+  }
+  .planta-dir {
+    font-family: var(--f-mono); font-size: 11px; color: var(--ink-2);
+    letter-spacing: 0.05em; margin-top: 4px;
+  }
+  .planta-role {
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em;
+    color: var(--red); text-transform: uppercase; font-weight: 700;
+    padding: 4px 10px; border: 1px solid var(--red); border-radius: 3px;
+  }
+  .cobertura-map {
+    height: clamp(360px, 40vw, 480px);
+    background: var(--paper);
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .cobertura-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* ============================================================
+     CTA final — cierre
+     ============================================================ */
+  .cta-final { background: var(--ink); color: var(--white); padding: 100px 0; position: relative; overflow: hidden; }
+  .cta-final::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 40%, rgba(227,6,19,0.32), transparent 55%),
+      radial-gradient(ellipse at 85% 60%, rgba(227,6,19,0.15), transparent 55%);
+    pointer-events: none;
+  }
+  .cta-final .wrap { position: relative; text-align: center; }
+  .cta-final-eyebrow {
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.28em;
+    color: var(--red); text-transform: uppercase; font-weight: 700;
+    display: block; margin-bottom: 20px;
+  }
+  .cta-final h2 {
+    font-family: var(--f-display); font-weight: 900;
+    font-size: clamp(40px, 5.5vw, 76px); line-height: 0.92;
+    letter-spacing: -0.01em; text-transform: uppercase;
+    text-wrap: balance;
+    color: var(--white); margin: 0 0 20px;
+  }
+  .cta-final h2 em { font-style: italic; color: var(--red); }
+  .cta-final p {
+    color: rgba(255,255,255,0.8); font-size: 17px;
+    max-width: 620px; margin: 0 auto 34px;
+    line-height: 1.6;
+  }
+  .cta-final .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ============================================================
+     FOOTER
+     ============================================================ */
+  footer { background: var(--ink); color: rgba(255,255,255,0.7); padding: 68px 0 32px; }
+  .footer-grid {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px;
+    padding-bottom: 44px;
+    border-bottom: 1px solid rgba(255,255,255,0.14);
+  }
+  @media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .footer-grid { grid-template-columns: 1fr; } }
+  .footer-brand {
+    font-family: var(--f-display); font-weight: 900;
+    font-size: 34px; letter-spacing: 0.02em;
+    color: var(--white); text-transform: uppercase;
+    line-height: 1;
+  }
+  .footer-brand em { font-style: normal; color: var(--red); }
+  .footer-tagline {
+    color: rgba(255,255,255,0.55);
+    font-size: 13px; margin-top: 14px;
+    max-width: 340px; line-height: 1.6;
+  }
+  .footer-col h5 {
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.24em;
+    color: var(--white); text-transform: uppercase; font-weight: 700;
+    margin: 0 0 18px;
+  }
+  .footer-col ul { list-style: none; padding: 0; margin: 0; }
+  .footer-col li { margin-bottom: 10px; font-size: 13px; line-height: 1.5; }
+  .footer-col a:hover { color: var(--white); }
+  .footer-bottom {
+    padding-top: 26px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.42); text-transform: uppercase; font-weight: 600;
+  }
+</style>
+
+<!-- ===============================================================
+     TOPBAR
+     =============================================================== -->
+<header class="topbar">
+  <a href="#" class="brand" aria-label="Mallatex">
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+      <rect width="34" height="34" rx="4" fill="#E30613"/>
+      <circle cx="17" cy="17" r="10" fill="none" stroke="#fff" stroke-width="2"/>
+      <circle cx="17" cy="17" r="5" fill="none" stroke="#fff" stroke-width="1.5"/>
+    </svg>
+    <span class="brand-name">Malla<em>tex</em></span>
+  </a>
+  <nav class="nav" aria-label="Principal">
+    <a href="#cultivos">Cultivos</a>
+    <a href="#productos">Productos</a>
+    <a href="#promesa">Nuestra promesa</a>
+    <a href="#casos">Casos</a>
+    <a href="#cobertura">Cobertura</a>
+  </nav>
+  <a href="#cotizar" class="btn topbar-cta">Cotizar a la medida</a>
+  <button class="menu-btn" aria-label="Abrir menú">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+    </svg>
+  </button>
+</header>
+
+<!-- ===============================================================
+     HERO
+     =============================================================== -->
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Mallas agrotextiles · Hechas a la medida</div>
+      <h1 class="hero-title">Protegemos<br />lo que <em>siembras.</em></h1>
+      <p class="hero-lead">
+        Fabricamos mallas agrícolas <strong>a la medida de tu cultivo</strong>
+        — antigranizo, antiáfido, cubresuelo, monofilamento y raschel — con
+        respaldo de más de 25 años protegiendo campos en el Bajío, Norte y
+        Occidente de México.
+      </p>
+      <div class="hero-ctas">
+        <a href="#cotizar" class="btn big">Cotizar a la medida →</a>
+        <a href="#casos" class="btn ghost big">Ver casos reales</a>
+      </div>
+      <div class="hero-kpis">
+        <div class="hero-kpi">
+          <div class="hero-kpi-value">25<sup>+</sup></div>
+          <div class="hero-kpi-label">Años protegiendo cultivos</div>
+        </div>
+        <div class="hero-kpi">
+          <div class="hero-kpi-value">3.4<sup>M</sup></div>
+          <div class="hero-kpi-label">m² fabricados en 2025</div>
+        </div>
+        <div class="hero-kpi">
+          <div class="hero-kpi-value">100<sup>%</sup></div>
+          <div class="hero-kpi-label">Mexicano, planta propia</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <svg viewBox="0 0 500 500" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <pattern id="mesh-a" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+          </pattern>
+          <pattern id="mesh-b" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="12" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+            <line x1="0" y1="0" x2="12" y2="0" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="500" height="240" fill="url(#mesh-a)"/>
+        <rect width="500" height="240" fill="url(#mesh-b)"/>
+        <g stroke="rgba(255,255,255,0.42)" stroke-width="2" fill="none">
+          <line x1="80" y1="40" x2="80" y2="240"/>
+          <line x1="200" y1="40" x2="200" y2="240"/>
+          <line x1="320" y1="40" x2="320" y2="240"/>
+          <line x1="440" y1="40" x2="440" y2="240"/>
+          <path d="M 40 40 Q 250 -12 460 40"/>
+          <line x1="40" y1="240" x2="460" y2="240"/>
+        </g>
+        <g fill="rgba(255,255,255,0.12)">
+          <ellipse cx="120" cy="330" rx="80" ry="18"/>
+          <ellipse cx="290" cy="360" rx="110" ry="20"/>
+          <ellipse cx="440" cy="330" rx="60" ry="18"/>
+          <ellipse cx="180" cy="410" rx="100" ry="20"/>
+          <ellipse cx="380" cy="430" rx="90" ry="22"/>
+        </g>
+        <g stroke="rgba(255,255,255,0.78)" stroke-width="2" fill="none" stroke-linecap="round">
+          <path d="M 100 330 q 0 -22 12 -32 M 112 298 q -6 -12 -22 -8"/>
+          <path d="M 260 355 q 0 -22 12 -32 M 272 323 q 6 -12 22 -8"/>
+          <path d="M 430 325 q 0 -20 10 -30"/>
+          <path d="M 160 405 q 0 -18 12 -30"/>
+          <path d="M 360 425 q 0 -22 12 -32"/>
+        </g>
+      </svg>
+      <div class="hero-visual-tag">
+        <span class="hero-visual-tag-dot" aria-hidden="true"></span>
+        <span class="hero-visual-tag-text">
+          Malla antigranizo · 11.10 × 50 m
+          <small>Instalada · Berrymex · Michoacán</small>
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     CLIENTES REALES
+     =============================================================== -->
+<section class="clients">
+  <div class="wrap">
+    <div class="clients-title">Confían en Mallatex</div>
+    <div class="clients-row">
+      <div class="client">Driscoll's</div>
+      <div class="client">Berrymex</div>
+      <div class="client">NatureSweet</div>
+      <div class="client">Bioparques</div>
+      <div class="client">Agro Viva</div>
+      <div class="client">Surexport</div>
+      <div class="client">La Cima Produce</div>
+      <div class="client">Horticola Heres</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     CULTIVOS
+     =============================================================== -->
+<section id="cultivos">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow" style="justify-content:center;">Encuentra tu cultivo</div>
+      <h2 class="section-title">Soluciones por <em>cultivo,</em><br />no por catálogo.</h2>
+      <p class="section-lead">
+        Cada cultivo pide una malla diferente. Empieza por tu campo — te
+        proponemos la combinación exacta de material, calibre y medida.
+      </p>
+    </div>
+
+    <div class="cultivos-grid">
+      <article class="cultivo">
+        <div class="cultivo-icon">
+          <!-- Berry -->
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M 20 8 C 12 8 6 15 6 22 C 6 30 12 36 20 36 C 28 36 34 30 34 22 C 34 15 28 8 20 8 Z"/>
+            <path d="M 20 8 L 22 3 M 22 3 L 26 3 M 22 3 L 22 6"/>
+            <circle cx="14" cy="18" r="1.5" fill="currentColor"/>
+            <circle cx="20" cy="15" r="1.5" fill="currentColor"/>
+            <circle cx="26" cy="18" r="1.5" fill="currentColor"/>
+            <circle cx="16" cy="24" r="1.5" fill="currentColor"/>
+            <circle cx="22" cy="22" r="1.5" fill="currentColor"/>
+            <circle cx="28" cy="24" r="1.5" fill="currentColor"/>
+            <circle cx="19" cy="30" r="1.5" fill="currentColor"/>
+            <circle cx="25" cy="30" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <h3 class="cultivo-title">Berries</h3>
+        <p class="cultivo-desc">
+          Fresa, arándano, frambuesa, zarzamora. Antipájaro, antigranizo
+          y control térmico para invernadero.
+        </p>
+        <div class="cultivo-tags">
+          <span class="cultivo-tag">Antipájaro</span>
+          <span class="cultivo-tag">Antigranizo</span>
+          <span class="cultivo-tag">Raschel 35–50%</span>
+        </div>
+      </article>
+
+      <article class="cultivo">
+        <div class="cultivo-icon">
+          <!-- Tomato / hortaliza -->
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="20" cy="24" r="12"/>
+            <path d="M 14 12 L 20 8 M 20 8 L 26 12 M 20 8 L 20 3 M 15 10 L 25 10"/>
+            <path d="M 15 24 Q 20 20 25 24"/>
+          </svg>
+        </div>
+        <h3 class="cultivo-title">Hortalizas</h3>
+        <p class="cultivo-desc">
+          Tomate, pimiento, chile, calabaza. Control de plagas y radiación
+          para invernadero e invernadero abierto.
+        </p>
+        <div class="cultivo-tags">
+          <span class="cultivo-tag">Antiáfido</span>
+          <span class="cultivo-tag">Monofilamento</span>
+          <span class="cultivo-tag">Sombra 35%</span>
+        </div>
+      </article>
+
+      <article class="cultivo">
+        <div class="cultivo-icon">
+          <!-- Grain / trigo -->
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="20" y1="4" x2="20" y2="36"/>
+            <path d="M 20 10 L 12 6 M 20 14 L 12 10 M 20 18 L 12 14 M 20 22 L 12 18 M 20 26 L 12 22 M 20 10 L 28 6 M 20 14 L 28 10 M 20 18 L 28 14 M 20 22 L 28 18 M 20 26 L 28 22"/>
+          </svg>
+        </div>
+        <h3 class="cultivo-title">Granos y forraje</h3>
+        <p class="cultivo-desc">
+          Maíz, sorgo, alfalfa. Cobertura de suelo, retención de humedad
+          y aceleración de germinación.
+        </p>
+        <div class="cultivo-tags">
+          <span class="cultivo-tag">Cubresuelo</span>
+          <span class="cultivo-tag">Azorrillado</span>
+          <span class="cultivo-tag">105–130 gr</span>
+        </div>
+      </article>
+
+      <article class="cultivo">
+        <div class="cultivo-icon">
+          <!-- Fruit / árbol frutal -->
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M 12 20 Q 6 14 12 8 Q 20 4 28 8 Q 34 14 28 20 Q 34 24 28 30 Q 20 34 12 30 Q 6 24 12 20 Z"/>
+            <line x1="20" y1="30" x2="20" y2="38"/>
+            <circle cx="14" cy="14" r="1.5" fill="currentColor"/>
+            <circle cx="24" cy="14" r="1.5" fill="currentColor"/>
+            <circle cx="20" cy="20" r="1.5" fill="currentColor"/>
+            <circle cx="14" cy="24" r="1.5" fill="currentColor"/>
+            <circle cx="26" cy="24" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <h3 class="cultivo-title">Aguacate y frutales</h3>
+        <p class="cultivo-desc">
+          Aguacate, cítrico, mango. Antigranizo y control de radiación
+          para huertos de alto valor.
+        </p>
+        <div class="cultivo-tags">
+          <span class="cultivo-tag">Antigranizo</span>
+          <span class="cultivo-tag">Raschel</span>
+          <span class="cultivo-tag">A la medida</span>
+        </div>
+      </article>
+
+      <article class="cultivo">
+        <div class="cultivo-icon">
+          <!-- Seedling / vivero -->
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M 20 30 L 20 18"/>
+            <path d="M 20 18 Q 10 18 8 8 Q 18 8 20 18 Z"/>
+            <path d="M 20 22 Q 30 22 32 12 Q 22 12 20 22 Z"/>
+            <path d="M 10 36 L 30 36"/>
+            <path d="M 12 36 L 14 30 L 26 30 L 28 36"/>
+          </svg>
+        </div>
+        <h3 class="cultivo-title">Vivero y hortaliza fina</h3>
+        <p class="cultivo-desc">
+          Plántulas, hierbas aromáticas, ornamental. Control fino de
+          radiación y aislamiento térmico.
+        </p>
+        <div class="cultivo-tags">
+          <span class="cultivo-tag">Raschel 50%</span>
+          <span class="cultivo-tag">Antipájaro</span>
+          <span class="cultivo-tag">Bandeo</span>
+        </div>
+      </article>
+
+      <article class="cultivo">
+        <div class="cultivo-icon">
+          <!-- Fence / obra -->
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="10" x2="36" y2="10"/>
+            <line x1="4" y1="30" x2="36" y2="30"/>
+            <line x1="8" y1="6" x2="8" y2="36"/>
+            <line x1="16" y1="6" x2="16" y2="36"/>
+            <line x1="24" y1="6" x2="24" y2="36"/>
+            <line x1="32" y1="6" x2="32" y2="36"/>
+            <path d="M 8 6 L 12 4 L 8 6 Z M 16 6 L 20 4 L 16 6 Z M 24 6 L 28 4 L 24 6 Z M 32 6 L 36 4 L 32 6 Z"/>
+          </svg>
+        </div>
+        <h3 class="cultivo-title">Construcción y obra</h3>
+        <p class="cultivo-desc">
+          Contención, protección perimetral, andamios. Confección
+          especial para tuberías, obra civil y avicultura.
+        </p>
+        <div class="cultivo-tags">
+          <span class="cultivo-tag">Perimetral</span>
+          <span class="cultivo-tag">Especialidades</span>
+          <span class="cultivo-tag">Confección</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     MANIFESTO — momento editorial
+     =============================================================== -->
+<section class="manifesto">
+  <div class="wrap">
+    <span class="manifesto-eyebrow">◆ Nuestra filosofía</span>
+    <p class="manifesto-quote">
+      Ninguna cosecha se parece a otra. Ningún campo. Ningún cliente. Por eso
+      no vendemos catálogos — <strong>fabricamos exactamente lo que tu
+      cultivo necesita.</strong>
+    </p>
+    <div class="manifesto-attr">Tejidos Técnicos Mallatex · desde 1998</div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     PRODUCTOS
+     =============================================================== -->
+<section id="productos">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow" style="justify-content:center;">Portafolio técnico</div>
+      <h2 class="section-title">5 familias de malla,<br />infinitas <em>combinaciones.</em></h2>
+      <p class="section-lead">
+        Fabricamos rollos entre 1.5 y 12 m de ancho, en longitudes desde
+        50 hasta 500 m. Confeccionamos uniones a la medida sin costura visible.
+      </p>
+    </div>
+
+    <div class="productos-grid">
+      <article class="producto">
+        <div class="producto-visual">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M 20 4 L 4 36 L 36 36 Z"/><path d="M 20 14 L 12 30 L 28 30 Z"/></svg>
+        </div>
+        <div class="producto-body">
+          <div class="producto-code">MT · Antigranizo</div>
+          <h3 class="producto-title">Malla Antigranizo</h3>
+          <p class="producto-desc">
+            Protección contra piedra en cultivos de alto valor. Anchos hasta
+            11.10 m con resistencia UV comprobada.
+          </p>
+          <div class="producto-specs">
+            <span>Ancho 4–11.10 m</span>
+            <span>50–500 m largo</span>
+            <span>Negro / cristal</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="producto">
+        <div class="producto-visual">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="30" height="30" rx="1"/><path d="M 15 5 L 15 35 M 25 5 L 25 35 M 5 15 L 35 15 M 5 25 L 35 25"/></svg>
+        </div>
+        <div class="producto-body">
+          <div class="producto-code">MT · Antiáfido</div>
+          <h3 class="producto-title">Malla Antiáfido</h3>
+          <p class="producto-desc">
+            Barrera fitosanitaria contra pulgón, mosca blanca y trips.
+            Retenciones 10×16, 10×20 y 12×22.
+          </p>
+          <div class="producto-specs">
+            <span>Cristal</span>
+            <span>1.50–4.20 m</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="producto">
+        <div class="producto-visual">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M 6 20 L 34 20 M 6 12 L 34 12 M 6 28 L 34 28"/></svg>
+        </div>
+        <div class="producto-body">
+          <div class="producto-code">MT · Cubresuelo</div>
+          <h3 class="producto-title">Cubresuelo</h3>
+          <p class="producto-desc">
+            Control de maleza, retención de humedad y aceleración de
+            germinación. Blanco, negro o azorrillado.
+          </p>
+          <div class="producto-specs">
+            <span>105–130 gr/m²</span>
+            <span>1.65–3.30 m</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="producto">
+        <div class="producto-visual">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="20" cy="20" r="15"/><path d="M 5 20 L 35 20 M 20 5 L 20 35"/></svg>
+        </div>
+        <div class="producto-body">
+          <div class="producto-code">MT · Monofilamento</div>
+          <h3 class="producto-title">Monofilamento</h3>
+          <p class="producto-desc">
+            Máxima transparencia con protección UV. Ideal para invernadero
+            con exigencia de luminosidad.
+          </p>
+          <div class="producto-specs">
+            <span>70% / 90% sombra</span>
+            <span>Ancho 4.20 m</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="producto">
+        <div class="producto-visual">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M 6 6 L 34 34 M 34 6 L 6 34 M 20 6 L 20 34 M 6 20 L 34 20"/></svg>
+        </div>
+        <div class="producto-body">
+          <div class="producto-code">MT · Raschel</div>
+          <h3 class="producto-title">Malla Raschel</h3>
+          <p class="producto-desc">
+            Control de radiación y temperatura para invernadero e
+            invernadero abierto. Sombra al 35% y 50%.
+          </p>
+          <div class="producto-specs">
+            <span>35% / 50% sombra</span>
+            <span>Hasta 16.80 m</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="producto">
+        <div class="producto-visual">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M 6 20 L 34 20 M 6 12 L 34 12 M 6 28 L 34 28 M 14 4 L 14 36 M 26 4 L 26 36"/></svg>
+        </div>
+        <div class="producto-body">
+          <div class="producto-code">MT · Confección</div>
+          <h3 class="producto-title">Confección especial</h3>
+          <p class="producto-desc">
+            Uniones, ojales, sujetadores y refuerzos. Convertimos cualquier
+            rollo en una solución instalable.
+          </p>
+          <div class="producto-specs">
+            <span>Costura industrial</span>
+            <span>Ojales metálicos</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     PROMESA — 4 razones (sin numerales)
+     =============================================================== -->
+<section id="promesa" class="promesa">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Nuestra promesa</div>
+      <h2 class="section-title">Un fabricante <em>mexicano</em><br />diseñado para el productor real.</h2>
+      <p class="section-lead">
+        Sin intermediarios, sin catálogos rígidos y con respuesta rápida.
+        Producción, almacén y despacho bajo el mismo techo.
+      </p>
+    </div>
+    <div class="promesa-grid">
+      <div class="promesa-item">
+        <h3>A la medida sin sobrecosto</h3>
+        <p>Cortamos, confeccionamos y unimos según tu campo. No pagas desperdicio de rollos estándar.</p>
+      </div>
+      <div class="promesa-item">
+        <h3>Planta propia en México</h3>
+        <p>Zapopan y Ensenada. Fabricación, control de calidad y despacho bajo el mismo techo.</p>
+      </div>
+      <div class="promesa-item">
+        <h3>Trazabilidad por rollo</h3>
+        <p>Cada rollo lleva QR y lote. Sabes qué material salió de qué línea y en qué fecha.</p>
+      </div>
+      <div class="promesa-item">
+        <h3>Asesoría antes de comprar</h3>
+        <p>Un ingeniero revisa tu cultivo y te propone la combinación material + gramaje + medida.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     CASO REAL
+     =============================================================== -->
+<section id="casos">
+  <div class="wrap">
+    <div class="case-grid">
+      <div class="case-visual">
+        <svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <pattern id="berry-mesh" width="18" height="18" patternUnits="userSpaceOnUse">
+              <path d="M 18 0 L 0 0 0 18" fill="none" stroke="rgba(227,6,19,0.14)" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <rect width="400" height="260" fill="url(#berry-mesh)" opacity="0.7"/>
+          <g stroke="rgba(227,6,19,0.32)" stroke-width="1.4" fill="none">
+            <line x1="60" y1="20" x2="60" y2="260"/>
+            <line x1="200" y1="20" x2="200" y2="260"/>
+            <line x1="340" y1="20" x2="340" y2="260"/>
+            <path d="M 20 30 Q 200 -5 380 30"/>
+          </g>
+          <g fill="rgba(23,20,18,0.06)">
+            <ellipse cx="200" cy="330" rx="170" ry="14"/>
+            <ellipse cx="200" cy="375" rx="170" ry="14"/>
+            <ellipse cx="200" cy="420" rx="170" ry="14"/>
+            <ellipse cx="200" cy="465" rx="170" ry="14"/>
+          </g>
+          <g fill="#E30613" opacity="0.72">
+            <circle cx="70" cy="325" r="5"/><circle cx="130" cy="332" r="5"/>
+            <circle cx="200" cy="326" r="5"/><circle cx="270" cy="330" r="5"/><circle cx="330" cy="326" r="5"/>
+            <circle cx="90" cy="370" r="5"/><circle cx="160" cy="378" r="5"/>
+            <circle cx="240" cy="374" r="5"/><circle cx="310" cy="376" r="5"/>
+            <circle cx="60" cy="418" r="5"/><circle cx="130" cy="422" r="5"/>
+            <circle cx="220" cy="416" r="5"/><circle cx="300" cy="420" r="5"/>
+            <circle cx="100" cy="462" r="5"/><circle cx="190" cy="466" r="5"/>
+            <circle cx="270" cy="464" r="5"/><circle cx="340" cy="462" r="5"/>
+          </g>
+        </svg>
+        <div class="case-visual-tag">Driscoll's<br /><em>Los Reyes,<br />Michoacán</em></div>
+      </div>
+      <div>
+        <div class="eyebrow">Caso real</div>
+        <h2 class="section-title" style="font-size: clamp(30px, 3.4vw, 44px)">Un pedido de <em>2,900 rollos</em><br />partido en 5 sub-campos.</h2>
+        <p class="case-quote">
+          Cuando el proyecto llegó a 2,900 rollos partidos entre 5 sub-campos,
+          nadie más podía coordinar la logística. Mallatex organizó las entregas
+          por Egipto, San Francisco, Atenco, San Jose y Cabaña.
+        </p>
+        <div class="case-author">
+          <div class="case-author-avatar">D</div>
+          <div>
+            <div class="case-author-name">Driscoll's · Ranch Operations MX</div>
+            <div class="case-author-role">Malla antigranizo · 11.10 × 50 m</div>
+          </div>
+        </div>
+        <div class="case-kpis">
+          <div>
+            <div class="case-kpi-value">2,900</div>
+            <div class="case-kpi-label">Rollos</div>
+          </div>
+          <div>
+            <div class="case-kpi-value">1.6M</div>
+            <div class="case-kpi-label">m² totales</div>
+          </div>
+          <div>
+            <div class="case-kpi-value">5</div>
+            <div class="case-kpi-label">Sub-campos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     COTIZADOR
+     =============================================================== -->
+<section id="cotizar" class="cotizador">
+  <div class="wrap">
+    <div class="cotizador-shell">
+      <div class="cotizador-copy">
+        <div class="eyebrow">Cotización a la medida</div>
+        <h2 class="section-title">Hablemos de <em>tu campo.</em></h2>
+        <p class="section-lead" style="text-align:left">
+          Compártenos dimensiones, tipo de cultivo y ubicación. Un asesor te
+          contacta en menos de 24 horas hábiles con la combinación exacta
+          de material, medida y logística.
+        </p>
+        <ol class="cotizador-steps">
+          <li>Envíanos las medidas de tu campo o proyecto.</li>
+          <li>Recibes propuesta con material, gramaje y confección.</li>
+          <li>Aprobamos la cotización y agendamos producción.</li>
+          <li>Despachamos desde Zapopan o Ensenada — logística incluida.</li>
+        </ol>
+      </div>
+      <form class="cotizador-form" onsubmit="event.preventDefault(); alert('Demo · en producción esto enviaría a ventas@mallatex.com.mx');">
+        <div class="form-two">
+          <div class="form-row">
+            <label for="nombre">Nombre</label>
+            <input id="nombre" type="text" placeholder="Nombre completo" required />
+          </div>
+          <div class="form-row">
+            <label for="empresa">Empresa</label>
+            <input id="empresa" type="text" placeholder="Razón social" />
+          </div>
+        </div>
+        <div class="form-two">
+          <div class="form-row">
+            <label for="tel">Teléfono</label>
+            <input id="tel" type="tel" placeholder="+52 33 · · ·" required />
+          </div>
+          <div class="form-row">
+            <label for="email">Correo</label>
+            <input id="email" type="email" placeholder="tu@correo.com" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="cultivo">Tipo de cultivo</label>
+          <select id="cultivo" required>
+            <option value="">Selecciona…</option>
+            <option>Berries (fresa, arándano, frambuesa)</option>
+            <option>Hortalizas (tomate, pimiento, chile)</option>
+            <option>Granos y forraje</option>
+            <option>Aguacate / frutales</option>
+            <option>Vivero / hortaliza fina</option>
+            <option>Construcción / obra</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="detalle">Medidas y ubicación</label>
+          <textarea id="detalle" placeholder="Ej. ~50 rollos de antigranizo 8.60 × 66 m, Michoacán"></textarea>
+        </div>
+        <button class="form-submit" type="submit">Solicitar cotización →</button>
+        <div class="form-note">Respuesta en menos de 24 h hábiles</div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     COBERTURA
+     =============================================================== -->
+<section id="cobertura">
+  <div class="wrap">
+    <div class="cobertura-grid">
+      <div>
+        <div class="eyebrow">Cobertura</div>
+        <h2 class="section-title" style="font-size: clamp(32px, 3.6vw, 46px)">Dos plantas.<br />Todo <em>México.</em></h2>
+        <p class="section-lead" style="text-align:left">
+          Despachamos a Bajío, Norte y Occidente con flota propia y aliados
+          logísticos. Alta demanda: Jalisco, Michoacán, Guanajuato, Sinaloa,
+          Baja California, Sonora, Chihuahua, Puebla.
+        </p>
+        <ul class="plantas">
+          <li class="planta">
+            <div class="planta-num">1</div>
+            <div>
+              <h4 class="planta-name">Planta Zapopan</h4>
+              <div class="planta-dir">Av. El Colli 5210 · Colli Urbano · CP 45070 · Jalisco</div>
+            </div>
+            <div class="planta-role">Matriz</div>
+          </li>
+          <li class="planta">
+            <div class="planta-num">2</div>
+            <div>
+              <h4 class="planta-name">Sucursal Ensenada</h4>
+              <div class="planta-dir">Ensenada · Baja California</div>
+            </div>
+            <div class="planta-role">Norte</div>
+          </li>
+        </ul>
+      </div>
+      <div class="cobertura-map">
+        <svg viewBox="0 0 500 375" preserveAspectRatio="xMidYMid meet">
+          <!-- México simplificado -->
+          <path d="M 55 125 L 90 92 L 155 92 L 205 100 L 255 105 L 305 100 L 355 95 L 405 108 L 425 135 L 435 165 L 428 200 L 405 228 L 385 248 L 355 262 L 325 268 L 295 278 L 265 302 L 245 322 L 222 338 L 192 342 L 165 338 L 145 316 L 130 296 L 115 275 L 105 250 L 95 225 L 90 200 L 80 175 L 68 155 L 55 130 Z"
+                fill="#f3ede6" stroke="#d6cec5" stroke-width="1.4"/>
+          <!-- Zapopan -->
+          <g transform="translate(220,222)">
+            <circle r="22" fill="rgba(227,6,19,0.14)"/>
+            <circle r="13" fill="#E30613"/>
+            <text y="4" text-anchor="middle" fill="#fff" font-family="Barlow Condensed, Impact, sans-serif" font-weight="900" font-size="16">1</text>
+          </g>
+          <text x="240" y="248" font-family="Barlow Condensed, Impact, sans-serif" font-weight="800" font-size="13" fill="#171412">ZAPOPAN</text>
+          <text x="240" y="262" font-family="JetBrains Mono, monospace" font-weight="700" font-size="9" fill="#57534e" letter-spacing="1.5">MATRIZ · JAL.</text>
+
+          <!-- Ensenada -->
+          <g transform="translate(102,170)">
+            <circle r="20" fill="rgba(227,6,19,0.14)"/>
+            <circle r="11" fill="#E30613"/>
+            <text y="4" text-anchor="middle" fill="#fff" font-family="Barlow Condensed, Impact, sans-serif" font-weight="900" font-size="14">2</text>
+          </g>
+          <text x="26" y="194" font-family="Barlow Condensed, Impact, sans-serif" font-weight="800" font-size="13" fill="#171412">ENSENADA</text>
+          <text x="26" y="208" font-family="JetBrains Mono, monospace" font-weight="700" font-size="9" fill="#57534e" letter-spacing="1.5">SUCURSAL · B.C.</text>
+
+          <!-- Puntos zonas atendidas -->
+          <g fill="#B30410">
+            <circle cx="270" cy="240" r="4"/>
+            <circle cx="150" cy="180" r="4"/>
+            <circle cx="180" cy="200" r="4"/>
+            <circle cx="290" cy="260" r="4"/>
+            <circle cx="332" cy="230" r="4"/>
+            <circle cx="360" cy="255" r="4"/>
+            <circle cx="240" cy="272" r="4"/>
+            <circle cx="200" cy="242" r="4"/>
+          </g>
+
+          <!-- Líneas de despacho -->
+          <g stroke="#E30613" stroke-width="1.2" stroke-dasharray="4,3" fill="none" opacity="0.55">
+            <path d="M 220 222 Q 200 210 180 200"/>
+            <path d="M 220 222 Q 245 230 270 240"/>
+            <path d="M 220 222 Q 258 245 290 260"/>
+            <path d="M 220 222 Q 280 222 332 230"/>
+            <path d="M 102 170 Q 128 188 150 180"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     CTA final
+     =============================================================== -->
+<section class="cta-final">
+  <div class="wrap">
+    <span class="cta-final-eyebrow">◆ Empezamos hoy mismo</span>
+    <h2>¿Listo para <em>proteger</em><br />tu próxima cosecha?</h2>
+    <p>Cotiza a la medida en menos de 24 horas o habla directo con un asesor.
+      Sin intermediarios, sin catálogos rígidos.</p>
+    <div class="btns">
+      <a href="#cotizar" class="btn big">Cotizar ahora →</a>
+      <a href="tel:+523300000000" class="btn big ghost" style="color: var(--white); border-color: var(--white);">Llamar a un asesor</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     FOOTER
+     =============================================================== -->
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">Malla<em>tex</em></div>
+        <p class="footer-tagline">
+          Tejidos Técnicos Mallatex S.A. de C.V. — mallas agrícolas
+          a la medida desde 1998. Protegemos lo que siembras.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h5>Producto</h5>
+        <ul>
+          <li><a href="#productos">Antigranizo</a></li>
+          <li><a href="#productos">Antiáfido</a></li>
+          <li><a href="#productos">Cubresuelo</a></li>
+          <li><a href="#productos">Monofilamento</a></li>
+          <li><a href="#productos">Raschel</a></li>
+          <li><a href="#productos">Confección</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Empresa</h5>
+        <ul>
+          <li><a href="#promesa">Nuestra promesa</a></li>
+          <li><a href="#casos">Casos reales</a></li>
+          <li><a href="#cobertura">Cobertura</a></li>
+          <li><a href="#cotizar">Cotización</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contacto</h5>
+        <ul>
+          <li>ventas@mallatex.com.mx</li>
+          <li>+52 33 · · · · · ·</li>
+          <li>Zapopan, Jalisco</li>
+          <li>Ensenada, Baja California</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 1998–2026 Tejidos Técnicos Mallatex S.A. de C.V.</div>
+      <div>Aviso de privacidad · Términos</div>
+    </div>
+  </div>
+</footer>
