@@ -23,6 +23,15 @@ Las imágenes de la aplicación están en [`docs/screenshots/`](docs/screenshots
 | ![Revisión de asistencia](docs/screenshots/03-revision-asistencia.png) | ![Periodos y NOI](docs/screenshots/06-periodos-noi.png) |
 | Revisión de asistencia | Periodos y exportación NOI |
 
+## 📖 Manual de usuario
+
+Manual completo con todas las pantallas y funcionalidades:
+
+- **PDF:** [`docs/Manual_Mallatex_Plataforma_Asistencia.pdf`](docs/Manual_Mallatex_Plataforma_Asistencia.pdf)
+- **Word:** [`docs/Manual_Mallatex_Plataforma_Asistencia.docx`](docs/Manual_Mallatex_Plataforma_Asistencia.docx)
+
+Cómo regenerarlo: ver [`docs/manual/`](docs/manual/).
+
 ## 🎯 Alcance implementado
 
 La aplicación cubre el **alcance inicial** completo descrito en la propuesta:
