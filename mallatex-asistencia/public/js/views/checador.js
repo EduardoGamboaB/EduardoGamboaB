@@ -34,6 +34,7 @@ export default async function checador(el) {
       can('admin', 'contador', 'nomina')
         ? h('button', { class: 'btn btn-primary btn-block mt', id: 'sync-btn', onClick: doSync }, '⟳ Sincronizar checadas')
         : h('div', { class: 'note-box mt' }, 'Sólo Contabilidad/Nómina puede sincronizar.'),
+      h('a', { class: 'btn btn-block mt', href: '/kiosk', target: '_blank', rel: 'noopener' }, '🖥  Abrir modo kiosco (pantalla del empleado) ↗'),
     ),
   ));
 

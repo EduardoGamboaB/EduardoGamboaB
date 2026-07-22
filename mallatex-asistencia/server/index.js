@@ -12,6 +12,7 @@ import catalogRoutes from './routes/catalog.js';
 import operationsRoutes from './routes/operations.js';
 import periodRoutes from './routes/periods.js';
 import auditRoutes from './routes/audit.js';
+import kioskRoutes from './routes/kiosk.js';
 import { requireAuth } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,6 +36,9 @@ app.use('/api', (req, _res, next) => {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 
+// Kiosco: público (la identificación la haría el reconocimiento facial del dispositivo)
+app.use('/api/kiosk', kioskRoutes);
+
 app.use('/api/auth', authRoutes);
 app.use('/api', requireAuth, catalogRoutes);
 app.use('/api', requireAuth, operationsRoutes);
@@ -43,6 +47,7 @@ app.use('/api', requireAuth, auditRoutes);
 
 // Frontend estático
 app.use(express.static(PUBLIC_DIR));
+app.get('/kiosk', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'kiosk.html')));
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));

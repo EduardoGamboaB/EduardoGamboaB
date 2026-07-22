@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Mallatex · Control de acceso</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <style>
+    :root{ --red:#eb2429; --red-d:#9e1e22; --black:#231f20; --ok:#22c55e; --warn:#f59e0b; --info:#38bdf8; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    html,body{ height:100%; }
+    body{
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; color:#fff;
+      background:radial-gradient(1200px 700px at 50% -10%, #2c2626 0%, #191515 55%, #120f0f 100%);
+      height:100vh; overflow:hidden; user-select:none;
+    }
+    .kiosk{ height:100vh; display:flex; flex-direction:column; }
+    /* Top bar */
+    .top{ display:flex; align-items:center; justify-content:space-between; padding:22px 34px; }
+    .brand{ display:flex; align-items:center; gap:14px; }
+    .brand img{ width:46px; height:46px; border-radius:12px; }
+    .brand b{ font-size:20px; letter-spacing:.3px; }
+    .brand span{ display:block; font-size:12px; color:#b9adac; font-weight:500; }
+    .clock{ text-align:right; }
+    .clock .t{ font-size:34px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:1px; }
+    .clock .d{ font-size:13px; color:#b9adac; text-transform:capitalize; }
+    /* Center */
+    .stage{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; position:relative; }
+    .scanner{ width:230px; height:230px; border-radius:50%; display:grid; place-items:center; position:relative; }
+    .scanner .ring{ position:absolute; inset:0; border-radius:50%; border:3px solid rgba(235,36,41,.35); }
+    .scanner .ring.pulse{ animation:pulse 2s ease-out infinite; }
+    @keyframes pulse{ 0%{ transform:scale(.82); opacity:.9 } 100%{ transform:scale(1.25); opacity:0 } }
+    .scanner .face{ width:150px; height:150px; border-radius:50%; background:rgba(255,255,255,.04); border:2px solid rgba(255,255,255,.14); display:grid; place-items:center; }
+    .scanner .face svg{ width:78px; height:78px; opacity:.5; }
+    .scanline{ position:absolute; left:14%; right:14%; height:2px; background:linear-gradient(90deg,transparent,var(--red),transparent); top:20%; animation:scan 2.4s ease-in-out infinite; border-radius:2px; box-shadow:0 0 12px var(--red); }
+    @keyframes scan{ 0%,100%{ top:22% } 50%{ top:78% } }
+    .prompt{ text-align:center; }
+    .prompt h1{ font-size:28px; font-weight:700; }
+    .prompt p{ color:#b9adac; margin-top:6px; font-size:15px; }
+    .sim{ margin-top:6px; }
+    .btn{ border:none; cursor:pointer; font:inherit; font-weight:700; border-radius:12px; padding:14px 22px; font-size:15px; }
+    .btn-red{ background:var(--red); color:#fff; box-shadow:0 8px 24px rgba(235,36,41,.35); }
+    .btn-red:active{ transform:translateY(1px); }
+    .btn-ghost{ background:rgba(255,255,255,.08); color:#fff; }
+    .foot{ padding:16px; text-align:center; color:#6f6664; font-size:12px; }
+    .foot b{ color:#a99f9d; }
+    /* Picker */
+    .picker{ position:fixed; inset:0; background:rgba(18,15,15,.86); backdrop-filter:blur(4px); display:none; flex-direction:column; z-index:20; }
+    .picker.open{ display:flex; }
+    .picker-head{ display:flex; align-items:center; justify-content:space-between; padding:22px 30px; }
+    .picker-head h2{ font-size:20px; } .picker-head p{ color:#b9adac; font-size:13px; }
+    .grid{ flex:1; overflow-y:auto; padding:10px 30px 30px; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; align-content:start; }
+    .emp{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:18px 12px; text-align:center; cursor:pointer; transition:.15s; }
+    .emp:hover{ background:rgba(235,36,41,.14); border-color:var(--red); }
+    .emp .av{ width:60px; height:60px; border-radius:50%; margin:0 auto 10px; display:grid; place-items:center; font-weight:800; font-size:20px; background:var(--red); color:#fff; }
+    .emp .nm{ font-size:13.5px; font-weight:600; line-height:1.25; }
+    .emp .dp{ font-size:11px; color:#b9adac; margin-top:3px; }
+    /* Confirmación */
+    .confirm{ position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:30; text-align:center; }
+    .confirm.show{ display:flex; animation:fade .3s ease; }
+    @keyframes fade{ from{ opacity:0; transform:scale(.96) } to{ opacity:1; transform:none } }
+    .confirm{ background:#141010; }
+    .confirm.ok{ background:radial-gradient(900px 620px at 50% 32%, rgba(34,197,94,.28), rgba(20,16,16,0) 68%), #141010; }
+    .confirm.warn{ background:radial-gradient(900px 620px at 50% 32%, rgba(245,158,11,.26), rgba(20,16,16,0) 68%), #141010; }
+    .confirm.info{ background:radial-gradient(900px 620px at 50% 32%, rgba(56,189,248,.24), rgba(20,16,16,0) 68%), #141010; }
+    .c-av{ width:130px; height:130px; border-radius:50%; display:grid; place-items:center; font-weight:800; font-size:46px; color:#fff; position:relative; }
+    .c-badge{ position:absolute; right:-4px; bottom:-4px; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-size:24px; border:4px solid #191515; }
+    .c-headline{ font-size:38px; font-weight:800; }
+    .c-detail{ font-size:19px; color:#d8cfce; }
+    .c-time{ font-size:64px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:1px; line-height:1; }
+    .c-chip{ font-size:18px; font-weight:700; padding:8px 20px; border-radius:999px; }
+    .chip-ok{ background:rgba(34,197,94,.18); color:#4ade80; }
+    .chip-warn{ background:rgba(245,158,11,.18); color:#fbbf24; }
+    .chip-info{ background:rgba(56,189,248,.16); color:#7dd3fc; }
+    .c-type{ font-size:14px; letter-spacing:3px; text-transform:uppercase; color:#b9adac; }
+    .cbar{ position:absolute; bottom:0; left:0; height:5px; background:var(--red); }
+    .scanning{ position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; z-index:25; background:rgba(18,15,15,.9); }
+    .scanning.show{ display:flex; }
+    .spinner{ width:90px; height:90px; border-radius:50%; border:4px solid rgba(255,255,255,.12); border-top-color:var(--red); animation:spin .8s linear infinite; }
+    @keyframes spin{ to{ transform:rotate(360deg) } }
+  </style>
+</head>
+<body>
+  <div class="kiosk">
+    <div class="top">
+      <div class="brand">
+        <img src="assets/logo.svg" alt="Mallatex" />
+        <div><b>Mallatex</b><span>Control de acceso</span></div>
+      </div>
+      <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="date">—</div></div>
+    </div>
+
+    <div class="stage">
+      <div class="scanner">
+        <div class="ring"></div><div class="ring pulse"></div>
+        <div class="face">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.4"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9 15c.8.7 1.9 1 3 1s2.2-.3 3-1"/></svg>
+        </div>
+        <div class="scanline"></div>
+      </div>
+      <div class="prompt">
+        <h1>Coloca tu rostro frente al lector</h1>
+        <p>Reconocimiento facial · Registro de entrada y salida</p>
+      </div>
+      <div class="sim">
+        <button class="btn btn-red" id="simBtn">Simular reconocimiento</button>
+      </div>
+    </div>
+
+    <div class="foot">Checador principal · Recepción &nbsp;·&nbsp; powered by <b>Evorgyn</b></div>
+  </div>
+
+  <!-- Selector de empleado (simulación del reconocimiento) -->
+  <div class="picker" id="picker">
+    <div class="picker-head">
+      <div><h2>¿Quién eres?</h2><p>Simulación: selecciona tu rostro para registrar el acceso</p></div>
+      <button class="btn btn-ghost" id="closePicker">Cerrar</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- Escaneo -->
+  <div class="scanning" id="scanning">
+    <div class="spinner"></div>
+    <div style="font-size:18px;color:#d8cfce">Reconociendo rostro…</div>
+  </div>
+
+  <!-- Confirmación -->
+  <div class="confirm" id="confirm">
+    <div class="c-type" id="cType">ENTRADA</div>
+    <div class="c-av" id="cAv"></div>
+    <div class="c-headline" id="cHead">—</div>
+    <div class="c-time" id="cTime">--:--</div>
+    <div class="c-detail" id="cDetail">—</div>
+    <div class="c-chip" id="cChip">—</div>
+    <div class="cbar" id="cBar"></div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const DAYS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+    function tick(){
+      const d = new Date();
+      $('clock').textContent = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      $('date').textContent = `${DAYS[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    }
+    tick(); setInterval(tick, 1000);
+
+    async function loadEmployees(){
+      const res = await fetch('/api/kiosk/employees');
+      const emps = await res.json();
+      const grid = $('grid');
+      grid.innerHTML = '';
+      for(const e of emps){
+        const el = document.createElement('div');
+        el.className = 'emp';
+        el.innerHTML = `<div class="av">${e.initials}</div><div class="nm">${e.name}</div><div class="dp">${e.department||''}</div>`;
+        el.onclick = () => checkin(e.id);
+        grid.appendChild(el);
+      }
+    }
+
+    $('simBtn').onclick = () => { $('picker').classList.add('open'); };
+    $('closePicker').onclick = () => { $('picker').classList.remove('open'); };
+
+    async function checkin(employeeId){
+      $('picker').classList.remove('open');
+      $('scanning').classList.add('show');
+      try{
+        // pequeña espera para simular el reconocimiento
+        await new Promise(r => setTimeout(r, 1100));
+        const res = await fetch('/api/kiosk/checkin', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ employeeId }) });
+        const data = await res.json();
+        $('scanning').classList.remove('show');
+        if(!res.ok){ alert(data.error || 'No reconocido'); return; }
+        showConfirm(data);
+      }catch(err){ $('scanning').classList.remove('show'); alert('Error de conexión'); }
+    }
+
+    let confirmTimer = null;
+    function showConfirm(d){
+      const c = $('confirm');
+      c.className = 'confirm show ' + d.tone;
+      const toneColor = d.tone==='ok' ? '#22c55e' : d.tone==='warn' ? '#f59e0b' : '#38bdf8';
+      $('cType').textContent = d.type === 'entrada' ? 'ENTRADA' : 'SALIDA';
+      $('cAv').style.background = 'var(--red)';
+      $('cAv').innerHTML = d.employee.initials + `<span class="c-badge" style="background:${toneColor}">${d.type==='entrada'?'↳':'↰'}</span>`;
+      $('cHead').textContent = d.headline;
+      $('cTime').textContent = d.time;
+      $('cDetail').textContent = `${d.detail} · ${d.employee.name}`;
+      const chip = $('cChip');
+      chip.textContent = d.statusLabel;
+      chip.className = 'c-chip ' + (d.tone==='ok'?'chip-ok':d.tone==='warn'?'chip-warn':'chip-info');
+      $('cBar').style.background = toneColor;
+
+      // barra de progreso / auto-cierre
+      const total = 6000; const bar = $('cBar'); bar.style.transition='none'; bar.style.width='100%';
+      requestAnimationFrame(()=>{ bar.style.transition=`width ${total}ms linear`; bar.style.width='0%'; });
+      clearTimeout(confirmTimer);
+      confirmTimer = setTimeout(()=>{ c.classList.remove('show'); }, total);
+      c.onclick = ()=>{ clearTimeout(confirmTimer); c.classList.remove('show'); };
+    }
+
+    loadEmployees();
+  </script>
+</body>
+</html>
