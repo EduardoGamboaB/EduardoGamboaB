@@ -173,13 +173,17 @@ servida por el propio servidor. Diseño minimalista con la identidad corporativa
 Colores corporativos **exactos**, tomados del logotipo oficial de Mallatex
 (*"Protegemos lo que siembras"*):
 
-| Color | Hex | Uso |
-|-------|-----|-----|
-| Rojo Mallatex | `#EB2429` | Acento principal: logo, botones, navegación activa |
-| Rojo sombra | `#9E1E22` | Degradado / estados presionados |
-| Negro Mallatex | `#231F20` | Texto principal y tarjetas destacadas |
+Tomados del **Manual de Identidad Corporativa Mallatex 2023**:
 
-El isotipo de la plataforma reproduce las **ondas concéntricas** del logotipo de Mallatex.
+| Color | Hex | RGB | Uso |
+|-------|-----|-----|-----|
+| Rojo Mallatex | `#ED3237` | 237,50,55 | Acento principal: botones, navegación activa |
+| Rojo oscuro | `#9B3234` | 155,50,52 | Degradado / estados presionados |
+| Negro Mallatex | `#232121` | 35,33,33 | Texto principal y tarjetas destacadas |
+| Gris | `#606062` | 96,96,98 | Texto secundario |
+| Gris claro | `#D2D3D5` | 210,211,213 | Líneas y divisores |
+
+Se usa el **logotipo oficial** de Mallatex (imagotipo e isotipo).
 
 ### Sobre la integración con hardware y NOI
 

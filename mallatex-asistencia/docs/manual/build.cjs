@@ -22,8 +22,7 @@ const table = (headers, rows) => w(`<table><thead><tr>${headers.map((h) => `<th>
 const sec = () => w('<div class="page-break"></div>');
 
 w(`<section class="cover">
-  <img class="cover-logo" src="${LOGO}"/>
-  <div class="cover-brand">MALLATEX</div>
+  <img class="cover-imago" src="../manual-assets/mallatex-logo.png"/>
   <div class="cover-sub">Plataforma de Asistencia · Aspel NOI</div>
   <div class="cover-title">MANUAL DE USUARIO</div>
   <div class="cover-desc">Control de asistencia, incidencias, tiempo extra y exportación a nómina</div>
@@ -254,7 +253,7 @@ p(`${B('Pruebas:')} la aplicación incluye 27 pruebas automatizadas (unitarias y
 w('<div class="end">Mallatex · Plataforma de Asistencia · Aspel NOI &nbsp;·&nbsp; powered by <b>Evorgyn</b></div>');
 
 const css = `
-  :root{ --red:#EB2429; --black:#231F20; --ink:#3f3b3c; --gray:#7c7472; --line:#e6e2e2; --line2:#f5f3f3; }
+  :root{ --red:#ED3237; --black:#232121; --ink:#3f3d3d; --gray:#606062; --line:#d2d3d5; --line2:#eeeef0; }
   *{ box-sizing:border-box; } html,body{ margin:0; }
   body{ font-family:'Segoe UI',system-ui,Arial,sans-serif; color:var(--ink); font-size:12.5px; line-height:1.55; }
   h1{ color:var(--red); font-size:22px; margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--red); }
@@ -278,6 +277,7 @@ const css = `
   .page-break{ page-break-after:always; }
   .cover{ height:960px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
   .cover-logo{ width:120px; height:120px; margin-bottom:20px; }
+  .cover-imago{ width:440px; max-width:72%; margin-bottom:30px; }
   .cover-brand{ font-size:46px; font-weight:800; color:var(--red); letter-spacing:2px; }
   .cover-sub{ font-size:18px; color:var(--black); margin-bottom:34px; }
   .cover-title{ font-size:34px; font-weight:800; color:var(--black); border-top:3px solid var(--red); border-bottom:3px solid var(--red); padding:10px 26px; }

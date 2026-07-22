@@ -1,21 +1,21 @@
 /* Mallatex · Plataforma de Asistencia (Aspel NOI) — sistema de diseño minimalista
-   Colores corporativos Mallatex (tomados del logotipo oficial):
-     Rojo Mallatex  #EB2429  ·  Negro Mallatex #231F20  ·  Rojo sombra #9E1E22
+   Paleta corporativa OFICIAL (Manual de Identidad Corporativa Mallatex 2023):
+     Rojo  #ED3237 · Rojo oscuro #9B3234 · Negro #232121 · Gris #606062 · Gris claro #D2D3D5
    powered by Evorgyn */
 :root {
-  --accent: #eb2429;       /* Rojo corporativo Mallatex */
-  --accent-600: #cc1f24;   /* hover */
-  --accent-700: #9e1e22;   /* rojo sombra del logotipo */
+  --accent: #ed3237;       /* Rojo corporativo Mallatex (R237 G50 B55) */
+  --accent-600: #cf2a2f;   /* hover */
+  --accent-700: #9b3234;   /* Rojo oscuro Mallatex (R155 G50 B52) */
   --accent-050: #fef3f3;
-  --accent-100: #fbdadb;
+  --accent-100: #fbdcdd;
 
-  --ink-900: #231f20;      /* Negro corporativo Mallatex */
-  --ink-700: #45403f;
-  --ink-600: #5c5555;
-  --ink-500: #7c7472;
-  --ink-400: #a8a1a0;
-  --line: #e6e2e2;
-  --line-2: #f5f3f3;
+  --ink-900: #232121;      /* Negro corporativo Mallatex (R35 G33 B33) */
+  --ink-700: #3f3d3d;
+  --ink-600: #606062;      /* Gris corporativo (R96 G96 B98) */
+  --ink-500: #74757a;
+  --ink-400: #a7a8ac;
+  --line: #d2d3d5;         /* Gris claro corporativo (R210 G211 B213) */
+  --line-2: #eeeef0;
   --bg: #fafafa;
   --card: #ffffff;
 
@@ -43,9 +43,9 @@ a { color: var(--accent); }
   background: var(--bg); padding: 24px; gap: 22px;
 }
 .login-card { width: 100%; max-width: 396px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 34px; box-shadow: var(--shadow); }
-.login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
-.login-brand strong { display: block; color: var(--ink-900); font-size: 17px; letter-spacing: -.01em; }
-.login-brand span { color: var(--ink-500); font-size: 12px; }
+.login-brand { text-align: center; margin: 4px 0 6px; }
+.login-logo { width: 100%; max-width: 268px; height: auto; }
+.login-tag { text-align: center; color: var(--ink-500); font-size: 12.5px; letter-spacing: .02em; margin-bottom: 20px; }
 .login-card h1 { margin: 0 0 4px; font-size: 21px; letter-spacing: -.02em; }
 .login-sub { color: var(--ink-500); margin: 0 0 22px; font-size: 13.5px; }
 .login-card form { display: flex; flex-direction: column; gap: 14px; }

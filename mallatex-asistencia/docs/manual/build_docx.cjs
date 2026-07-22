@@ -15,7 +15,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const SHOTS = path.join(ROOT, 'docs', 'screenshots');
 const ASSETS = path.join(ROOT, 'docs', 'manual-assets');
 
-const RED = 'EB2429', BLACK = '231F20', INK = '3F3B3C', GRAY = '7C7472', LIGHT = 'F5F3F3';
+const RED = 'ED3237', BLACK = '232121', INK = '3F3D3D', GRAY = '606062', LIGHT = 'EEEEF0';
 
 const runsOf = (parts) => (Array.isArray(parts) ? parts : [parts]).map((p) => typeof p === 'string' ? new TextRun({ text: p, color: INK, size: 21 }) : p);
 const P = (parts, opts = {}) => new Paragraph({ spacing: { after: 120, line: 276 }, children: runsOf(parts), ...opts });
@@ -47,11 +47,12 @@ function table(headers, rows, widths) {
 }
 
 const body = [];
-const logoBuf = fs.readFileSync(path.join(ASSETS, 'logo.png'));
+const imagoBuf = fs.readFileSync(path.join(ASSETS, 'mallatex-logo.png'));
+const imagoDim = sizeOf(imagoBuf);
+const imagoW = 440, imagoH = Math.round((imagoW * imagoDim.height) / imagoDim.width);
 body.push(
-  new Paragraph({ spacing: { before: 1400 }, alignment: AlignmentType.CENTER, children: [new ImageRun({ type: 'png', data: logoBuf, transformation: { width: 150, height: 150 } })] }),
-  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 240 }, children: [new TextRun({ text: 'MALLATEX', bold: true, color: RED, size: 56 })] }),
-  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 320 }, children: [new TextRun({ text: 'Plataforma de Asistencia · Aspel NOI', color: BLACK, size: 26 })] }),
+  new Paragraph({ spacing: { before: 1600 }, alignment: AlignmentType.CENTER, children: [new ImageRun({ type: 'png', data: imagoBuf, transformation: { width: imagoW, height: imagoH } })] }),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 260, after: 320 }, children: [new TextRun({ text: 'Plataforma de Asistencia · Aspel NOI', color: BLACK, size: 26 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, border: { top: { style: BorderStyle.SINGLE, size: 12, color: RED, space: 10 }, bottom: { style: BorderStyle.SINGLE, size: 12, color: RED, space: 10 } }, children: [new TextRun({ text: 'MANUAL DE USUARIO', bold: true, color: BLACK, size: 40 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 600 }, children: [new TextRun({ text: 'Control de asistencia, incidencias, tiempo extra y exportación a nómina', color: GRAY, size: 22 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 1600 }, children: [new TextRun({ text: 'Versión 1.0 · Julio 2026', color: INK, size: 20 })] }),
