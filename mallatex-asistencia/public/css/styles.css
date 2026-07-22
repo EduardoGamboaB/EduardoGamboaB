@@ -54,6 +54,9 @@ a { color: var(--accent); }
 .login-hint { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line-2); font-size: 12px; color: var(--ink-500); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .login-hint button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 11px; cursor: pointer; color: var(--ink-600); }
 .login-hint button:hover { border-color: var(--accent); color: var(--accent); }
+.login-seg { display: flex; margin-bottom: 16px; width: 100%; }
+.login-seg button { flex: 1; }
+#admin-fields, #emp-fields { display: flex; flex-direction: column; gap: 14px; }
 .login-foot { color: var(--ink-400); font-size: 12px; }
 .login-foot b { color: var(--ink-600); font-weight: 600; }
 

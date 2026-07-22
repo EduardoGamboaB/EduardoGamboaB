@@ -1,8 +1,10 @@
-// Estado compartido de la aplicación.
+// Estado compartido de la aplicación (personas: admin y empleado).
 import { api } from './api.js';
 
 export const state = {
-  user: null,
+  principal: 'admin', // 'admin' | 'empleado'
+  user: null,         // sesión administrativa
+  employee: null,     // sesión de empleado
   roleLabel: '',
   periods: [],
   currentPeriodId: null,
@@ -14,25 +16,31 @@ export function currentPeriod() {
 }
 
 export function can(...roles) {
-  return state.user && roles.includes(state.user.role);
+  return state.principal === 'admin' && state.user && roles.includes(state.user.role);
 }
 
+export function isEmployee() { return state.principal === 'empleado'; }
+
 export async function loadContext() {
-  const [me, periods, settings] = await Promise.all([
-    api.get('/auth/me'),
-    api.get('/periods'),
-    api.get('/settings'),
-  ]);
-  state.user = me.user;
+  const me = await api.get('/auth/me');
+  state.principal = me.principal;
   state.roleLabel = me.roleLabel;
-  state.periods = periods;
-  state.settings = settings;
+  if (me.principal === 'empleado') {
+    state.employee = me.employee;
+    const portal = await api.get('/portal/me');
+    state.periods = portal.periods || [];
+  } else {
+    state.user = me.user;
+    const [periods, settings] = await Promise.all([api.get('/periods'), api.get('/settings')]);
+    state.periods = periods;
+    state.settings = settings;
+  }
   if (!state.currentPeriodId) {
-    const open = periods.find((p) => p.status === 'abierto');
-    state.currentPeriodId = (open || periods[0])?.id || null;
+    const open = state.periods.find((p) => p.status === 'abierto');
+    state.currentPeriodId = (open || state.periods[0])?.id || null;
   }
 }
 
 export async function refreshPeriods() {
-  state.periods = await api.get('/periods');
+  if (state.principal === 'admin') state.periods = await api.get('/periods');
 }

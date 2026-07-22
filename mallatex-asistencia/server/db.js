@@ -22,6 +22,8 @@ const COLLECTIONS = [
   'overtime',
   'periods',
   'noiConcepts',
+  'tickets',
+  'payslips',
   'audit',
   'settings',
 ];

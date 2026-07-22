@@ -21,21 +21,38 @@
       </div>
       <h1>Iniciar sesión</h1>
       <p class="login-sub">Control de asistencia e integración con <b>Aspel NOI</b> (módulo de nómina).</p>
+      <div class="seg login-seg" id="persona-seg">
+        <button type="button" data-persona="admin" class="active">Administrativo</button>
+        <button type="button" data-persona="empleado">Empleado</button>
+      </div>
       <form id="login-form">
-        <label>Correo
-          <input type="email" name="email" value="nomina@mallatex.mx" autocomplete="username" required />
-        </label>
-        <label>Contraseña
-          <input type="password" name="password" value="mallatex2026" autocomplete="current-password" required />
-        </label>
+        <div id="admin-fields">
+          <label>Correo
+            <input type="email" name="email" value="nomina@mallatex.mx" autocomplete="username" />
+          </label>
+          <label>Contraseña
+            <input type="password" name="password" value="mallatex2026" autocomplete="current-password" />
+          </label>
+        </div>
+        <div id="emp-fields" class="hidden">
+          <label>Código de empleado
+            <input type="text" name="code" placeholder="MTX001" autocomplete="username" />
+          </label>
+          <label>PIN
+            <input type="password" name="pin" placeholder="••••" autocomplete="current-password" />
+          </label>
+        </div>
         <button class="btn btn-primary btn-block" type="submit">Entrar</button>
         <p class="login-error" id="login-error"></p>
       </form>
-      <div class="login-hint">
+      <div class="login-hint" id="hint-admin">
         <span>Cuentas demo:</span>
         <button type="button" data-demo="admin@mallatex.mx">Administrador</button>
         <button type="button" data-demo="contabilidad@mallatex.mx">Contador general</button>
         <button type="button" data-demo="nomina@mallatex.mx">Nómina</button>
+      </div>
+      <div class="login-hint hidden" id="hint-emp">
+        <span>Demo empleado:</span> Código <b>MTX001</b> &nbsp;·&nbsp; PIN <b>1234</b>
       </div>
     </div>
     <footer class="login-foot">powered by <b>Evorgyn</b></footer>

@@ -13,7 +13,9 @@ import operationsRoutes from './routes/operations.js';
 import periodRoutes from './routes/periods.js';
 import auditRoutes from './routes/audit.js';
 import kioskRoutes from './routes/kiosk.js';
-import { requireAuth } from './auth.js';
+import portalRoutes from './routes/portal.js';
+import rhRoutes from './routes/rh.js';
+import { requireAuth, adminOnly } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -40,10 +42,14 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOS
 app.use('/api/kiosk', kioskRoutes);
 
 app.use('/api/auth', authRoutes);
-app.use('/api', requireAuth, catalogRoutes);
-app.use('/api', requireAuth, operationsRoutes);
-app.use('/api', requireAuth, periodRoutes);
-app.use('/api', requireAuth, auditRoutes);
+// Portal del empleado: se monta antes que los routers admin genéricos
+// (que capturan cualquier ruta bajo /api) para no ser bloqueado por adminOnly.
+app.use('/api/portal', requireAuth, portalRoutes);
+app.use('/api', requireAuth, adminOnly, catalogRoutes);
+app.use('/api', requireAuth, adminOnly, operationsRoutes);
+app.use('/api', requireAuth, adminOnly, periodRoutes);
+app.use('/api', requireAuth, adminOnly, auditRoutes);
+app.use('/api', requireAuth, adminOnly, rhRoutes);
 
 // Frontend estático
 app.use(express.static(PUBLIC_DIR));

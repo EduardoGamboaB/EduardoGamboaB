@@ -1,11 +1,18 @@
 import express from 'express';
-import { login, logout, requireAuth, ROLE_LABEL } from '../auth.js';
+import { login, loginEmployee, logout, requireAuth, ROLE_LABEL } from '../auth.js';
 import { log } from '../audit.js';
 
 const router = express.Router();
 
+// Login administrativo (correo + contraseña) o de empleado (código + PIN).
 router.post('/login', (req, res) => {
-  const { email, password } = req.body || {};
+  const { email, password, code, pin } = req.body || {};
+  if (code || pin) {
+    const result = loginEmployee(code, pin);
+    if (!result) return res.status(401).json({ error: 'Código o PIN incorrectos' });
+    res.json(result);
+    return;
+  }
   const result = login(email, password);
   if (!result) return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
   req.user = result.user;
@@ -19,7 +26,11 @@ router.post('/logout', requireAuth, (req, res) => {
 });
 
 router.get('/me', requireAuth, (req, res) => {
-  res.json({ user: req.user, roleLabel: ROLE_LABEL[req.user.role] });
+  if (req.principal === 'empleado') {
+    res.json({ principal: 'empleado', employee: req.employee, roleLabel: 'Colaborador' });
+  } else {
+    res.json({ principal: 'admin', user: req.user, roleLabel: ROLE_LABEL[req.user.role] });
+  }
 });
 
 export default router;

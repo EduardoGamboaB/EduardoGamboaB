@@ -1,21 +1,36 @@
-// Bootstrap del SPA: acceso, shell, navegación y contexto global.
+// Bootstrap del SPA: acceso, shell, navegación y contexto global (admin + empleado).
 import { api, getToken, setToken } from './api.js';
 import { state, loadContext, currentPeriod } from './state.js';
-import { ROUTES, render, navigate, setRenderHook } from './router.js';
-import { h, clear, initials, toast } from './ui.js';
+import { ROUTES, render, setRenderHook, defaultRoute } from './router.js';
+import { h, clear, initials } from './ui.js';
 
 const loginEl = document.getElementById('login');
 const appEl = document.getElementById('app');
+const loginForm = document.getElementById('login-form');
+
+// ---------- Selector de persona ----------
+let persona = 'admin';
+document.querySelectorAll('#persona-seg button').forEach((b) => b.addEventListener('click', () => {
+  persona = b.dataset.persona;
+  document.querySelectorAll('#persona-seg button').forEach((x) => x.classList.toggle('active', x === b));
+  document.getElementById('admin-fields').classList.toggle('hidden', persona !== 'admin');
+  document.getElementById('emp-fields').classList.toggle('hidden', persona !== 'empleado');
+  document.getElementById('hint-admin').classList.toggle('hidden', persona !== 'admin');
+  document.getElementById('hint-emp').classList.toggle('hidden', persona !== 'empleado');
+  document.getElementById('login-error').textContent = '';
+}));
 
 // ---------- Login ----------
-const loginForm = document.getElementById('login-form');
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(loginForm);
   const errBox = document.getElementById('login-error');
   errBox.textContent = '';
+  const payload = persona === 'empleado'
+    ? { code: fd.get('code'), pin: fd.get('pin') }
+    : { email: fd.get('email'), password: fd.get('password') };
   try {
-    const r = await api.post('/auth/login', { email: fd.get('email'), password: fd.get('password') });
+    const r = await api.post('/auth/login', payload);
     setToken(r.token);
     await start();
   } catch (err) {
@@ -34,12 +49,10 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
   location.reload();
 });
 
-// ---------- Periodo ----------
+// ---------- Periodo (sólo admin) ----------
 const periodSelect = document.getElementById('period-select');
-periodSelect.addEventListener('change', () => {
-  state.currentPeriodId = Number(periodSelect.value);
-  render();
-});
+const periodPicker = document.querySelector('.period-picker');
+periodSelect.addEventListener('change', () => { state.currentPeriodId = Number(periodSelect.value); render(); });
 
 function renderPeriodSelect() {
   clear(periodSelect);
@@ -56,23 +69,24 @@ function buildNav() {
   clear(nav);
   const groups = {};
   for (const r of ROUTES) {
-    if (r.roles && !r.roles.includes(state.user.role)) continue;
+    if (r.principal !== state.principal) continue;
+    if (r.roles && !(state.user && r.roles.includes(state.user.role))) continue;
     (groups[r.group] ||= []).push(r);
   }
   for (const [group, items] of Object.entries(groups)) {
     nav.appendChild(h('div', { class: 'nav-group' }, group));
     for (const r of items) {
-      const a = h('a', { href: `#${r.key}`, dataset: { key: r.key } },
+      nav.appendChild(h('a', { href: `#${r.key}`, dataset: { key: r.key } },
         h('span', { class: 'ico' }, r.icon),
         h('span', {}, r.label),
         r.badge ? h('span', { class: 'badge-count hidden', dataset: { badge: r.badge } }, '0') : null,
-      );
-      nav.appendChild(a);
+      ));
     }
   }
 }
 
 async function refreshBadges() {
+  if (state.principal !== 'admin') return;
   try {
     const [inc, ot] = await Promise.all([
       api.get('/incidents?status=pendiente'),
@@ -90,7 +104,7 @@ async function refreshBadges() {
 function setActiveNav(key) {
   document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.key === key));
   const period = currentPeriod();
-  document.getElementById('view-sub').textContent = period ? `${period.name} · ${period.status}` : '';
+  document.getElementById('view-sub').textContent = state.principal === 'admin' && period ? `${period.name} · ${period.status}` : (state.principal === 'empleado' ? 'Portal del empleado' : '');
   refreshBadges();
   document.querySelector('.sidebar')?.classList.remove('open');
 }
@@ -101,15 +115,19 @@ async function start() {
   loginEl.classList.add('hidden');
   appEl.classList.remove('hidden');
 
-  document.getElementById('user-name').textContent = state.user.name;
+  const principalName = state.principal === 'empleado' ? state.employee.name : state.user.name;
+  document.getElementById('user-name').textContent = principalName;
   document.getElementById('user-role').textContent = state.roleLabel;
-  document.getElementById('user-avatar').textContent = initials(state.user.name);
+  document.getElementById('user-avatar').textContent = initials(principalName);
+  periodPicker.classList.toggle('hidden', state.principal !== 'admin');
 
   buildNav();
   renderPeriodSelect();
   setRenderHook(setActiveNav);
-  if (!location.hash) location.hash = 'dashboard';
-  await render();
+  // Evita doble render: fijar el hash dispara hashchange→render; si ya hay hash, render una vez.
+  const wanted = location.hash.slice(1);
+  if (!wanted) location.hash = defaultRoute();
+  else await render();
   refreshBadges();
 }
 
@@ -127,7 +145,6 @@ document.getElementById('menu-toggle').addEventListener('click', () => {
 
 window.addEventListener('hashchange', render);
 
-// Sesión existente
 if (getToken()) {
   start().catch(() => { setToken(null); loginEl.classList.remove('hidden'); appEl.classList.add('hidden'); });
 }

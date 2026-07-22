@@ -92,6 +92,8 @@ export function seed({ reset = false } = {}) {
     ['MTX011', 'Ricardo Vázquez Luna', 'Producción', 'Operador de empaque', turnoProduccion.id, 410.0],
     ['MTX012', 'Paola Andrea Reyes Campos', 'Administración', 'Asistente de dirección', turnoOficina.id, 560.0],
   ];
+  // Años de antigüedad variados (para saldos de vacaciones distintos)
+  const hireYears = [2019, 2015, 2012, 2021, 2023, 2018, 2022, 2020, 2010, 2017, 2024, 2016];
   let idx = 0;
   for (const [code, name, department, position, scheduleId, dailySalary] of employees) {
     idx++;
@@ -105,8 +107,9 @@ export function seed({ reset = false } = {}) {
       scheduleId,
       deviceId: device.id,
       checadorUserId: String(1000 + idx), // id de persona en el Hikvision
+      pin: '1234', // PIN de acceso al portal del empleado (demo)
       dailySalary,
-      hireDate: '2024-01-15',
+      hireDate: `${hireYears[idx - 1]}-03-01`,
       bonusEligible: true,
       active: true,
     });
@@ -147,6 +150,29 @@ export function seed({ reset = false } = {}) {
     startDate: '2026-07-21', endDate: '2026-07-21',
     reason: 'Asunto personal', status: 'pendiente',
     createdBy: 'Sofía Herrera', authorizedBy: null, createdAt: '2026-07-20T12:00:00.000Z',
+  });
+
+  // ----- Solicitud del portal del empleado (autoservicio) -----
+  db.insert('incidents', {
+    employeeId: emps[9].id, type: 'vacaciones',
+    startDate: '2026-07-28', endDate: '2026-07-30',
+    reason: 'Solicitud desde el portal', status: 'pendiente', selfService: true,
+    createdBy: emps[9].name, authorizedBy: null, createdAt: '2026-07-21T10:30:00.000Z',
+  });
+
+  // ----- Tickets de RH de ejemplo -----
+  db.insert('tickets', {
+    employeeId: emps[0].id, employeeName: emps[0].name, category: 'Nómina',
+    subject: 'Aclaración de retardo del 18 de julio', status: 'abierto', createdAt: '2026-07-21T09:15:00.000Z',
+    messages: [{ by: emps[0].name, role: 'empleado', message: 'Buen día, marqué a tiempo pero aparece retardo el 18. ¿Pueden revisar?', at: '2026-07-21T09:15:00.000Z' }],
+  });
+  db.insert('tickets', {
+    employeeId: emps[5].id, employeeName: emps[5].name, category: 'Recursos Humanos',
+    subject: 'Constancia laboral', status: 'en_proceso', createdAt: '2026-07-20T16:40:00.000Z',
+    messages: [
+      { by: emps[5].name, role: 'empleado', message: 'Necesito una constancia laboral con sueldo para el banco.', at: '2026-07-20T16:40:00.000Z' },
+      { by: 'Diana Laura Flores Ríos', role: 'rh', message: 'Con gusto, la tendremos lista en 2 días hábiles.', at: '2026-07-21T11:00:00.000Z' },
+    ],
   });
 
   // Reprocesar para que las incidencias autorizadas se reflejen en la asistencia.
