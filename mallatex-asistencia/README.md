@@ -1,16 +1,27 @@
-# Plataforma de Control de Asistencia e Integración con NOI — Mallatex
+# Mallatex — Plataforma de Control de Asistencia e Integración con Aspel NOI
 
-Implementación funcional de la **Propuesta Ejecutiva de Digital Enigma para Mallatex**:
-una capa de control entre el **checador facial (Hikvision)** y **Aspel NOI**, que revisa
-y valida la información de asistencia **antes** de generar los movimientos de nómina.
+Sistema de asistencia de **Mallatex**: una capa de control entre el **checador facial
+(Hikvision)** y **Aspel NOI** —el módulo de nómina del ERP de Aspel— que revisa y valida
+la información de asistencia **antes** de generar los movimientos de nómina.
 
-> Meta del proyecto (según la propuesta): *revisar y validar la información del checador
-> antes de generar los movimientos de nómina*. La plataforma **no** envía registros crudos
-> a NOI: consolida la información ya revisada y autorizada del periodo.
+> Meta del proyecto: *revisar y validar la información del checador antes de generar los
+> movimientos de nómina*. La plataforma **no** envía registros crudos a Aspel NOI:
+> consolida la información ya revisada y autorizada del periodo.
 
-<p align="center"><i>Digital Enigma · Julio 2026 · Implementación progresiva sobre plataforma existente</i></p>
+<p align="center"><i>Julio 2026 · Implementación progresiva — powered by <b>Evorgyn</b></i></p>
 
 ---
+
+## 🖼️ Capturas
+
+Las imágenes de la aplicación están en [`docs/screenshots/`](docs/screenshots/):
+
+| | |
+|---|---|
+| ![Acceso](docs/screenshots/01-login.png) | ![Tablero](docs/screenshots/02-tablero.png) |
+| Acceso | Tablero |
+| ![Revisión de asistencia](docs/screenshots/03-revision-asistencia.png) | ![Periodos y NOI](docs/screenshots/06-periodos-noi.png) |
+| Revisión de asistencia | Periodos y exportación NOI |
 
 ## 🎯 Alcance implementado
 
@@ -128,7 +139,7 @@ organizada por colecciones (fácilmente migrable a un motor SQL). Autenticación
 token con roles y bitácora de cada operación.
 
 **Frontend**: SPA en JavaScript modular (ES Modules, sin paso de compilación),
-servida por el propio servidor. Diseño con la identidad de Digital Enigma.
+servida por el propio servidor. Diseño minimalista con la identidad de Mallatex.
 
 ### Sobre la integración con hardware y NOI
 
@@ -147,4 +158,4 @@ reportes ampliados y tableros ejecutivos.
 
 ---
 
-<p align="center"><b>Digital Enigma</b> — Plataforma de Asistencia · NOI</p>
+<p align="center"><b>Mallatex</b> — Plataforma de Asistencia · Aspel NOI · <i>powered by Evorgyn</i></p>

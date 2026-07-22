@@ -1,7 +1,7 @@
 {
   "name": "mallatex-asistencia",
   "version": "1.0.0",
-  "description": "Plataforma de control de asistencia e integración con NOI — Digital Enigma / Mallatex",
+  "description": "Mallatex — Plataforma de control de asistencia e integración con Aspel NOI (powered by Evorgyn)",
   "type": "module",
   "main": "server/index.js",
   "scripts": {
@@ -16,6 +16,6 @@
   "dependencies": {
     "express": "^4.19.2"
   },
-  "author": "Digital Enigma",
+  "author": "Evorgyn",
   "license": "UNLICENSED"
 }

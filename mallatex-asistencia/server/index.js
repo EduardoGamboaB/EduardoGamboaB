@@ -55,7 +55,7 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n  Plataforma de Asistencia Mallatex · Digital Enigma`);
+  console.log(`\n  Mallatex · Plataforma de Asistencia (NOI) — powered by Evorgyn`);
   console.log(`  Servidor: http://localhost:${PORT}`);
   console.log(`  Empleados: ${db.all('employees').length} · Checadas: ${db.all('checadas').length}\n`);
 });
