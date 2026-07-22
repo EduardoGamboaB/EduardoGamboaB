@@ -85,7 +85,7 @@ export default async function dashboard(el) {
     ),
   );
 
-  el.appendChild(h('div', { class: 'grid mb', style: 'grid-template-columns: 1.6fr 1fr;gap:16px' }, dist, side));
+  el.appendChild(h('div', { class: 'grid split mb' }, dist, side));
 
   // Flujo operativo
   el.appendChild(h('div', { class: 'card' },

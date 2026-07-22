@@ -200,7 +200,30 @@ S([B('Propósito. '), T('Trazabilidad de todas las operaciones: quién hizo qué
 body.push(...image('11-bitacora.png', { caption: 'Bitácora de trazabilidad' }));
 S('Puede filtrarse por entidad. Registra altas, correcciones, autorizaciones, rechazos, sincronizaciones, cierres y exportaciones.');
 
-body.push(pageBreak(), H1('16. Referencia: motor de reglas'));
+body.push(pageBreak(), H1('16. Recursos Humanos (RH)'));
+S([B('Propósito. '), T('Módulos administrativos de RH (grupo Recursos Humanos en la barra lateral): indicadores, recibos preliminares, saldos de vacaciones y tickets.')]);
+body.push(H2('Indicadores RH'));
+S('Tablero con % de asistencia, puntualidad y ausentismo, tiempo extra, empleados elegibles a bono, asistencia por área, top de retardos y pendientes por autorizar.');
+body.push(...image('21-rh-indicadores.png', { caption: 'Indicadores de Recursos Humanos' }));
+body.push(H2('Recibos'));
+S([T('Genera '), B('recibos preliminares'), T(' del periodo a partir de la asistencia, incidencias, tiempo extra y bono (percepciones, deducciones y neto); cada recibo puede consultarse y descargarse.')]);
+body.push(...image('24-recibo-detalle.png', { caption: 'Detalle de un recibo preliminar', maxH: 520 }));
+body.push(callout([B('Importante: '), T('los recibos son preliminares/informativos. El cálculo fiscal definitivo (ISR/IMSS) se realiza en Aspel NOI.')], true));
+body.push(H2('Vacaciones (saldos) y Tickets'));
+S('Los saldos de vacaciones se calculan conforme a la Ley Federal del Trabajo (reforma 2023) según la antigüedad. La bandeja de tickets permite a RH responder y cambiar el estado (abierto, en proceso, resuelto).');
+body.push(...image('23-rh-vacaciones.png', { caption: 'Saldos de vacaciones' }));
+
+body.push(pageBreak(), H1('17. Portal del empleado'));
+S([B('Propósito. '), T('Autoservicio del colaborador. Se accede desde la pantalla de inicio eligiendo '), B('Empleado'), T(' e ingresando su '), B('código y PIN'), T('.')]);
+body.push(...image('26-portal-asistencia.png', { caption: 'Mi asistencia (portal del empleado)' }));
+body.push(H2('Funciones del portal'));
+body.push(bullet([B('Mi asistencia: '), T('indicadores y detalle diario del periodo (sólo su propia información).')]));
+body.push(bullet([B('Vacaciones y permisos: '), T('saldo y solicitud de vacaciones/permisos, que quedan pendientes hasta su autorización.')]));
+body.push(bullet([B('Mis recibos: '), T('consulta y descarga de los recibos emitidos.')]));
+body.push(bullet([B('Mis tickets: '), T('apertura y seguimiento de solicitudes a Recursos Humanos.')]));
+body.push(callout([T('El portal del empleado corresponde a la '), B('etapa siguiente'), T(' de la propuesta (crecimiento por módulos).')]));
+
+body.push(pageBreak(), H1('18. Referencia: motor de reglas'));
 S('Para cada empleado y día, el sistema determina el estatus así:');
 body.push(step(1, 'Si hay una incidencia autorizada que cubre el día, ese es el estatus.'));
 body.push(step(2, 'Si no es día laborable del horario → Descanso.'));
@@ -209,7 +232,7 @@ body.push(step(4, [T('Entrada dentro de tolerancia → '), B('Asistencia'), T(';
 body.push(step(5, 'El tiempo extra son los minutos tras la salida programada (con umbral y bloque mínimo).'));
 S([B('Bono de puntualidad. '), T('Se conserva si no se exceden los retardos permitidos ni hay faltas injustificadas u omisiones.')]);
 
-body.push(pageBreak(), H1('17. Preguntas frecuentes'));
+body.push(pageBreak(), H1('19. Preguntas frecuentes'));
 body.push(table(['Situación', 'Solución'], [['No veo las checadas de un empleado', 'Verifique checador e ID asignados y sincronice el rango correcto.'], ['Un día aparece como Falta pero asistió', 'Si sólo hay una checada será Omisión. Corrija con motivo o registre la incidencia.'], ['No puedo autorizar una incidencia', 'La autorización corresponde al Contador general o al Administrador.'], ['No me deja exportar a NOI', 'Hay pendientes por autorizar. Autorícelos o fuerce la exportación al confirmar.'], ['No puedo corregir un día', 'El periodo probablemente está cerrado; un Contador/Administrador puede reabrirlo.']], [3600, 5800]));
 body.push(H2('Glosario'));
 body.push(table(['Término', 'Definición'], [['Checada', 'Registro de entrada o salida capturado por el checador.'], ['Tolerancia', 'Minutos de gracia tras la entrada antes de contar retardo.'], ['Omisión', 'Día con una sola checada.'], ['Movimiento NOI', 'Concepto consolidado que se exporta a Aspel NOI.'], ['Bitácora', 'Registro de auditoría de todas las operaciones.']], [2800, 6600]));

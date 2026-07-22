@@ -32,7 +32,7 @@ w(`<section class="cover">
 </section>`);
 sec();
 
-const toc = ['1. Introducción', '2. Conceptos clave', '3. Acceso al sistema', '4. Interfaz general', '5. Tablero', '6. Revisión de asistencia', '7. Faltas e incidencias', '8. Horas extra', '9. Periodos y NOI', '10. Empleados', '11. Horarios y reglas', '12. Checador', '13. Kiosco y reconocimiento facial', '14. Usuarios', '15. Bitácora', '16. Referencia: motor de reglas', '17. Uso en dispositivos móviles', '18. Preguntas frecuentes', '19. Glosario', '20. Anexo: requisitos e instalación'];
+const toc = ['1. Introducción', '2. Conceptos clave', '3. Acceso al sistema', '4. Interfaz general', '5. Tablero', '6. Revisión de asistencia', '7. Faltas e incidencias', '8. Horas extra', '9. Periodos y NOI', '10. Empleados', '11. Horarios y reglas', '12. Checador', '13. Kiosco y reconocimiento facial', '14. Usuarios', '15. Bitácora', '16. Recursos Humanos (RH)', '17. Portal del empleado', '18. Referencia: motor de reglas', '19. Uso en dispositivos móviles', '20. Preguntas frecuentes', '21. Glosario', '22. Anexo: requisitos e instalación'];
 w('<h1 class="toc-title">Contenido</h1><nav class="toc">' + toc.map((t) => `<div class="toc-item"><span>${esc(t)}</span></div>`).join('') + '</nav>');
 sec();
 
@@ -193,26 +193,60 @@ img('11-bitacora.png', 'Bitácora de trazabilidad');
 p('Puede filtrarse por entidad (asistencia, incidencias, horas extra, periodo, empleado, etc.). Registra altas, correcciones, autorizaciones, rechazos, sincronizaciones, cierres y exportaciones.');
 sec();
 
-h1(16, 'Referencia: motor de reglas');
+h1(16, 'Recursos Humanos (RH)');
+p(`${B('Propósito.')} Módulos administrativos de RH: indicadores, recibos preliminares, saldos de vacaciones y tickets. Disponibles en el grupo ${B('Recursos Humanos')} de la barra lateral.`);
+h2('Indicadores RH');
+p('Tablero con % de asistencia, puntualidad y ausentismo, tiempo extra, empleados elegibles a bono, asistencia por área y top de retardos, además de los pendientes por autorizar.');
+img('21-rh-indicadores.png', 'Indicadores de Recursos Humanos');
+h2('Recibos');
+p('Genera <b>recibos preliminares</b> del periodo a partir de la asistencia, incidencias, tiempo extra y bono (percepciones, deducciones y neto). Cada recibo puede consultarse y descargarse.');
+ol([`Seleccione el periodo en la barra superior y presione ${B('Generar recibos del periodo')}.`, `Presione ${B('Ver')} en un empleado para el detalle y ${B('Descargar')} para obtener el archivo.`]);
+img('24-recibo-detalle.png', 'Detalle de un recibo preliminar', 'narrow');
+note(`${B('Importante:')} los recibos son preliminares/informativos. El cálculo fiscal definitivo (ISR/IMSS) se realiza en Aspel NOI.`, true);
+h2('Vacaciones (saldos)');
+p('Muestra, para toda la plantilla, la antigüedad y los días de vacaciones (derecho, tomados y disponibles) calculados conforme a la Ley Federal del Trabajo (reforma 2023).');
+img('23-rh-vacaciones.png', 'Saldos de vacaciones');
+h2('Tickets RH');
+p('Bandeja de solicitudes de los colaboradores. RH responde, da seguimiento y cambia el estado (abierto, en proceso, resuelto).');
+sec();
+
+h1(17, 'Portal del empleado');
+p(`${B('Propósito.')} Espacio de autoservicio para el colaborador. Se accede desde la pantalla de inicio eligiendo ${B('Empleado')} e ingresando su ${B('código y PIN')}.`);
+img('25-login-empleado.png', 'Acceso del empleado (código + PIN)', 'narrow');
+h2('Mi asistencia');
+p('El colaborador consulta su asistencia del periodo: indicadores (asistencias, faltas, incidencias, tiempo extra) y el detalle diario. No tiene acceso a información administrativa ni de otros empleados.');
+img('26-portal-asistencia.png', 'Mi asistencia (portal del empleado)');
+h2('Vacaciones y permisos');
+p('Muestra el saldo de vacaciones y permite <b>solicitar</b> vacaciones o permisos. La solicitud queda pendiente hasta que RH/Contabilidad la autorice (aparece en el módulo de incidencias).');
+img('27-portal-vacaciones.png', 'Solicitud de vacaciones y permisos', 'narrow');
+h2('Mis recibos');
+p('Lista los recibos emitidos; el colaborador puede ver el detalle y descargarlos.');
+h2('Mis tickets');
+p('Permite abrir tickets a Recursos Humanos y dar seguimiento a las respuestas.');
+img('29-portal-tickets.png', 'Mis tickets (portal del empleado)', 'narrow');
+note(`El portal del empleado corresponde a la ${B('etapa siguiente')} de la propuesta (crecimiento por módulos).`);
+sec();
+
+h1(18, 'Referencia: motor de reglas');
 p('Para cada empleado y día, el sistema determina el estatus así:');
 ol(['Si hay una incidencia autorizada que cubre el día, ese es el estatus (vacaciones, permiso, incapacidad, etc.).', 'Si no es día laborable del horario → Descanso.', 'Sin checadas en día laborable → Falta. Una sola checada → Omisión.', `Con entrada y salida se compara la entrada contra la tolerancia: dentro → ${B('Asistencia')}; pasada la tolerancia y hasta el umbral → ${B('Retardo')}; más allá del umbral → ${B('Falta')}.`, 'El tiempo extra son los minutos tras la salida programada (con umbral y bloque mínimo).']);
 p(`${B('Bono de puntualidad.')} Un empleado conserva el bono del periodo si no excede los retardos permitidos, no tiene faltas injustificadas ni omisiones.`);
 sec();
 
-h1(17, 'Uso en dispositivos móviles');
+h1(19, 'Uso en dispositivos móviles');
 p('La plataforma es responsiva. En pantallas pequeñas la barra lateral se oculta y se abre con el botón de menú (☰); los indicadores y tablas se reorganizan en una sola columna.');
 img('14-movil-tablero.png', 'Tablero en vista móvil', 'phone');
 sec();
 
-h1(18, 'Preguntas frecuentes');
+h1(20, 'Preguntas frecuentes');
 table(['Situación', 'Solución'], [['No veo las checadas de un empleado', 'Verifique que el empleado tenga checador e ID asignados y sincronice el rango de fechas correcto en la pantalla Checador.'], ['Un día aparece como Falta pero el empleado asistió', 'Revise si registró ambas checadas; si sólo hay una será Omisión. Corrija el registro con un motivo, o registre la incidencia correspondiente.'], ['No puedo autorizar una incidencia', 'La autorización de incidencias corresponde al Contador general o al Administrador.'], ['No me deja exportar a NOI', 'Existen incidencias u horas extra pendientes de autorizar. Autorícelas o fuerce la exportación al confirmar.'], ['No puedo corregir un día', 'Probablemente el periodo está cerrado. Un Contador/Administrador puede reabrirlo.'], ['¿Puedo agregar más usuarios?', 'Sí, hasta 5 usuarios administrativos activos en el plan Renta Operativa.']]);
 sec();
 
-h1(19, 'Glosario');
+h1(21, 'Glosario');
 table(['Término', 'Definición'], [['Checada', 'Registro de entrada o salida capturado por el checador.'], ['Tolerancia', 'Minutos de gracia tras la hora de entrada antes de contar retardo.'], ['Omisión', 'Día con una sola checada (falta entrada o salida).'], ['Incidencia', 'Evento que justifica o modifica la asistencia (vacaciones, permiso, incapacidad…).'], ['Periodo', 'Intervalo de nómina (por ejemplo, una quincena).'], ['Movimiento NOI', 'Concepto consolidado (percepción/deducción) que se exporta a Aspel NOI.'], ['Bitácora', 'Registro de auditoría de todas las operaciones.']]);
 sec();
 
-h1(20, 'Anexo: requisitos e instalación');
+h1(22, 'Anexo: requisitos e instalación');
 p('La plataforma es una aplicación web (Node.js + Express) con una interfaz servida por el propio servidor. No requiere instalación en el equipo del usuario final, sólo un navegador moderno.');
 h2('Puesta en marcha (equipo servidor)');
 ol(['Requiere Node.js 20 o superior.', `En la carpeta del proyecto: ${B('npm install')} y luego ${B('npm start')}.`, `Abrir ${B('http://localhost:3000')}. En el primer arranque se cargan los datos demostrativos.`]);

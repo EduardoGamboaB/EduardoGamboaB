@@ -20,7 +20,7 @@ export default async function rhIndicadores(el) {
     kpi('Tiempo extra', d.overtimeHours + ' h', `${d.bonusEligible} elegibles a bono`),
   ));
 
-  el.appendChild(h('div', { class: 'grid mb', style: 'grid-template-columns:1.5fr 1fr;gap:16px' },
+  el.appendChild(h('div', { class: 'grid split mb' },
     // Por área
     h('div', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', {}, 'Asistencia por área'), h('span', { class: 'sub' }, d.period.name)),
       h('div', { class: 'card-pad', style: 'display:grid;gap:12px' }, ...Object.entries(d.byArea).map(([area, a]) => {

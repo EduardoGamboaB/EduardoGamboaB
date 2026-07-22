@@ -8,13 +8,17 @@
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "seed": "node server/seed.js --reset",
-    "test": "node --test"
+    "test": "node --test test/rules.test.js test/qa.test.js",
+    "e2e": "node --test test/e2e.test.js"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
   },
   "author": "Evorgyn",
   "license": "UNLICENSED"

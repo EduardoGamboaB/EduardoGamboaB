@@ -128,6 +128,7 @@ label { font-size: 13px; }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
+.split { grid-template-columns: 1.6fr 1fr; }
 .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .spread { justify-content: space-between; }
 .mt { margin-top: 16px; } .mb { margin-bottom: 16px; }
@@ -215,8 +216,16 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   .sidebar { position: fixed; z-index: 60; width: 244px; transform: translateX(-100%); transition: .2s; box-shadow: var(--shadow-lg); }
   .sidebar.open { transform: none; }
   #menu-toggle { display: block; }
-  .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  .grid-3, .grid-2, .split { grid-template-columns: 1fr; }
   .period-picker label { display: none; }
   .user-meta { display: none; }
+  .topbar { padding: 12px 16px; }
+  .view { padding: 18px 16px 60px; }
 }
-@media (max-width: 560px) { .grid-4 { grid-template-columns: 1fr; } .flow { grid-template-columns: 1fr; } .form-grid.two { grid-template-columns: 1fr; } }
+@media (max-width: 560px) {
+  .grid-4 { grid-template-columns: 1fr; }
+  .flow { grid-template-columns: 1fr; }
+  .form-grid.two { grid-template-columns: 1fr; }
+  .period-picker { display: none; }
+  .topbar-right { gap: 10px; }
+}
