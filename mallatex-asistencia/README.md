@@ -139,7 +139,20 @@ organizada por colecciones (fácilmente migrable a un motor SQL). Autenticación
 token con roles y bitácora de cada operación.
 
 **Frontend**: SPA en JavaScript modular (ES Modules, sin paso de compilación),
-servida por el propio servidor. Diseño minimalista con la identidad de Mallatex.
+servida por el propio servidor. Diseño minimalista con la identidad corporativa de Mallatex.
+
+### 🎨 Identidad de marca
+
+Colores corporativos **exactos**, tomados del logotipo oficial de Mallatex
+(*"Protegemos lo que siembras"*):
+
+| Color | Hex | Uso |
+|-------|-----|-----|
+| Rojo Mallatex | `#EB2429` | Acento principal: logo, botones, navegación activa |
+| Rojo sombra | `#9E1E22` | Degradado / estados presionados |
+| Negro Mallatex | `#231F20` | Texto principal y tarjetas destacadas |
+
+El isotipo de la plataforma reproduce las **ondas concéntricas** del logotipo de Mallatex.
 
 ### Sobre la integración con hardware y NOI
 

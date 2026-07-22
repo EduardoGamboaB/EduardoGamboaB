@@ -1,24 +1,27 @@
 /* Mallatex · Plataforma de Asistencia (Aspel NOI) — sistema de diseño minimalista
+   Colores corporativos Mallatex (tomados del logotipo oficial):
+     Rojo Mallatex  #EB2429  ·  Negro Mallatex #231F20  ·  Rojo sombra #9E1E22
    powered by Evorgyn */
 :root {
-  --accent: #0f766e;       /* acento único (teal profundo) */
-  --accent-600: #0d9488;
-  --accent-050: #f0fdfa;
-  --accent-100: #ccfbf1;
+  --accent: #eb2429;       /* Rojo corporativo Mallatex */
+  --accent-600: #cc1f24;   /* hover */
+  --accent-700: #9e1e22;   /* rojo sombra del logotipo */
+  --accent-050: #fef3f3;
+  --accent-100: #fbdadb;
 
-  --ink-900: #18181b;
-  --ink-700: #3f3f46;
-  --ink-600: #52525b;
-  --ink-500: #71717a;
-  --ink-400: #a1a1aa;
-  --line: #e4e4e7;
-  --line-2: #f4f4f5;
+  --ink-900: #231f20;      /* Negro corporativo Mallatex */
+  --ink-700: #45403f;
+  --ink-600: #5c5555;
+  --ink-500: #7c7472;
+  --ink-400: #a8a1a0;
+  --line: #e6e2e2;
+  --line-2: #f5f3f3;
   --bg: #fafafa;
   --card: #ffffff;
 
   --ok: #15803d; --ok-bg:#f0fdf4;
   --warn: #b45309; --warn-bg:#fffbeb;
-  --err: #b91c1c; --err-bg:#fef2f2;
+  --err: #b91c1c; --err-bg:#fdeced;
   --info: #1d4ed8; --info-bg:#eff6ff;
   --purple:#6d28d9; --purple-bg:#f5f3ff;
 
@@ -199,8 +202,8 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .progress { height: 7px; background: var(--line-2); border-radius: 999px; overflow: hidden; }
 .progress > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
-.note-box { background: var(--accent-050); border: 1px solid var(--accent-100); color: #115e56; padding: 12px 14px; border-radius: 9px; font-size: 13px; }
-.note-box.warn { background: var(--warn-bg); border-color:#fde9c8; color: #92600b; }
+.note-box { background: #fbfafa; border: 1px solid var(--line); border-left: 3px solid var(--accent); color: var(--ink-700); padding: 12px 14px; border-radius: 9px; font-size: 13px; }
+.note-box.warn { background: var(--warn-bg); border-color:#fde9c8; border-left-color:#d97706; color: #92600b; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1080px) { .grid-4 { grid-template-columns: repeat(2,1fr); } .flow { grid-template-columns: repeat(3,1fr); } }
