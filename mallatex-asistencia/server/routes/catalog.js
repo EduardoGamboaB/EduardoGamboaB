@@ -27,9 +27,35 @@ router.get('/employees', (req, res) => {
   let items = db.all('employees');
   if (req.query.active === 'true') items = items.filter((e) => e.active !== false);
   if (req.query.department) items = items.filter((e) => e.department === req.query.department);
-  // Enriquecer con nombre de horario
+  // Enriquecer con nombre de horario. Se omiten los datos biométricos pesados
+  // (descriptor/foto); se expone sólo el indicador de enrolamiento.
   const schedules = Object.fromEntries(db.all('schedules').map((s) => [s.id, s.name]));
-  res.json(items.map((e) => ({ ...e, scheduleName: schedules[e.scheduleId] || null })));
+  res.json(items.map(({ faceDescriptor, facePhoto, ...e }) => ({
+    ...e,
+    scheduleName: schedules[e.scheduleId] || null,
+    faceEnrolled: Array.isArray(faceDescriptor) && faceDescriptor.length > 0,
+  })));
+});
+
+// ---------- Enrolamiento biométrico (rostro) ----------
+router.post('/employees/:id/face', requireRole(ROLES.ADMIN, ROLES.CONTADOR), (req, res) => {
+  const e = db.get('employees', req.params.id);
+  if (!e) return res.status(404).json({ error: 'Empleado no encontrado' });
+  const { descriptor, photo } = req.body || {};
+  if (!Array.isArray(descriptor) || descriptor.length !== 128) {
+    return res.status(400).json({ error: 'Descriptor facial inválido (se esperan 128 valores)' });
+  }
+  db.update('employees', e.id, { faceDescriptor: descriptor.map(Number), facePhoto: typeof photo === 'string' ? photo : null });
+  log(req, { action: 'enroll', entity: 'employee', entityId: e.id, detail: `Registro biométrico (rostro) de ${e.name}` });
+  res.json({ ok: true, faceEnrolled: true });
+});
+
+router.delete('/employees/:id/face', requireRole(ROLES.ADMIN, ROLES.CONTADOR), (req, res) => {
+  const e = db.get('employees', req.params.id);
+  if (!e) return res.status(404).json({ error: 'Empleado no encontrado' });
+  db.update('employees', e.id, { faceDescriptor: null, facePhoto: null });
+  log(req, { action: 'unenroll', entity: 'employee', entityId: e.id, detail: `Baja de registro biométrico de ${e.name}` });
+  res.json({ ok: true, faceEnrolled: false });
 });
 
 router.get('/employees/:id', (req, res) => {

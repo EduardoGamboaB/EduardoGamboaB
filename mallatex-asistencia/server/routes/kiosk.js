@@ -16,6 +16,33 @@ function initials(name) {
 }
 function dateOf(ts) { return ts.slice(0, 10); }
 
+// Distancia euclidiana entre dos descriptores faciales (128D).
+function euclidean(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) { const d = a[i] - b[i]; s += d * d; }
+  return Math.sqrt(s);
+}
+const MATCH_THRESHOLD = 0.5; // menor = coincidencia (típico 0.5–0.6)
+
+// Identifica al empleado enrolado más parecido a un descriptor facial.
+function matchByDescriptor(descriptor) {
+  const enrolled = db.all('employees', (e) => e.active !== false && Array.isArray(e.faceDescriptor) && e.faceDescriptor.length === 128);
+  let best = null, bestDist = Infinity;
+  for (const e of enrolled) {
+    const dist = euclidean(descriptor, e.faceDescriptor);
+    if (dist < bestDist) { bestDist = dist; best = e; }
+  }
+  return best && bestDist <= MATCH_THRESHOLD ? { employee: best, distance: bestDist } : null;
+}
+
+// Estado del kiosco: cuántos rostros hay enrolados.
+router.get('/status', (_req, res) => {
+  const enrolled = db.all('employees', (e) => e.active !== false && Array.isArray(e.faceDescriptor) && e.faceDescriptor.length === 128).length;
+  const total = db.all('employees', (e) => e.active !== false).length;
+  const device = db.all('devices')[0] || null;
+  res.json({ enrolled, total, threshold: MATCH_THRESHOLD, device: device ? { name: device.name } : null });
+});
+
 // Empleados disponibles para el kiosco (datos mínimos, sin información sensible)
 router.get('/employees', (_req, res) => {
   const emps = db.all('employees', (e) => e.active !== false)
@@ -24,11 +51,20 @@ router.get('/employees', (_req, res) => {
   res.json(emps);
 });
 
-// Registro de entrada/salida desde el kiosco
+// Registro de entrada/salida desde el kiosco.
+// Identificación por descriptor facial (cámara), o por employeeId/código (respaldo).
 router.post('/checkin', (req, res) => {
   const b = req.body || {};
-  const emp = b.employeeId ? db.get('employees', b.employeeId)
-    : db.find('employees', (e) => e.code === b.code || e.checadorUserId === String(b.checadorUserId));
+  let emp = null, matchDistance = null;
+  if (Array.isArray(b.descriptor) && b.descriptor.length === 128) {
+    const m = matchByDescriptor(b.descriptor.map(Number));
+    if (!m) return res.status(404).json({ error: 'Rostro no reconocido' });
+    emp = m.employee; matchDistance = Number(m.distance.toFixed(3));
+  } else if (b.employeeId) {
+    emp = db.get('employees', b.employeeId);
+  } else if (b.code || b.checadorUserId) {
+    emp = db.find('employees', (e) => e.code === b.code || e.checadorUserId === String(b.checadorUserId));
+  }
   if (!emp || emp.active === false) return res.status(404).json({ error: 'Empleado no reconocido' });
 
   const now = new Date();
@@ -73,7 +109,8 @@ router.post('/checkin', (req, res) => {
     else statusLabel = 'Buen descanso';
   }
 
-  logSystem({ action: 'checkin', entity: 'kiosk', entityId: emp.id, detail: `${type} ${emp.name} ${time} (${statusLabel})` });
+  const via = matchDistance != null ? `facial d=${matchDistance}` : 'manual';
+  logSystem({ action: 'checkin', entity: 'kiosk', entityId: emp.id, detail: `${type} ${emp.name} ${time} (${statusLabel}) · ${via}` });
 
   res.json({
     ok: true,
@@ -84,8 +121,9 @@ router.post('/checkin', (req, res) => {
     tone,
     detail,
     statusLabel,
+    matchDistance,
     headline: type === 'entrada' ? `¡Bienvenido, ${emp.name.split(' ')[0]}!` : `¡Hasta pronto, ${emp.name.split(' ')[0]}!`,
-    employee: { id: emp.id, name: emp.name, code: emp.code, department: emp.department, initials: initials(emp.name) },
+    employee: { id: emp.id, name: emp.name, code: emp.code, department: emp.department, initials: initials(emp.name), photo: emp.facePhoto || null },
   });
 });
 

@@ -53,6 +53,24 @@ Además, transversalmente:
 - **Usuarios y roles**: Administrador, Contador general y Responsable de nómina (hasta 5 usuarios administrativos, plan *Renta Operativa*).
 - **Cierre de periodo**: exige autorizar los movimientos pendientes y bloquea correcciones posteriores.
 
+## 📷 Reconocimiento facial por cámara (modo kiosco)
+
+El registro de entrada/salida del empleado se hace por **reconocimiento facial con la
+cámara frontal de una tablet o una webcam**, 100 % en el navegador y **sin conexión a
+servicios externos** (modelos de [`@vladmandic/face-api`](https://github.com/vladmandic/face-api)
+servidos localmente desde `public/models`).
+
+- **Enrolamiento:** en *Empleados → 📷 Registrar* se captura el rostro y se genera una
+  plantilla facial (descriptor de 128 valores) que se guarda en el empleado.
+- **Kiosco (`/kiosk`):** muestra la cámara en vivo, detecta el rostro, calcula su
+  descriptor y lo compara (distancia euclidiana, umbral 0.5) contra los rostros
+  enrolados. Al identificar, registra la checada y muestra la confirmación.
+- **Respaldo:** si no hay cámara disponible, ofrece registro manual.
+
+> La cámara del navegador requiere **contexto seguro**: funciona en `localhost` o sobre
+> **HTTPS**. Para una tablet en red local, sirve la plataforma por HTTPS. La
+> identificación en el dispositivo Hikvision físico seguiría su propio flujo por ISAPI/SDK.
+
 ## 🔄 Flujo operativo (tal como en la propuesta)
 
 ```
