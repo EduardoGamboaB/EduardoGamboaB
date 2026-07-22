@@ -175,17 +175,32 @@ body.push(step(1, 'Indique el rango de fechas (Desde / Hasta).'));
 body.push(step(2, [T('Presione '), B('Sincronizar checadas'), T('. Se descargan y procesan las checadas del rango.')]));
 body.push(callout([B('Nota técnica: '), T('en producción la sincronización consulta el dispositivo Hikvision vía ISAPI/SDK. En esta versión de demostración las checadas se generan de forma simulada.')]));
 
-body.push(pageBreak(), H1('13. Usuarios'));
+body.push(pageBreak(), H1('13. Kiosco y reconocimiento facial'));
+S([B('Propósito. '), T('Pantalla que ve el colaborador al registrar su entrada/salida por '), B('reconocimiento facial con la cámara frontal de una tablet o una webcam'), T('. El reconocimiento se ejecuta en el navegador, de forma local y sin servicios externos.')]);
+body.push(...image('20-kiosco-camara.png', { caption: 'Kiosco de acceso con cámara en vivo' }));
+body.push(H2('Enrolamiento del rostro (una vez por empleado)'));
+S([T('En '), B('Empleados'), T(', la columna '), B('Biometría'), T(' indica el estado. Para registrar el rostro:')]);
+body.push(step(1, [T('En la fila del empleado, presione '), B('📷 Registrar'), T('.')]));
+body.push(step(2, 'Permita el acceso a la cámara y encuadre el rostro, bien iluminado y de frente.'));
+body.push(step(3, [T('Presione '), B('Capturar rostro'), T(' y luego '), B('Guardar registro'), T('. Se genera una plantilla facial (128 valores) que se guarda en el empleado.')]));
+body.push(...image('19-enrolamiento.png', { caption: 'Registro biométrico del rostro del empleado', maxH: 520 }));
+body.push(H2('Registro de acceso en el kiosco'));
+S([T('Abra el kiosco desde '), B('Checador → Abrir modo kiosco'), T(' o en la dirección '), B('/kiosk'), T('. El colaborador se coloca frente a la cámara; el sistema identifica el rostro contra los enrolados y registra automáticamente la '), B('entrada'), T(' o '), B('salida'), T(', mostrando la confirmación con nombre, hora y estatus.')]);
+body.push(...image('17-kiosco-confirmacion.png', { caption: 'Confirmación que ve el empleado al registrar su acceso', maxH: 520 }));
+body.push(callout([B('Respaldo: '), T('si la cámara no está disponible, el kiosco ofrece un registro manual por selección de nombre.')]));
+body.push(callout([B('Requisito técnico: '), T('la cámara del navegador funciona en localhost o sobre HTTPS. Para una tablet en red local, sirva la plataforma por HTTPS.')], true));
+
+body.push(pageBreak(), H1('14. Usuarios'));
 S([B('Propósito. '), T('Administrar los usuarios de la plataforma (sólo Administrador): alta, edición, rol y activación.')]);
 body.push(...image('10-usuarios.png', { caption: 'Usuarios administrativos' }));
 body.push(callout([T('El plan Renta Operativa contempla '), B('hasta 5 usuarios administrativos'), T(' activos.')]));
 
-body.push(pageBreak(), H1('14. Bitácora'));
+body.push(pageBreak(), H1('15. Bitácora'));
 S([B('Propósito. '), T('Trazabilidad de todas las operaciones: quién hizo qué, cuándo y con qué detalle/motivo.')]);
 body.push(...image('11-bitacora.png', { caption: 'Bitácora de trazabilidad' }));
 S('Puede filtrarse por entidad. Registra altas, correcciones, autorizaciones, rechazos, sincronizaciones, cierres y exportaciones.');
 
-body.push(pageBreak(), H1('15. Referencia: motor de reglas'));
+body.push(pageBreak(), H1('16. Referencia: motor de reglas'));
 S('Para cada empleado y día, el sistema determina el estatus así:');
 body.push(step(1, 'Si hay una incidencia autorizada que cubre el día, ese es el estatus.'));
 body.push(step(2, 'Si no es día laborable del horario → Descanso.'));
@@ -194,7 +209,7 @@ body.push(step(4, [T('Entrada dentro de tolerancia → '), B('Asistencia'), T(';
 body.push(step(5, 'El tiempo extra son los minutos tras la salida programada (con umbral y bloque mínimo).'));
 S([B('Bono de puntualidad. '), T('Se conserva si no se exceden los retardos permitidos ni hay faltas injustificadas u omisiones.')]);
 
-body.push(pageBreak(), H1('16. Preguntas frecuentes'));
+body.push(pageBreak(), H1('17. Preguntas frecuentes'));
 body.push(table(['Situación', 'Solución'], [['No veo las checadas de un empleado', 'Verifique checador e ID asignados y sincronice el rango correcto.'], ['Un día aparece como Falta pero asistió', 'Si sólo hay una checada será Omisión. Corrija con motivo o registre la incidencia.'], ['No puedo autorizar una incidencia', 'La autorización corresponde al Contador general o al Administrador.'], ['No me deja exportar a NOI', 'Hay pendientes por autorizar. Autorícelos o fuerce la exportación al confirmar.'], ['No puedo corregir un día', 'El periodo probablemente está cerrado; un Contador/Administrador puede reabrirlo.']], [3600, 5800]));
 body.push(H2('Glosario'));
 body.push(table(['Término', 'Definición'], [['Checada', 'Registro de entrada o salida capturado por el checador.'], ['Tolerancia', 'Minutos de gracia tras la entrada antes de contar retardo.'], ['Omisión', 'Día con una sola checada.'], ['Movimiento NOI', 'Concepto consolidado que se exporta a Aspel NOI.'], ['Bitácora', 'Registro de auditoría de todas las operaciones.']], [2800, 6600]));

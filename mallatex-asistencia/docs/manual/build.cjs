@@ -32,7 +32,7 @@ w(`<section class="cover">
 </section>`);
 sec();
 
-const toc = ['1. Introducción', '2. Conceptos clave', '3. Acceso al sistema', '4. Interfaz general', '5. Tablero', '6. Revisión de asistencia', '7. Faltas e incidencias', '8. Horas extra', '9. Periodos y NOI', '10. Empleados', '11. Horarios y reglas', '12. Checador', '13. Usuarios', '14. Bitácora', '15. Referencia: motor de reglas', '16. Uso en dispositivos móviles', '17. Preguntas frecuentes', '18. Glosario', '19. Anexo: requisitos e instalación'];
+const toc = ['1. Introducción', '2. Conceptos clave', '3. Acceso al sistema', '4. Interfaz general', '5. Tablero', '6. Revisión de asistencia', '7. Faltas e incidencias', '8. Horas extra', '9. Periodos y NOI', '10. Empleados', '11. Horarios y reglas', '12. Checador', '13. Kiosco y reconocimiento facial', '14. Usuarios', '15. Bitácora', '16. Referencia: motor de reglas', '17. Uso en dispositivos móviles', '18. Preguntas frecuentes', '19. Glosario', '20. Anexo: requisitos e instalación'];
 w('<h1 class="toc-title">Contenido</h1><nav class="toc">' + toc.map((t) => `<div class="toc-item"><span>${esc(t)}</span></div>`).join('') + '</nav>');
 sec();
 
@@ -157,39 +157,62 @@ p('El listado inferior permite filtrar por empleado y por día, mostrando cada c
 note(`${B('Nota técnica:')} en producción la sincronización consulta el dispositivo Hikvision vía ISAPI/SDK. En esta versión de demostración las checadas se generan de forma simulada para mostrar el flujo completo sin hardware.`);
 sec();
 
-h1(13, 'Usuarios');
+h1(13, 'Kiosco y reconocimiento facial');
+p(`${B('Propósito.')} Es la pantalla que ve el colaborador al registrar su entrada/salida por ${B('reconocimiento facial con la cámara frontal de una tablet o una webcam')}. El reconocimiento se ejecuta en el navegador, de forma local y sin servicios externos.`);
+img('20-kiosco-camara.png', 'Kiosco de acceso con cámara en vivo');
+h2('Enrolamiento del rostro (una vez por empleado)');
+p('Antes de usar el kiosco, cada colaborador debe registrar su rostro. En <b>Empleados</b>, la columna <b>Biometría</b> indica el estado (<span class="tag ok">✓ Rostro</span> / <span class="tag gray">Sin registro</span>).');
+ol([
+  `En la fila del empleado, presione ${B('📷 Registrar')}.`,
+  'Permita el acceso a la cámara y encuadre el rostro, bien iluminado y de frente.',
+  `Presione ${B('Capturar rostro')} y luego ${B('Guardar registro')}. Se genera una plantilla facial (128 valores) que se guarda en el empleado.`,
+]);
+img('19-enrolamiento.png', 'Registro biométrico del rostro del empleado', 'narrow');
+h2('Registro de acceso en el kiosco');
+p(`Abra el kiosco desde ${B('Checador → Abrir modo kiosco')} o en la dirección ${B('/kiosk')} (idealmente en la tablet de recepción).`);
+ol([
+  'El colaborador se coloca frente a la cámara.',
+  'El sistema detecta el rostro, lo compara con los rostros enrolados e identifica al empleado.',
+  `Se registra automáticamente la ${B('entrada')} o ${B('salida')} (según la última marca del día) y se muestra la confirmación con nombre, hora y estatus (Puntual / Retardo / Tiempo extra).`,
+]);
+img('17-kiosco-confirmacion.png', 'Confirmación que ve el empleado al registrar su acceso', 'narrow');
+note(`${B('Respaldo:')} si la cámara no está disponible, el kiosco ofrece un ${B('registro manual')} por selección de nombre.`);
+note(`${B('Requisito técnico:')} la cámara del navegador funciona en ${B('localhost')} o sobre ${B('HTTPS')}. Para una tablet en red local, sirva la plataforma por HTTPS. La identificación en el checador Hikvision físico seguiría su propio flujo por ISAPI/SDK.`, true);
+sec();
+
+h1(14, 'Usuarios');
 p(`${B('Propósito.')} Administrar los usuarios de la plataforma (sólo Administrador).`);
 img('10-usuarios.png', 'Usuarios administrativos');
 ul(['Alta y edición de usuarios con nombre, correo, puesto, rol y contraseña.', 'Activación / desactivación de cuentas.']);
 note(`El plan Renta Operativa contempla ${B('hasta 5 usuarios administrativos')} activos.`);
 sec();
 
-h1(14, 'Bitácora');
+h1(15, 'Bitácora');
 p(`${B('Propósito.')} Trazabilidad de todas las operaciones: quién hizo qué, cuándo y con qué detalle/motivo.`);
 img('11-bitacora.png', 'Bitácora de trazabilidad');
 p('Puede filtrarse por entidad (asistencia, incidencias, horas extra, periodo, empleado, etc.). Registra altas, correcciones, autorizaciones, rechazos, sincronizaciones, cierres y exportaciones.');
 sec();
 
-h1(15, 'Referencia: motor de reglas');
+h1(16, 'Referencia: motor de reglas');
 p('Para cada empleado y día, el sistema determina el estatus así:');
 ol(['Si hay una incidencia autorizada que cubre el día, ese es el estatus (vacaciones, permiso, incapacidad, etc.).', 'Si no es día laborable del horario → Descanso.', 'Sin checadas en día laborable → Falta. Una sola checada → Omisión.', `Con entrada y salida se compara la entrada contra la tolerancia: dentro → ${B('Asistencia')}; pasada la tolerancia y hasta el umbral → ${B('Retardo')}; más allá del umbral → ${B('Falta')}.`, 'El tiempo extra son los minutos tras la salida programada (con umbral y bloque mínimo).']);
 p(`${B('Bono de puntualidad.')} Un empleado conserva el bono del periodo si no excede los retardos permitidos, no tiene faltas injustificadas ni omisiones.`);
 sec();
 
-h1(16, 'Uso en dispositivos móviles');
+h1(17, 'Uso en dispositivos móviles');
 p('La plataforma es responsiva. En pantallas pequeñas la barra lateral se oculta y se abre con el botón de menú (☰); los indicadores y tablas se reorganizan en una sola columna.');
 img('14-movil-tablero.png', 'Tablero en vista móvil', 'phone');
 sec();
 
-h1(17, 'Preguntas frecuentes');
+h1(18, 'Preguntas frecuentes');
 table(['Situación', 'Solución'], [['No veo las checadas de un empleado', 'Verifique que el empleado tenga checador e ID asignados y sincronice el rango de fechas correcto en la pantalla Checador.'], ['Un día aparece como Falta pero el empleado asistió', 'Revise si registró ambas checadas; si sólo hay una será Omisión. Corrija el registro con un motivo, o registre la incidencia correspondiente.'], ['No puedo autorizar una incidencia', 'La autorización de incidencias corresponde al Contador general o al Administrador.'], ['No me deja exportar a NOI', 'Existen incidencias u horas extra pendientes de autorizar. Autorícelas o fuerce la exportación al confirmar.'], ['No puedo corregir un día', 'Probablemente el periodo está cerrado. Un Contador/Administrador puede reabrirlo.'], ['¿Puedo agregar más usuarios?', 'Sí, hasta 5 usuarios administrativos activos en el plan Renta Operativa.']]);
 sec();
 
-h1(18, 'Glosario');
+h1(19, 'Glosario');
 table(['Término', 'Definición'], [['Checada', 'Registro de entrada o salida capturado por el checador.'], ['Tolerancia', 'Minutos de gracia tras la hora de entrada antes de contar retardo.'], ['Omisión', 'Día con una sola checada (falta entrada o salida).'], ['Incidencia', 'Evento que justifica o modifica la asistencia (vacaciones, permiso, incapacidad…).'], ['Periodo', 'Intervalo de nómina (por ejemplo, una quincena).'], ['Movimiento NOI', 'Concepto consolidado (percepción/deducción) que se exporta a Aspel NOI.'], ['Bitácora', 'Registro de auditoría de todas las operaciones.']]);
 sec();
 
-h1(19, 'Anexo: requisitos e instalación');
+h1(20, 'Anexo: requisitos e instalación');
 p('La plataforma es una aplicación web (Node.js + Express) con una interfaz servida por el propio servidor. No requiere instalación en el equipo del usuario final, sólo un navegador moderno.');
 h2('Puesta en marcha (equipo servidor)');
 ol(['Requiere Node.js 20 o superior.', `En la carpeta del proyecto: ${B('npm install')} y luego ${B('npm start')}.`, `Abrir ${B('http://localhost:3000')}. En el primer arranque se cargan los datos demostrativos.`]);
