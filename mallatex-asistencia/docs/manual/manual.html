@@ -129,6 +129,17 @@
 <h2>Cerrar y reabrir el periodo</h2>
 <ul><li><b>Cerrar periodo:</b> bloquea correcciones. Si hay pendientes, pide confirmación.</li><li><b>Reabrir</b> (Contador/Administrador): vuelve el periodo a Abierto.</li><li><b>+ Periodo:</b> crea un nuevo periodo indicando nombre y fechas.</li></ul>
 <div class="page-break"></div>
+<h2>9.1 Percepciones variables (kilometraje, costura por m², comisiones)</h2>
+<p><b>Propósito.</b> Administrar pagos que <b>no dependen del reloj checador</b> sino de una cantidad capturada por periodo: el <b>bono por kilometraje</b> del conductor, la <b>costura extra por metro cuadrado</b> del operador de producción y la <b>comisión sobre ventas</b> del vendedor. Se abre en <b>Nómina → Percepciones variables</b>.</p>
+<figure class="tall"><img src="../screenshots/30-percepciones-variables.png"/><figcaption>Percepciones variables: capturas del periodo y catálogo de conceptos</figcaption></figure>
+<h2>Conceptos variables</h2>
+<p>Cada tipo de pago es un concepto configurable con su número de Aspel NOI y su forma de cálculo:</p>
+<table><thead><tr><th>Forma de cálculo</th><th>Cómo se obtiene el importe</th><th>Ejemplo</th></tr></thead><tbody><tr><td><b>Tarifa por unidad</b></td><td>cantidad × tarifa</td><td>640 km × $2.50 = $1,600</td></tr><tr><td><b>Porcentaje sobre base</b></td><td>base × (porcentaje ÷ 100)</td><td>$92,000 × 3 % = $2,760</td></tr><tr><td><b>Importe directo</b></td><td>se captura el importe ya calculado</td><td>—</td></tr></tbody></table>
+<p>Con <b>+ Concepto</b> (Contador/Administrador) se crea un concepto indicando nombre, número NOI, forma de cálculo, unidad (km, m², $ ventas…), tarifa/porcentaje y el área sugerida.</p>
+<h2>Capturar una percepción</h2>
+<ol><li>Con el periodo <b>Abierto</b>, presione <b>+ Captura</b>.</li><li>Elija el empleado y el concepto.</li><li>Escriba la <b>cantidad</b> (kilómetros, metros cuadrados o monto de ventas). El importe se calcula en vivo.</li><li>Opcional: indique una <b>tarifa o porcentaje distinto</b> para ese empleado (excepción puntual); si se deja vacío, se usa la del concepto.</li><li>Guarde. La captura aparece en la tabla del periodo.</li></ol>
+<div class="note ">Los importes capturados se <b>suman a los movimientos calculados por asistencia</b> y viajan en la misma exportación a Aspel NOI. Sólo se capturan en periodos <b>abiertos</b>; al cerrar el periodo quedan bloqueadas.</div>
+<div class="page-break"></div>
 <h1 id="s10"><span class="num">10</span> Empleados</h1>
 <p><b>Propósito.</b> Catálogo del personal, con su relación (clave) en Aspel NOI y su identificador en el checador.</p>
 <figure class="tall"><img src="../screenshots/07-empleados.png"/><figcaption>Catálogo de empleados</figcaption></figure>

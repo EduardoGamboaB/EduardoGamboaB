@@ -129,6 +129,18 @@ h2('Cerrar y reabrir el periodo');
 ul([`${B('Cerrar periodo:')} bloquea correcciones. Si hay pendientes, pide confirmación.`, `${B('Reabrir')} (Contador/Administrador): vuelve el periodo a Abierto.`, `${B('+ Periodo:')} crea un nuevo periodo indicando nombre y fechas.`]);
 sec();
 
+h2('9.1 Percepciones variables (kilometraje, costura por m², comisiones)');
+p(`${B('Propósito.')} Administrar pagos que ${B('no dependen del reloj checador')} sino de una cantidad capturada por periodo: el ${B('bono por kilometraje')} del conductor, la ${B('costura extra por metro cuadrado')} del operador de producción y la ${B('comisión sobre ventas')} del vendedor. Se abre en ${B('Nómina → Percepciones variables')}.`);
+img('30-percepciones-variables.png', 'Percepciones variables: capturas del periodo y catálogo de conceptos', 'tall');
+h2('Conceptos variables');
+p('Cada tipo de pago es un concepto configurable con su número de Aspel NOI y su forma de cálculo:');
+table(['Forma de cálculo', 'Cómo se obtiene el importe', 'Ejemplo'], [[`${B('Tarifa por unidad')}`, 'cantidad × tarifa', '640 km × $2.50 = $1,600'], [`${B('Porcentaje sobre base')}`, 'base × (porcentaje ÷ 100)', '$92,000 × 3 % = $2,760'], [`${B('Importe directo')}`, 'se captura el importe ya calculado', '—']]);
+p(`Con ${B('+ Concepto')} (Contador/Administrador) se crea un concepto indicando nombre, número NOI, forma de cálculo, unidad (km, m², $ ventas…), tarifa/porcentaje y el área sugerida.`);
+h2('Capturar una percepción');
+ol([`Con el periodo ${B('Abierto')}, presione ${B('+ Captura')}.`, 'Elija el empleado y el concepto.', `Escriba la ${B('cantidad')} (kilómetros, metros cuadrados o monto de ventas). El importe se calcula en vivo.`, `Opcional: indique una ${B('tarifa o porcentaje distinto')} para ese empleado (excepción puntual); si se deja vacío, se usa la del concepto.`, `Guarde. La captura aparece en la tabla del periodo.`]);
+note(`Los importes capturados se ${B('suman a los movimientos calculados por asistencia')} y viajan en la misma exportación a Aspel NOI. Sólo se capturan en periodos ${B('abiertos')}; al cerrar el periodo quedan bloqueadas.`);
+sec();
+
 h1(10, 'Empleados');
 p(`${B('Propósito.')} Catálogo del personal, con su relación (clave) en Aspel NOI y su identificador en el checador.`);
 img('07-empleados.png', 'Catálogo de empleados', 'tall');

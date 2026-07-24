@@ -4,7 +4,7 @@
 
 import * as db from './db.js';
 import { hashPassword, ROLES } from './auth.js';
-import { defaultNoiConcepts } from './noi.js';
+import { defaultNoiConcepts, defaultVariableConcepts, computeVariableImporte } from './noi.js';
 import { syncDevice } from './checador.js';
 import { reprocess } from './rules.js';
 import { logSystem } from './audit.js';
@@ -91,9 +91,10 @@ export function seed({ reset = false } = {}) {
     ['MTX010', 'Karla Jiménez Aguilar', 'Ventas', 'Coordinadora comercial', turnoOficina.id, 640.0],
     ['MTX011', 'Ricardo Vázquez Luna', 'Producción', 'Operador de empaque', turnoProduccion.id, 410.0],
     ['MTX012', 'Paola Andrea Reyes Campos', 'Administración', 'Asistente de dirección', turnoOficina.id, 560.0],
+    ['MTX013', 'Fernando Aguirre Salas', 'Reparto', 'Conductor de reparto', turnoMatutino.id, 480.0],
   ];
   // Años de antigüedad variados (para saldos de vacaciones distintos)
-  const hireYears = [2019, 2015, 2012, 2021, 2023, 2018, 2022, 2020, 2010, 2017, 2024, 2016];
+  const hireYears = [2019, 2015, 2012, 2021, 2023, 2018, 2022, 2020, 2010, 2017, 2024, 2016, 2019];
   let idx = 0;
   for (const [code, name, department, position, scheduleId, dailySalary] of employees) {
     idx++;
@@ -118,6 +119,13 @@ export function seed({ reset = false } = {}) {
   // ----- Conceptos NOI -----
   for (const c of defaultNoiConcepts()) db.insert('noiConcepts', c);
 
+  // ----- Conceptos de percepciones variables (kilometraje, costura m², comisión) -----
+  const varConcepts = {};
+  for (const c of defaultVariableConcepts()) {
+    const created = db.insert('variableConcepts', c);
+    varConcepts[created.key] = created;
+  }
+
   // ----- Periodos de nómina (quincenal) -----
   db.insert('periods', {
     name: '1ª quincena julio 2026', startDate: '2026-07-01', endDate: '2026-07-15',
@@ -131,8 +139,32 @@ export function seed({ reset = false } = {}) {
   // ----- Descargar checadas simuladas (Hikvision) del 1 al 22 de julio -----
   syncDevice(device.id, { startDate: '2026-07-01', endDate: '2026-07-22', profile: 'realista' });
 
-  // ----- Algunas incidencias de ejemplo -----
+  // ----- Capturas de percepciones variables del periodo en curso -----
   const emps = db.all('employees');
+  const byCode = Object.fromEntries(emps.map((e) => [e.code, e]));
+  const captura = (code, conceptKey, cantidad, note) => {
+    const emp = byCode[code];
+    const concept = varConcepts[conceptKey];
+    if (!emp || !concept) return;
+    db.insert('variableEntries', {
+      periodId: current.id,
+      employeeId: emp.id,
+      conceptId: concept.id,
+      cantidad,
+      rate: null, // usa la tarifa/porcentaje del concepto
+      importe: computeVariableImporte(concept, cantidad, null),
+      note: note || '',
+      createdBy: 'Sofía Herrera',
+      createdAt: '2026-07-22T12:00:00.000Z',
+    });
+  };
+  captura('MTX013', 'km_conductor', 640, 'Ruta reparto quincenal');       // 640 km × 2.5 = 1600
+  captura('MTX001', 'costura_m2', 45, 'Costura extra pedido especial');   // 45 m² × 12 = 540
+  captura('MTX002', 'costura_m2', 32, 'Acabado adicional');               // 32 m² × 12 = 384
+  captura('MTX006', 'comision_ventas', 92000, 'Ventas del periodo');      // 92,000 × 3% = 2760
+  captura('MTX010', 'comision_ventas', 118000, 'Ventas del periodo');     // 118,000 × 3% = 3540
+
+  // ----- Algunas incidencias de ejemplo -----
   db.insert('incidents', {
     employeeId: emps[1].id, type: 'vacaciones',
     startDate: '2026-07-20', endDate: '2026-07-24',

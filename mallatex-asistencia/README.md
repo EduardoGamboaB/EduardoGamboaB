@@ -53,6 +53,29 @@ Además, transversalmente:
 - **Usuarios y roles**: Administrador, Contador general y Responsable de nómina (hasta 5 usuarios administrativos, plan *Renta Operativa*).
 - **Cierre de periodo**: exige autorizar los movimientos pendientes y bloquea correcciones posteriores.
 
+## 💲 Percepciones variables (kilometraje, costura por m², comisiones)
+
+Además de la asistencia, la plataforma administra **percepciones que no dependen del
+reloj** sino de una cantidad capturada por periodo. Cada tipo de pago es un **concepto
+configurable** con su número de Aspel NOI y su forma de cálculo:
+
+| Caso de uso | Concepto | Cálculo | Ejemplo |
+|-------------|----------|---------|---------|
+| **Conductor** — pago por kilometraje | Bono por kilometraje | `cantidad × tarifa` | 640 km × $2.50 = **$1,600** |
+| **Operador de producción** — costura extra | Costura extra por m² | `cantidad × tarifa` | 45 m² × $12 = **$540** |
+| **Vendedor** — comisión | Comisión sobre ventas | `base × %` | $92,000 × 3 % = **$2,760** |
+
+- **Catálogo de conceptos**: modo de cálculo (`tarifa por unidad`, `porcentaje sobre base`
+  o `importe directo`), unidad, tarifa/porcentaje por defecto, número de concepto NOI y área.
+- **Captura por periodo** (*Nómina → Percepciones variables*): se registra la cantidad por
+  empleado; el importe se calcula en vivo. Se admite una **tarifa/porcentaje distinto por
+  empleado** (excepción puntual) sin cambiar el concepto.
+- **Integración con NOI**: estos importes se suman a los movimientos calculados por
+  asistencia y viajan en la misma interfaz de exportación (`.txt` / `.csv`).
+- Sólo se capturan en **periodos abiertos**; al cerrar el periodo quedan bloqueadas.
+
+![Percepciones variables](docs/screenshots/30-percepciones-variables.png)
+
 ## 📷 Reconocimiento facial por cámara (modo kiosco)
 
 El registro de entrada/salida del empleado se hace por **reconocimiento facial con la
@@ -95,8 +118,9 @@ npm start
 ```
 
 Abre <http://localhost:3000>. En el primer arranque se cargan automáticamente los
-**datos demostrativos de Mallatex** (12 empleados, 3 turnos, checador Hikvision,
-~6 semanas de checadas simuladas y dos periodos de nómina).
+**datos demostrativos de Mallatex** (13 empleados —incluido un conductor de reparto—,
+3 turnos, checador Hikvision, ~6 semanas de checadas simuladas, dos periodos de nómina
+y capturas de percepciones variables de ejemplo).
 
 Para reiniciar los datos:
 

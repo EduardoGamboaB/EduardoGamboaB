@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import catalogRoutes from './routes/catalog.js';
 import operationsRoutes from './routes/operations.js';
 import periodRoutes from './routes/periods.js';
+import variablePayRoutes from './routes/variablepay.js';
 import auditRoutes from './routes/audit.js';
 import kioskRoutes from './routes/kiosk.js';
 import portalRoutes from './routes/portal.js';
@@ -48,6 +49,7 @@ app.use('/api/portal', requireAuth, portalRoutes);
 app.use('/api', requireAuth, adminOnly, catalogRoutes);
 app.use('/api', requireAuth, adminOnly, operationsRoutes);
 app.use('/api', requireAuth, adminOnly, periodRoutes);
+app.use('/api', requireAuth, adminOnly, variablePayRoutes);
 app.use('/api', requireAuth, adminOnly, auditRoutes);
 app.use('/api', requireAuth, adminOnly, rhRoutes);
 

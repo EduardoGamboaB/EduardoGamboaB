@@ -82,9 +82,9 @@ test('roles: administrador SÍ puede listar usuarios', async () => {
   assert.ok(!('password' in data[0]), 'la contraseña no debe exponerse');
 });
 
-test('catálogo: hay 12 empleados demo mapeados a NOI', async () => {
+test('catálogo: hay 13 empleados demo mapeados a NOI', async () => {
   const { data } = await json('GET', '/api/employees?active=true', { token: tokens.nomina });
-  assert.equal(data.length, 12);
+  assert.equal(data.length, 13);
   assert.ok(data.every((e) => e.noiKey), 'todo empleado tiene clave NOI');
 });
 
@@ -165,6 +165,41 @@ test('horas extra: autorización con horas ajustadas', async () => {
   assert.equal(auth.data.authorizedMinutes, 60);
 });
 
+test('percepciones variables: catálogo demo y capturas del periodo', async () => {
+  const concepts = (await json('GET', '/api/variable-concepts', { token: tokens.nomina })).data;
+  assert.ok(concepts.find((c) => c.key === 'km_conductor' && c.modo === 'tarifa'), 'concepto de kilometraje');
+  assert.ok(concepts.find((c) => c.key === 'costura_m2' && c.modo === 'tarifa'), 'concepto de costura por m²');
+  assert.ok(concepts.find((c) => c.key === 'comision_ventas' && c.modo === 'porcentaje'), 'concepto de comisión');
+  const entries = (await json('GET', '/api/variable-entries?periodId=2', { token: tokens.nomina })).data;
+  assert.ok(entries.length >= 5, 'hay capturas demo del periodo');
+  const comision = entries.find((e) => e.conceptKey === 'comision_ventas');
+  assert.ok(comision && comision.importe > 0, 'la comisión tiene importe calculado');
+});
+
+test('percepciones variables: captura, override de tarifa y reflejo en NOI', async () => {
+  const emp = (await json('GET', '/api/employees?active=true', { token: tokens.nomina })).data.find((e) => e.code === 'MTX013');
+  const km = (await json('GET', '/api/variable-concepts', { token: tokens.nomina })).data.find((c) => c.key === 'km_conductor');
+  // captura: 100 km × 2.5 = 250
+  const created = await json('POST', '/api/variable-entries', { token: tokens.nomina, body: { periodId: 2, employeeId: emp.id, conceptId: km.id, cantidad: 100 } });
+  assert.equal(created.status, 201);
+  assert.equal(created.data.importe, 250);
+  // edición con tarifa distinta (excepción por empleado): 100 km × 3 = 300
+  const upd = await json('PUT', `/api/variable-entries/${created.data.id}`, { token: tokens.nomina, body: { rate: 3 } });
+  assert.equal(upd.data.importe, 300);
+  // aparece en la vista previa de movimientos NOI del periodo
+  const prev = (await json('GET', '/api/periods/2/noi/preview', { token: tokens.contador })).data;
+  assert.ok(prev.movements.some((m) => m.noiNumber === km.noiNumber && m.employeeId === emp.id), 'el movimiento variable llega a NOI');
+  // limpieza para no alterar el resto del flujo
+  const del = await json('DELETE', `/api/variable-entries/${created.data.id}`, { token: tokens.nomina });
+  assert.equal(del.status, 200);
+});
+
+test('percepciones variables: un concepto con capturas no se elimina (409)', async () => {
+  const inUse = (await json('GET', '/api/variable-concepts', { token: tokens.contador })).data.find((c) => c.key === 'comision_ventas');
+  const del = await json('DELETE', `/api/variable-concepts/${inUse.id}`, { token: tokens.contador });
+  assert.equal(del.status, 409);
+});
+
 test('periodo: no se cierra con pendientes salvo forzado', async () => {
   const blocked = await json('POST', '/api/periods/2/close', { token: tokens.contador, body: {} });
   assert.equal(blocked.status, 409);
@@ -205,4 +240,12 @@ test('NOI: los conceptos están mapeados y son configurables', async () => {
   const concepts = (await json('GET', '/api/noi/concepts', { token: tokens.contador })).data;
   assert.ok(concepts.find((c) => c.key === 'falta' && c.tipo === 'D'));
   assert.ok(concepts.find((c) => c.key === 'bono_puntualidad' && c.tipo === 'P'));
+});
+
+test('percepciones variables: periodo cerrado rechaza captura (409)', async () => {
+  // El periodo 2 quedó cerrado por el flujo completo anterior.
+  const km = (await json('GET', '/api/variable-concepts', { token: tokens.nomina })).data.find((c) => c.key === 'km_conductor');
+  const emp = (await json('GET', '/api/employees?active=true', { token: tokens.nomina })).data[0];
+  const r = await json('POST', '/api/variable-entries', { token: tokens.nomina, body: { periodId: 2, employeeId: emp.id, conceptId: km.id, cantidad: 50 } });
+  assert.equal(r.status, 409);
 });

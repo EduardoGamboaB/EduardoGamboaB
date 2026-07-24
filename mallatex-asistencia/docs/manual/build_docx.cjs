@@ -158,6 +158,21 @@ body.push(H2('Cerrar y reabrir el periodo'));
 body.push(bullet([B('Cerrar periodo: '), T('bloquea correcciones. Si hay pendientes, pide confirmación.')]));
 body.push(bullet([B('Reabrir '), T('(Contador/Administrador): vuelve el periodo a Abierto.')]));
 
+body.push(pageBreak(), H2('9.1 Percepciones variables (kilometraje, costura por m², comisiones)'));
+S([B('Propósito. '), T('Administrar pagos que no dependen del reloj checador sino de una cantidad capturada por periodo: el bono por kilometraje del conductor, la costura extra por metro cuadrado del operador de producción y la comisión sobre ventas del vendedor. Se abre en '), B('Nómina → Percepciones variables'), T('.')]);
+body.push(...image('30-percepciones-variables.png', { caption: 'Percepciones variables: capturas del periodo y catálogo de conceptos', maxH: 700 }));
+body.push(H2('Conceptos variables'));
+S([T('Cada tipo de pago es un concepto configurable con su número de Aspel NOI y su forma de cálculo:')]);
+body.push(table(['Forma de cálculo', 'Cómo se obtiene el importe', 'Ejemplo'], [['Tarifa por unidad', 'cantidad × tarifa', '640 km × $2.50 = $1,600'], ['Porcentaje sobre base', 'base × (porcentaje ÷ 100)', '$92,000 × 3 % = $2,760'], ['Importe directo', 'se captura el importe ya calculado', '—']], [2600, 3200, 2400]));
+S([T('Con '), B('+ Concepto'), T(' (Contador/Administrador) se crea un concepto con nombre, número NOI, forma de cálculo, unidad (km, m², $ ventas…), tarifa/porcentaje y área sugerida.')]);
+body.push(H2('Capturar una percepción'));
+body.push(step(1, [T('Con el periodo '), B('Abierto'), T(', presione '), B('+ Captura'), T('.')]));
+body.push(step(2, 'Elija el empleado y el concepto.'));
+body.push(step(3, [T('Escriba la '), B('cantidad'), T(' (kilómetros, metros cuadrados o monto de ventas). El importe se calcula en vivo.')]));
+body.push(step(4, [T('Opcional: indique una '), B('tarifa o porcentaje distinto'), T(' para ese empleado; si se deja vacío, se usa la del concepto.')]));
+body.push(step(5, 'Guarde. La captura aparece en la tabla del periodo.'));
+body.push(callout([T('Los importes capturados se '), B('suman a los movimientos calculados por asistencia'), T(' y viajan en la misma exportación a Aspel NOI. Sólo se capturan en periodos abiertos; al cerrar el periodo quedan bloqueadas.')]));
+
 body.push(pageBreak(), H1('10. Empleados'));
 S([B('Propósito. '), T('Catálogo del personal, con su relación (clave) en Aspel NOI y su identificador en el checador.')]);
 body.push(...image('07-empleados.png', { caption: 'Catálogo de empleados', maxH: 620 }));
