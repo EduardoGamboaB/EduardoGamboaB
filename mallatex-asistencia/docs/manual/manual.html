@@ -1,0 +1,233 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>
+  :root{ --red:#ED3237; --black:#232121; --ink:#3f3d3d; --gray:#606062; --line:#d2d3d5; --line2:#eeeef0; }
+  *{ box-sizing:border-box; } html,body{ margin:0; }
+  body{ font-family:'Segoe UI',system-ui,Arial,sans-serif; color:var(--ink); font-size:12.5px; line-height:1.55; }
+  h1{ color:var(--red); font-size:22px; margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--red); }
+  h1 .num{ display:inline-grid; place-items:center; width:30px; height:30px; background:var(--red); color:#fff; border-radius:8px; font-size:15px; margin-right:8px; vertical-align:middle; }
+  h2{ color:var(--black); font-size:15px; margin:18px 0 7px; }
+  p{ margin:0 0 9px; } b{ color:var(--black); }
+  ul,ol{ margin:0 0 10px; padding-left:20px; } li{ margin:0 0 4px; }
+  .note{ background:#fbf3f3; border-left:3px solid var(--red); padding:9px 12px; border-radius:0 6px 6px 0; margin:8px 0 12px; }
+  .note.warn{ background:#fff7e6; border-left-color:#d97706; }
+  table{ width:100%; border-collapse:collapse; margin:6px 0 14px; font-size:11.5px; }
+  th{ background:var(--red); color:#fff; text-align:left; padding:7px 10px; font-weight:600; }
+  td{ padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:nth-child(even){ background:var(--line2); }
+  figure{ margin:10px 0 16px; text-align:center; }
+  figure img{ max-width:100%; border:1px solid var(--line); border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  figure.narrow img{ max-width:66%; } figure.tall img{ max-height:820px; } figure.phone img{ max-width:250px; }
+  figcaption{ color:var(--gray); font-style:italic; font-size:10.5px; margin-top:5px; }
+  .tag{ display:inline-block; padding:1px 8px; border-radius:5px; font-weight:700; font-size:10.5px; }
+  .tag.ok{ background:#f0fdf4; color:#15803d; } .tag.warn{ background:#fffbeb; color:#b45309; }
+  .tag.err{ background:#fdeced; color:#b91c1c; } .tag.purple{ background:#f5f3ff; color:#6d28d9; } .tag.gray{ background:#f4f4f5; color:#71717a; }
+  .page-break{ page-break-after:always; }
+  .cover{ height:960px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .cover-logo{ width:120px; height:120px; margin-bottom:20px; }
+  .cover-imago{ width:440px; max-width:72%; margin-bottom:30px; }
+  .cover-brand{ font-size:46px; font-weight:800; color:var(--red); letter-spacing:2px; }
+  .cover-sub{ font-size:18px; color:var(--black); margin-bottom:34px; }
+  .cover-title{ font-size:34px; font-weight:800; color:var(--black); border-top:3px solid var(--red); border-bottom:3px solid var(--red); padding:10px 26px; }
+  .cover-desc{ color:var(--gray); font-size:15px; margin-top:26px; max-width:460px; }
+  .cover-meta{ margin-top:120px; color:var(--ink); font-size:14px; }
+  .cover-foot{ margin-top:6px; color:var(--gray); font-size:14px; } .cover-foot b{ color:var(--black); }
+  .toc-item{ display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px dotted var(--line); font-size:13px; }
+  .toc-item span{ color:var(--black); }
+  .end{ margin-top:40px; padding-top:14px; border-top:2px solid var(--red); text-align:center; color:var(--gray); font-size:12px; } .end b{ color:var(--black); }
+</style></head><body><section class="cover">
+  <img class="cover-imago" src="../manual-assets/mallatex-logo.png"/>
+  <div class="cover-sub">Plataforma de Asistencia · Aspel NOI</div>
+  <div class="cover-title">MANUAL DE USUARIO</div>
+  <div class="cover-desc">Control de asistencia, incidencias, tiempo extra y exportación a nómina</div>
+  <div class="cover-meta">Versión 1.0 · Julio 2026</div>
+  <div class="cover-foot">powered by <b>Evorgyn</b></div>
+</section>
+<div class="page-break"></div>
+<h1 class="toc-title">Contenido</h1><nav class="toc"><div class="toc-item"><span>1. Introducción</span></div><div class="toc-item"><span>2. Conceptos clave</span></div><div class="toc-item"><span>3. Acceso al sistema</span></div><div class="toc-item"><span>4. Interfaz general</span></div><div class="toc-item"><span>5. Tablero</span></div><div class="toc-item"><span>6. Revisión de asistencia</span></div><div class="toc-item"><span>7. Faltas e incidencias</span></div><div class="toc-item"><span>8. Horas extra</span></div><div class="toc-item"><span>9. Periodos y NOI</span></div><div class="toc-item"><span>10. Empleados</span></div><div class="toc-item"><span>11. Horarios y reglas</span></div><div class="toc-item"><span>12. Checador</span></div><div class="toc-item"><span>13. Kiosco y reconocimiento facial</span></div><div class="toc-item"><span>14. Usuarios</span></div><div class="toc-item"><span>15. Bitácora</span></div><div class="toc-item"><span>16. Recursos Humanos (RH)</span></div><div class="toc-item"><span>17. Portal del empleado</span></div><div class="toc-item"><span>18. Referencia: motor de reglas</span></div><div class="toc-item"><span>19. Uso en dispositivos móviles</span></div><div class="toc-item"><span>20. Preguntas frecuentes</span></div><div class="toc-item"><span>21. Glosario</span></div><div class="toc-item"><span>22. Anexo: requisitos e instalación</span></div></nav>
+<div class="page-break"></div>
+<h1 id="s1"><span class="num">1</span> Introducción</h1>
+<p><b>Mallatex · Plataforma de Asistencia</b> es el sistema con el que Mallatex controla la asistencia de su personal y prepara la información de nómina. Funciona como una <b>capa de control entre el checador facial (Hikvision) y Aspel NOI</b> —el módulo de nómina del ERP de Aspel—, de modo que la información se <b>revisa y valida antes</b> de generar los movimientos de nómina.</p>
+<div class="note "><b>Principio clave:</b> la plataforma nunca envía registros crudos a Aspel NOI. Consolida sólo la información ya revisada y autorizada del periodo, y cada ajuste queda registrado en la bitácora con usuario, fecha y motivo.</div>
+<h2>¿A quién está dirigido este manual?</h2>
+<ul><li><b>Responsable de nómina:</b> revisión diaria, corrección, incidencias, horas extra y exportación.</li><li><b>Contador general:</b> autorización de incidencias y tiempo extra, cierre de periodo y catálogos.</li><li><b>Administrador:</b> configuración, reglas, usuarios y todo lo anterior.</li></ul>
+<h2>Beneficios</h2>
+<ul><li>Menos captura manual y menos dependencia de hojas firmadas.</li><li>Mayor precisión: las incidencias pasan por reglas, revisión y validación.</li><li>Trazabilidad completa de cada ajuste.</li><li>Cierre de nómina más ágil y una base lista para crecer por módulos.</li></ul>
+<div class="page-break"></div>
+<h1 id="s2"><span class="num">2</span> Conceptos clave</h1>
+<h2>Flujo operativo</h2>
+<p>Toda la operación sigue seis pasos, visibles también en el Tablero:</p>
+<table><thead><tr><th>#</th><th>Etapa</th><th>Descripción</th></tr></thead><tbody><tr><td>1</td><td>Captura facial</td><td>El colaborador registra entrada y salida en el checador.</td></tr><tr><td>2</td><td>Sincronización</td><td>La plataforma descarga las checadas y aplica horarios y reglas.</td></tr><tr><td>3</td><td>Revisión</td><td>Nómina visualiza asistencias, retardos, faltas y omisiones.</td></tr><tr><td>4</td><td>Corrección</td><td>Se clasifican vacaciones, permisos, incidencias y ajustes.</td></tr><tr><td>5</td><td>Autorización</td><td>Se validan las horas extra y se cierra el periodo.</td></tr><tr><td>6</td><td>Exportación NOI</td><td>Se genera la información compatible para su carga en Aspel NOI.</td></tr></tbody></table>
+<h2>Roles y permisos</h2>
+<table><thead><tr><th>Acción</th><th>Nómina</th><th>Contador</th><th>Admin</th></tr></thead><tbody><tr><td>Ver tablero, asistencia, reportes</td><td>✓</td><td>✓</td><td>✓</td></tr><tr><td>Sincronizar checador / reprocesar</td><td>✓</td><td>✓</td><td>✓</td></tr><tr><td>Corregir asistencia (con motivo)</td><td>✓</td><td>✓</td><td>✓</td></tr><tr><td>Registrar incidencias</td><td>✓</td><td>✓</td><td>✓</td></tr><tr><td>Autorizar / rechazar incidencias</td><td>—</td><td>✓</td><td>✓</td></tr><tr><td>Autorizar / rechazar horas extra</td><td>✓</td><td>✓</td><td>✓</td></tr><tr><td>Cerrar periodo</td><td>✓</td><td>✓</td><td>✓</td></tr><tr><td>Reabrir periodo</td><td>—</td><td>✓</td><td>✓</td></tr><tr><td>Empleados, horarios, conceptos NOI</td><td>—</td><td>✓</td><td>✓</td></tr><tr><td>Reglas globales y usuarios</td><td>—</td><td>—</td><td>✓</td></tr></tbody></table>
+<h2>Periodos de nómina</h2>
+<p>El trabajo se organiza por periodos (por ejemplo, quincenas). Un periodo puede estar <b>Abierto</b> (admite cambios) o <b>Cerrado</b> (bloqueado). El periodo activo se elige en la barra superior y determina lo que se muestra en cada pantalla.</p>
+<h2>Aspel NOI</h2>
+<p>Aspel NOI es el módulo de nómina del ERP de Aspel. La plataforma genera un archivo de interfaz con los movimientos del periodo, mapeados a los conceptos de NOI del cliente, listo para su carga.</p>
+<div class="page-break"></div>
+<h1 id="s3"><span class="num">3</span> Acceso al sistema</h1>
+<figure class=""><img src="../screenshots/01-login.png"/><figcaption>Pantalla de acceso</figcaption></figure>
+<h2>Iniciar sesión</h2>
+<ol><li>Abra la plataforma en su navegador (por ejemplo <b>http://localhost:3000</b>).</li><li>Escriba su correo y contraseña.</li><li>Presione <b>Entrar</b>. Será dirigido al Tablero.</li></ol>
+<p>Los botones de <b>Cuentas demo</b> (Administrador, Contador general, Nómina) rellenan las credenciales de prueba automáticamente.</p>
+<h2>Cuentas y roles de demostración</h2>
+<table><thead><tr><th>Rol</th><th>Correo</th><th>Contraseña</th></tr></thead><tbody><tr><td>Administrador</td><td>admin@mallatex.mx</td><td>mallatex2026</td></tr><tr><td>Contador general</td><td>contabilidad@mallatex.mx</td><td>mallatex2026</td></tr><tr><td>Responsable de nómina</td><td>nomina@mallatex.mx</td><td>mallatex2026</td></tr></tbody></table>
+<div class="note "><b>Cerrar sesión:</b> use el ícono de encendido (⏻) en la esquina superior derecha, junto a su nombre.</div>
+<div class="page-break"></div>
+<h1 id="s4"><span class="num">4</span> Interfaz general</h1>
+<h2>Barra lateral (navegación)</h2>
+<p>Agrupa los módulos en cuatro secciones. Las opciones visibles dependen de su rol.</p>
+<ul><li><b>Operación:</b> Tablero, Revisión de asistencia, Faltas e incidencias, Horas extra.</li><li><b>Nómina:</b> Periodos y NOI.</li><li><b>Catálogos:</b> Empleados, Horarios y reglas, Checador.</li><li><b>Administración:</b> Usuarios (sólo Administrador) y Bitácora.</li></ul>
+<p>Los contadores rojos junto a <b>Faltas e incidencias</b> y <b>Horas extra</b> indican cuántos elementos están pendientes de autorizar.</p>
+<h2>Barra superior</h2>
+<ul><li>Título de la pantalla actual y periodo en curso.</li><li><b>Selector de Periodo:</b> cambia el periodo de trabajo; todas las pantallas se actualizan al periodo elegido.</li><li>Identidad del usuario (nombre y rol) y botón para cerrar sesión.</li></ul>
+<div class="page-break"></div>
+<h1 id="s5"><span class="num">5</span> Tablero</h1>
+<p><b>Propósito.</b> Ofrece una vista ejecutiva del periodo: indicadores, distribución de asistencia, estado del checador y pendientes.</p>
+<figure class=""><img src="../screenshots/02-tablero.png"/><figcaption>Tablero principal</figcaption></figure>
+<h2>Elementos de la pantalla</h2>
+<ul><li><b>Indicadores (KPIs):</b> empleados activos, asistencias, faltas/omisiones y horas extra autorizadas.</li><li><b>Distribución de asistencia:</b> barras con el conteo de cada estatus del periodo.</li><li><b>Checador:</b> modelo del dispositivo y fecha de la última sincronización, con acceso directo.</li><li><b>Pendientes por autorizar:</b> incidencias, horas extra y empleados elegibles a bono.</li><li><b>Flujo operativo:</b> recordatorio visual de las seis etapas del proceso.</li></ul>
+<div class="page-break"></div>
+<h1 id="s6"><span class="num">6</span> Revisión de asistencia</h1>
+<p><b>Propósito.</b> Es la pantalla central de trabajo diario: muestra el estatus calculado de cada empleado por día y permite corregirlo.</p>
+<figure class=""><img src="../screenshots/03-revision-asistencia.png"/><figcaption>Revisión de asistencia diaria</figcaption></figure>
+<h2>Filtros disponibles</h2>
+<ul><li>Rango de fechas (Desde / Hasta), Área, Estatus y búsqueda por nombre o clave.</li></ul>
+<h2>Estatus de asistencia</h2>
+<table><thead><tr><th>Estatus</th><th>Significado</th></tr></thead><tbody><tr><td><span class="tag ok">Asistencia</span></td><td>Entrada dentro de la tolerancia del turno.</td></tr><tr><td><span class="tag warn">Retardo</span></td><td>Entrada después de la tolerancia y hasta el umbral de retardo.</td></tr><tr><td><span class="tag err">Falta</span></td><td>Sin checadas en día laborable o retardo mayor al umbral.</td></tr><tr><td><span class="tag warn">Omisión</span></td><td>Registró una sola checada (falta entrada o salida).</td></tr><tr><td><span class="tag purple">Vacaciones / Permiso / Incapacidad</span></td><td>Proviene de una incidencia autorizada.</td></tr><tr><td><span class="tag gray">Descanso</span></td><td>Día no laborable según el horario.</td></tr></tbody></table>
+<h2>Corregir un registro</h2>
+<ol><li>Presione <b>Corregir</b> en la fila deseada.</li><li>Seleccione el nuevo estatus y, si aplica, ajuste los minutos de tiempo extra.</li><li><b>Escriba el motivo (obligatorio)</b> y guarde. El registro se marca como “✎ manual”.</li></ol>
+<div class="note ">Toda corrección exige un motivo y queda en la <b>bitácora</b>. En un periodo <b>cerrado</b> no se permiten correcciones.</div>
+<h2>Reprocesar reglas</h2>
+<p>El botón <b>Reprocesar reglas</b> recalcula la asistencia del rango con las reglas y checadas vigentes, respetando las correcciones manuales.</p>
+<div class="page-break"></div>
+<h1 id="s7"><span class="num">7</span> Faltas e incidencias</h1>
+<p><b>Propósito.</b> Registrar y autorizar vacaciones, permisos, incapacidades, faltas justificadas y días festivos. Una incidencia autorizada tiene prioridad sobre el cálculo automático.</p>
+<figure class=""><img src="../screenshots/04-incidencias.png"/><figcaption>Listado de incidencias</figcaption></figure>
+<h2>Tipos de incidencia</h2>
+<table><thead><tr><th>Tipo</th><th>Uso</th></tr></thead><tbody><tr><td>Vacaciones</td><td>Días de vacaciones autorizados.</td></tr><tr><td>Permiso con goce</td><td>Ausencia justificada con goce de sueldo.</td></tr><tr><td>Permiso sin goce</td><td>Ausencia sin goce (deducción).</td></tr><tr><td>Incapacidad</td><td>Incapacidad IMSS.</td></tr><tr><td>Falta justificada</td><td>Falta con justificación aceptada.</td></tr><tr><td>Día festivo / Descanso</td><td>Marca el día como festivo o de descanso.</td></tr></tbody></table>
+<h2>Registrar una incidencia</h2>
+<ol><li>Presione <b>+ Nueva incidencia</b>.</li><li>Elija empleado, tipo, fechas (desde/hasta) y motivo.</li><li>Registre. La incidencia queda en estado <b>Pendiente</b>.</li></ol>
+<figure class="narrow"><img src="../screenshots/12-modal-incidencia.png"/><figcaption>Alta de una nueva incidencia</figcaption></figure>
+<h2>Autorizar o rechazar</h2>
+<ul><li><b>Autorizar</b> (Contador/Administrador): la incidencia se refleja de inmediato en la asistencia del rango.</li><li><b>Rechazar:</b> solicita un motivo y no afecta la asistencia.</li><li><b>Eliminar:</b> disponible para incidencias no procesadas.</li></ul>
+<div class="page-break"></div>
+<h1 id="s8"><span class="num">8</span> Horas extra</h1>
+<p><b>Propósito.</b> Revisar y autorizar el tiempo extra calculado a partir de las checadas. Nada se exporta a NOI sin autorización.</p>
+<figure class=""><img src="../screenshots/05-horas-extra.png"/><figcaption>Autorización de tiempo extra</figcaption></figure>
+<h2>Cómo se calcula</h2>
+<p>El sistema propone el tiempo extra como los minutos trabajados después de la salida programada (sujeto a un umbral y un bloque mínimo configurables). El trabajo en día de descanso se contabiliza como tiempo extra.</p>
+<h2>Autorizar tiempo extra</h2>
+<ol><li>Filtre por estado (Pendientes) y por rango de fechas.</li><li>Ajuste, si es necesario, las <b>horas a autorizar</b> y el <b>tipo</b> (Ordinario o Doble/Triple).</li><li>Presione <b>Autorizar</b> (o <b>Rechazar</b>). El registro queda validado y con responsable.</li></ol>
+<div class="page-break"></div>
+<h1 id="s9"><span class="num">9</span> Periodos y NOI</h1>
+<p><b>Propósito.</b> Consolidar el periodo, revisar el resumen por empleado, generar los movimientos para Aspel NOI, exportarlos y cerrar el periodo.</p>
+<figure class="tall"><img src="../screenshots/06-periodos-noi.png"/><figcaption>Resumen del periodo, movimientos NOI y conceptos</figcaption></figure>
+<h2>Secciones</h2>
+<ul><li><b>Encabezado del periodo:</b> estado, fechas y botones de Cerrar/Reabrir y + Periodo. Muestra una alerta con los pendientes por autorizar.</li><li><b>Resumen por empleado:</b> asistencias, retardos, faltas, incidencias, tiempo extra y elegibilidad de bono.</li><li><b>Movimientos para NOI:</b> cada movimiento con clave, concepto, tipo (Percepción/Deducción/Informativo), cantidad e importe, con total.</li><li><b>Conceptos NOI:</b> mapeo editable de cada movimiento al número de concepto de Aspel NOI.</li></ul>
+<h2>Exportar a NOI</h2>
+<ol><li>Verifique que no haya pendientes (la alerta lo indica).</li><li>Presione <b>Exportar .txt</b> o <b>Exportar .csv</b>.</li><li>Se descarga el archivo de interfaz listo para cargar en Aspel NOI.</li></ol>
+<div class="note ">Si existen incidencias u horas extra pendientes, la exportación se <b>bloquea</b>; puede forzarse de forma explícita cuando se confirma.</div>
+<h2>Cerrar y reabrir el periodo</h2>
+<ul><li><b>Cerrar periodo:</b> bloquea correcciones. Si hay pendientes, pide confirmación.</li><li><b>Reabrir</b> (Contador/Administrador): vuelve el periodo a Abierto.</li><li><b>+ Periodo:</b> crea un nuevo periodo indicando nombre y fechas.</li></ul>
+<div class="page-break"></div>
+<h1 id="s10"><span class="num">10</span> Empleados</h1>
+<p><b>Propósito.</b> Catálogo del personal, con su relación (clave) en Aspel NOI y su identificador en el checador.</p>
+<figure class="tall"><img src="../screenshots/07-empleados.png"/><figcaption>Catálogo de empleados</figcaption></figure>
+<h2>Acciones</h2>
+<ul><li><b>+ Empleado:</b> da de alta con clave, clave NOI, nombre, RFC, área, puesto, horario, checador, salario diario y elegibilidad de bono.</li><li><b>Editar:</b> actualiza cualquier dato del empleado.</li><li><b>Baja (✕):</b> desactiva al empleado sin borrar su historial.</li></ul>
+<figure class="narrow"><img src="../screenshots/13-modal-empleado.png"/><figcaption>Alta / edición de empleado</figcaption></figure>
+<div class="note "><b>Mapeo con NOI:</b> la <b>Clave NOI</b> es la clave con la que el trabajador opera en Aspel NOI; el <b>ID en checador</b> es el número de persona en el dispositivo Hikvision.</div>
+<div class="page-break"></div>
+<h1 id="s11"><span class="num">11</span> Horarios y reglas</h1>
+<p><b>Propósito.</b> Definir los turnos (horarios) y las reglas globales que rigen el cálculo de asistencia.</p>
+<figure class=""><img src="../screenshots/08-horarios-reglas.png"/><figcaption>Turnos y reglas operativas</figcaption></figure>
+<h2>Turnos</h2>
+<p>Cada turno define entrada, salida, comida, tolerancia, umbral de retardo, horas por día y días laborables. Use + Turno para crear uno o Editar para ajustarlo.</p>
+<h2>Reglas globales</h2>
+<table><thead><tr><th>Parámetro</th><th>Descripción</th></tr></thead><tbody><tr><td>Umbral tiempo extra (min)</td><td>Minutos después de la salida para empezar a contar tiempo extra.</td></tr><tr><td>Bloque mínimo T. Extra (min)</td><td>Duración mínima para considerar el tiempo extra.</td></tr><tr><td>Salida anticipada (min)</td><td>Margen para marcar salida anticipada.</td></tr><tr><td>Retardos máx. para bono</td><td>Retardos permitidos en el periodo sin perder el bono.</td></tr><tr><td>Faltas permitidas para bono</td><td>Faltas injustificadas permitidas para conservar el bono.</td></tr><tr><td>Importe del bono</td><td>Monto del bono de puntualidad y asistencia.</td></tr></tbody></table>
+<div class="page-break"></div>
+<h1 id="s12"><span class="num">12</span> Checador</h1>
+<p><b>Propósito.</b> Consultar el dispositivo Hikvision, sincronizar las checadas y revisar los registros descargados.</p>
+<figure class=""><img src="../screenshots/09-checador.png"/><figcaption>Dispositivo y registros del checador</figcaption></figure>
+<h2>Sincronización</h2>
+<ol><li>Indique el rango de fechas (Desde / Hasta).</li><li>Presione <b>Sincronizar checadas</b>. Se descargan las checadas del rango y se procesan con las reglas.</li></ol>
+<p>El listado inferior permite filtrar por empleado y por día, mostrando cada checada con su hora, tipo (entrada/salida), método y origen.</p>
+<div class="note "><b>Nota técnica:</b> en producción la sincronización consulta el dispositivo Hikvision vía ISAPI/SDK. En esta versión de demostración las checadas se generan de forma simulada para mostrar el flujo completo sin hardware.</div>
+<div class="page-break"></div>
+<h1 id="s13"><span class="num">13</span> Kiosco y reconocimiento facial</h1>
+<p><b>Propósito.</b> Es la pantalla que ve el colaborador al registrar su entrada/salida por <b>reconocimiento facial con la cámara frontal de una tablet o una webcam</b>. El reconocimiento se ejecuta en el navegador, de forma local y sin servicios externos.</p>
+<figure class=""><img src="../screenshots/20-kiosco-camara.png"/><figcaption>Kiosco de acceso con cámara en vivo</figcaption></figure>
+<h2>Enrolamiento del rostro (una vez por empleado)</h2>
+<p>Antes de usar el kiosco, cada colaborador debe registrar su rostro. En <b>Empleados</b>, la columna <b>Biometría</b> indica el estado (<span class="tag ok">✓ Rostro</span> / <span class="tag gray">Sin registro</span>).</p>
+<ol><li>En la fila del empleado, presione <b>📷 Registrar</b>.</li><li>Permita el acceso a la cámara y encuadre el rostro, bien iluminado y de frente.</li><li>Presione <b>Capturar rostro</b> y luego <b>Guardar registro</b>. Se genera una plantilla facial (128 valores) que se guarda en el empleado.</li></ol>
+<figure class="narrow"><img src="../screenshots/19-enrolamiento.png"/><figcaption>Registro biométrico del rostro del empleado</figcaption></figure>
+<h2>Registro de acceso en el kiosco</h2>
+<p>Abra el kiosco desde <b>Checador → Abrir modo kiosco</b> o en la dirección <b>/kiosk</b> (idealmente en la tablet de recepción).</p>
+<ol><li>El colaborador se coloca frente a la cámara.</li><li>El sistema detecta el rostro, lo compara con los rostros enrolados e identifica al empleado.</li><li>Se registra automáticamente la <b>entrada</b> o <b>salida</b> (según la última marca del día) y se muestra la confirmación con nombre, hora y estatus (Puntual / Retardo / Tiempo extra).</li></ol>
+<figure class="narrow"><img src="../screenshots/17-kiosco-confirmacion.png"/><figcaption>Confirmación que ve el empleado al registrar su acceso</figcaption></figure>
+<div class="note "><b>Respaldo:</b> si la cámara no está disponible, el kiosco ofrece un <b>registro manual</b> por selección de nombre.</div>
+<div class="note warn"><b>Requisito técnico:</b> la cámara del navegador funciona en <b>localhost</b> o sobre <b>HTTPS</b>. Para una tablet en red local, sirva la plataforma por HTTPS. La identificación en el checador Hikvision físico seguiría su propio flujo por ISAPI/SDK.</div>
+<div class="page-break"></div>
+<h1 id="s14"><span class="num">14</span> Usuarios</h1>
+<p><b>Propósito.</b> Administrar los usuarios de la plataforma (sólo Administrador).</p>
+<figure class=""><img src="../screenshots/10-usuarios.png"/><figcaption>Usuarios administrativos</figcaption></figure>
+<ul><li>Alta y edición de usuarios con nombre, correo, puesto, rol y contraseña.</li><li>Activación / desactivación de cuentas.</li></ul>
+<div class="note ">El plan Renta Operativa contempla <b>hasta 5 usuarios administrativos</b> activos.</div>
+<div class="page-break"></div>
+<h1 id="s15"><span class="num">15</span> Bitácora</h1>
+<p><b>Propósito.</b> Trazabilidad de todas las operaciones: quién hizo qué, cuándo y con qué detalle/motivo.</p>
+<figure class=""><img src="../screenshots/11-bitacora.png"/><figcaption>Bitácora de trazabilidad</figcaption></figure>
+<p>Puede filtrarse por entidad (asistencia, incidencias, horas extra, periodo, empleado, etc.). Registra altas, correcciones, autorizaciones, rechazos, sincronizaciones, cierres y exportaciones.</p>
+<div class="page-break"></div>
+<h1 id="s16"><span class="num">16</span> Recursos Humanos (RH)</h1>
+<p><b>Propósito.</b> Módulos administrativos de RH: indicadores, recibos preliminares, saldos de vacaciones y tickets. Disponibles en el grupo <b>Recursos Humanos</b> de la barra lateral.</p>
+<h2>Indicadores RH</h2>
+<p>Tablero con % de asistencia, puntualidad y ausentismo, tiempo extra, empleados elegibles a bono, asistencia por área y top de retardos, además de los pendientes por autorizar.</p>
+<figure class=""><img src="../screenshots/21-rh-indicadores.png"/><figcaption>Indicadores de Recursos Humanos</figcaption></figure>
+<h2>Recibos</h2>
+<p>Genera <b>recibos preliminares</b> del periodo a partir de la asistencia, incidencias, tiempo extra y bono (percepciones, deducciones y neto). Cada recibo puede consultarse y descargarse.</p>
+<ol><li>Seleccione el periodo en la barra superior y presione <b>Generar recibos del periodo</b>.</li><li>Presione <b>Ver</b> en un empleado para el detalle y <b>Descargar</b> para obtener el archivo.</li></ol>
+<figure class="narrow"><img src="../screenshots/24-recibo-detalle.png"/><figcaption>Detalle de un recibo preliminar</figcaption></figure>
+<div class="note warn"><b>Importante:</b> los recibos son preliminares/informativos. El cálculo fiscal definitivo (ISR/IMSS) se realiza en Aspel NOI.</div>
+<h2>Vacaciones (saldos)</h2>
+<p>Muestra, para toda la plantilla, la antigüedad y los días de vacaciones (derecho, tomados y disponibles) calculados conforme a la Ley Federal del Trabajo (reforma 2023).</p>
+<figure class=""><img src="../screenshots/23-rh-vacaciones.png"/><figcaption>Saldos de vacaciones</figcaption></figure>
+<h2>Tickets RH</h2>
+<p>Bandeja de solicitudes de los colaboradores. RH responde, da seguimiento y cambia el estado (abierto, en proceso, resuelto).</p>
+<div class="page-break"></div>
+<h1 id="s17"><span class="num">17</span> Portal del empleado</h1>
+<p><b>Propósito.</b> Espacio de autoservicio para el colaborador. Se accede desde la pantalla de inicio eligiendo <b>Empleado</b> e ingresando su <b>código y PIN</b>.</p>
+<figure class="narrow"><img src="../screenshots/25-login-empleado.png"/><figcaption>Acceso del empleado (código + PIN)</figcaption></figure>
+<h2>Mi asistencia</h2>
+<p>El colaborador consulta su asistencia del periodo: indicadores (asistencias, faltas, incidencias, tiempo extra) y el detalle diario. No tiene acceso a información administrativa ni de otros empleados.</p>
+<figure class=""><img src="../screenshots/26-portal-asistencia.png"/><figcaption>Mi asistencia (portal del empleado)</figcaption></figure>
+<h2>Vacaciones y permisos</h2>
+<p>Muestra el saldo de vacaciones y permite <b>solicitar</b> vacaciones o permisos. La solicitud queda pendiente hasta que RH/Contabilidad la autorice (aparece en el módulo de incidencias).</p>
+<figure class="narrow"><img src="../screenshots/27-portal-vacaciones.png"/><figcaption>Solicitud de vacaciones y permisos</figcaption></figure>
+<h2>Mis recibos</h2>
+<p>Lista los recibos emitidos; el colaborador puede ver el detalle y descargarlos.</p>
+<h2>Mis tickets</h2>
+<p>Permite abrir tickets a Recursos Humanos y dar seguimiento a las respuestas.</p>
+<figure class="narrow"><img src="../screenshots/29-portal-tickets.png"/><figcaption>Mis tickets (portal del empleado)</figcaption></figure>
+<div class="note ">El portal del empleado corresponde a la <b>etapa siguiente</b> de la propuesta (crecimiento por módulos).</div>
+<div class="page-break"></div>
+<h1 id="s18"><span class="num">18</span> Referencia: motor de reglas</h1>
+<p>Para cada empleado y día, el sistema determina el estatus así:</p>
+<ol><li>Si hay una incidencia autorizada que cubre el día, ese es el estatus (vacaciones, permiso, incapacidad, etc.).</li><li>Si no es día laborable del horario → Descanso.</li><li>Sin checadas en día laborable → Falta. Una sola checada → Omisión.</li><li>Con entrada y salida se compara la entrada contra la tolerancia: dentro → <b>Asistencia</b>; pasada la tolerancia y hasta el umbral → <b>Retardo</b>; más allá del umbral → <b>Falta</b>.</li><li>El tiempo extra son los minutos tras la salida programada (con umbral y bloque mínimo).</li></ol>
+<p><b>Bono de puntualidad.</b> Un empleado conserva el bono del periodo si no excede los retardos permitidos, no tiene faltas injustificadas ni omisiones.</p>
+<div class="page-break"></div>
+<h1 id="s19"><span class="num">19</span> Uso en dispositivos móviles</h1>
+<p>La plataforma es responsiva. En pantallas pequeñas la barra lateral se oculta y se abre con el botón de menú (☰); los indicadores y tablas se reorganizan en una sola columna.</p>
+<figure class="phone"><img src="../screenshots/14-movil-tablero.png"/><figcaption>Tablero en vista móvil</figcaption></figure>
+<div class="page-break"></div>
+<h1 id="s20"><span class="num">20</span> Preguntas frecuentes</h1>
+<table><thead><tr><th>Situación</th><th>Solución</th></tr></thead><tbody><tr><td>No veo las checadas de un empleado</td><td>Verifique que el empleado tenga checador e ID asignados y sincronice el rango de fechas correcto en la pantalla Checador.</td></tr><tr><td>Un día aparece como Falta pero el empleado asistió</td><td>Revise si registró ambas checadas; si sólo hay una será Omisión. Corrija el registro con un motivo, o registre la incidencia correspondiente.</td></tr><tr><td>No puedo autorizar una incidencia</td><td>La autorización de incidencias corresponde al Contador general o al Administrador.</td></tr><tr><td>No me deja exportar a NOI</td><td>Existen incidencias u horas extra pendientes de autorizar. Autorícelas o fuerce la exportación al confirmar.</td></tr><tr><td>No puedo corregir un día</td><td>Probablemente el periodo está cerrado. Un Contador/Administrador puede reabrirlo.</td></tr><tr><td>¿Puedo agregar más usuarios?</td><td>Sí, hasta 5 usuarios administrativos activos en el plan Renta Operativa.</td></tr></tbody></table>
+<div class="page-break"></div>
+<h1 id="s21"><span class="num">21</span> Glosario</h1>
+<table><thead><tr><th>Término</th><th>Definición</th></tr></thead><tbody><tr><td>Checada</td><td>Registro de entrada o salida capturado por el checador.</td></tr><tr><td>Tolerancia</td><td>Minutos de gracia tras la hora de entrada antes de contar retardo.</td></tr><tr><td>Omisión</td><td>Día con una sola checada (falta entrada o salida).</td></tr><tr><td>Incidencia</td><td>Evento que justifica o modifica la asistencia (vacaciones, permiso, incapacidad…).</td></tr><tr><td>Periodo</td><td>Intervalo de nómina (por ejemplo, una quincena).</td></tr><tr><td>Movimiento NOI</td><td>Concepto consolidado (percepción/deducción) que se exporta a Aspel NOI.</td></tr><tr><td>Bitácora</td><td>Registro de auditoría de todas las operaciones.</td></tr></tbody></table>
+<div class="page-break"></div>
+<h1 id="s22"><span class="num">22</span> Anexo: requisitos e instalación</h1>
+<p>La plataforma es una aplicación web (Node.js + Express) con una interfaz servida por el propio servidor. No requiere instalación en el equipo del usuario final, sólo un navegador moderno.</p>
+<h2>Puesta en marcha (equipo servidor)</h2>
+<ol><li>Requiere Node.js 20 o superior.</li><li>En la carpeta del proyecto: <b>npm install</b> y luego <b>npm start</b>.</li><li>Abrir <b>http://localhost:3000</b>. En el primer arranque se cargan los datos demostrativos.</li></ol>
+<p><b>Pruebas:</b> la aplicación incluye 27 pruebas automatizadas (unitarias y de integración) que se ejecutan con <b>npm test</b>.</p>
+<div class="end">Mallatex · Plataforma de Asistencia · Aspel NOI &nbsp;·&nbsp; powered by <b>Evorgyn</b></div></body></html>

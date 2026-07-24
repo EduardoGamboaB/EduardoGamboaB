@@ -1,0 +1,25 @@
+{
+  "name": "mallatex-asistencia",
+  "version": "1.0.0",
+  "description": "Mallatex — Plataforma de control de asistencia e integración con Aspel NOI (powered by Evorgyn)",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "seed": "node server/seed.js --reset",
+    "test": "node --test test/rules.test.js test/qa.test.js",
+    "e2e": "node --test test/e2e.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  },
+  "author": "Evorgyn",
+  "license": "UNLICENSED"
+}
