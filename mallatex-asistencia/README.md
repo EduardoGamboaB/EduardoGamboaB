@@ -74,6 +74,25 @@ configurable** con su número de Aspel NOI y su forma de cálculo:
   asistencia y viajan en la misma interfaz de exportación (`.txt` / `.csv`).
 - Sólo se capturan en **periodos abiertos**; al cerrar el periodo quedan bloqueadas.
 
+### Fuente de datos por concepto (conectores)
+
+Es **un solo módulo configurable**: cada concepto declara su **fuente de datos**. Hoy la
+captura es **manual**; en una fase posterior cada fuente externa se **sincroniza
+automáticamente** —igual que la descarga del checador Hikvision está simulada hoy y en
+producción usaría ISAPI/SDK. La capa de conectores vive en
+[`server/connectors.js`](server/connectors.js) (sincronización simulada, lista para
+conectar la API real):
+
+| Fuente | Alimenta | Origen en producción (fase posterior) |
+|--------|----------|----------------------------------------|
+| **G3** | Kilometraje del conductor | Telemetría de flotilla (G3 Drive) |
+| **MES** | m² de costura en fabricación | Plataforma MES (órdenes de producción) |
+| **Aspel** | Base de comisión de ventas | Aspel (CxC/SAE) al confirmarse el **pago de facturas** |
+
+Cada captura guarda su **origen** (`Manual` / `G3` / `MES` / `Aspel`) para trazabilidad, y
+la sincronización hace *upsert* por identificador externo (re-sincronizar **actualiza**, no
+duplica) sin tocar las capturas manuales.
+
 ![Percepciones variables](docs/screenshots/30-percepciones-variables.png)
 
 ## 📷 Reconocimiento facial por cámara (modo kiosco)
@@ -176,6 +195,7 @@ mallatex-asistencia/
 │   ├── audit.js            # Bitácora / trazabilidad
 │   ├── rules.js            # Motor de reglas de asistencia
 │   ├── checador.js         # Integración/sincronización Hikvision (simulada)
+│   ├── connectors.js       # Fuentes de percepciones variables (G3/MES/Aspel, simuladas)
 │   ├── noi.js              # Conceptos y generación de interfaz NOI
 │   ├── seed.js             # Datos demostrativos de Mallatex
 │   └── routes/             # auth · catalog · operations · periods · audit

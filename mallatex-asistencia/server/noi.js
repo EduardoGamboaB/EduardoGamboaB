@@ -35,11 +35,13 @@ export function getConcepts() {
 //   'tarifa'     → importe = cantidad × tarifa      (unidad: km, m², pieza…)
 //   'porcentaje' → importe = base × (tarifa / 100)   (cantidad = base en $, tarifa = %)
 //   'importe'    → importe = cantidad                (se captura el importe ya calculado)
+// source: fuente de datos del concepto. 'manual' hoy; en una fase posterior cada
+// fuente externa se sincroniza automáticamente (ver server/connectors.js).
 export function defaultVariableConcepts() {
   return [
-    { key: 'km_conductor', name: 'Bono por kilometraje (conductor)', noiNumber: '2101', tipo: 'P', unidad: 'km', modo: 'tarifa', rate: 2.5, department: 'Reparto', enabled: true },
-    { key: 'costura_m2', name: 'Costura extra por metro cuadrado', noiNumber: '2102', tipo: 'P', unidad: 'm²', modo: 'tarifa', rate: 12, department: 'Producción', enabled: true },
-    { key: 'comision_ventas', name: 'Comisión sobre ventas', noiNumber: '2103', tipo: 'P', unidad: '$ ventas', modo: 'porcentaje', rate: 3, department: 'Ventas', enabled: true },
+    { key: 'km_conductor', name: 'Bono por kilometraje (conductor)', noiNumber: '2101', tipo: 'P', unidad: 'km', modo: 'tarifa', rate: 2.5, department: 'Reparto', source: 'g3', enabled: true },
+    { key: 'costura_m2', name: 'Costura extra por metro cuadrado', noiNumber: '2102', tipo: 'P', unidad: 'm²', modo: 'tarifa', rate: 12, department: 'Producción', source: 'mes', enabled: true },
+    { key: 'comision_ventas', name: 'Comisión sobre ventas', noiNumber: '2103', tipo: 'P', unidad: '$ ventas', modo: 'porcentaje', rate: 3, department: 'Ventas', source: 'aspel', enabled: true },
   ];
 }
 

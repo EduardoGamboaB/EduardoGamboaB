@@ -154,6 +154,7 @@ export function seed({ reset = false } = {}) {
       rate: null, // usa la tarifa/porcentaje del concepto
       importe: computeVariableImporte(concept, cantidad, null),
       note: note || '',
+      source: 'manual',
       createdBy: 'Sofía Herrera',
       createdAt: '2026-07-22T12:00:00.000Z',
     });

@@ -200,6 +200,21 @@ test('percepciones variables: un concepto con capturas no se elimina (409)', asy
   assert.equal(del.status, 409);
 });
 
+test('percepciones variables: fuentes de datos y sincronización simulada (upsert)', async () => {
+  const sources = (await json('GET', '/api/variable-sources', { token: tokens.nomina })).data;
+  for (const id of ['g3', 'mes', 'aspel']) assert.ok(sources.find((s) => s.id === id && s.external), `fuente ${id}`);
+  // sincroniza G3 (kilometraje, área Reparto → MTX013)
+  const r = await json('POST', '/api/variable-sync', { token: tokens.nomina, body: { source: 'g3', periodId: 2 } });
+  assert.equal(r.status, 200);
+  assert.ok(r.data.created + r.data.updated >= 1, 'sincroniza al menos una lectura');
+  const g3Count = () => (json('GET', '/api/variable-entries?periodId=2', { token: tokens.nomina }).then((x) => x.data.filter((e) => e.source === 'g3').length));
+  const before = await g3Count();
+  assert.ok(before >= 1, 'hay capturas con origen G3');
+  // re-sincronizar no duplica (upsert por externalId)
+  await json('POST', '/api/variable-sync', { token: tokens.nomina, body: { source: 'g3', periodId: 2 } });
+  assert.equal(await g3Count(), before, 're-sincronizar no duplica');
+});
+
 test('periodo: no se cierra con pendientes salvo forzado', async () => {
   const blocked = await json('POST', '/api/periods/2/close', { token: tokens.contador, body: {} });
   assert.equal(blocked.status, 409);

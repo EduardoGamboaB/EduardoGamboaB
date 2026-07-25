@@ -7,10 +7,31 @@ import * as db from '../db.js';
 import { requireRole, ROLES } from '../auth.js';
 import { log } from '../audit.js';
 import { getVariableConcepts, computeVariableImporte } from '../noi.js';
+import { listSources, SOURCES, syncSource } from '../connectors.js';
 
 const router = express.Router();
 
 const MODES = ['tarifa', 'porcentaje', 'importe'];
+const validSource = (s) => (s && SOURCES[s] ? s : 'manual');
+
+// ---------- Fuentes de datos (conectores) ----------
+router.get('/variable-sources', (_req, res) => {
+  res.json(listSources());
+});
+
+// Sincroniza una fuente externa (G3 / MES / Aspel) para un periodo. Simulada en esta
+// fase; en producción consultaría la API del sistema externo.
+router.post('/variable-sync', requireRole(ROLES.ADMIN, ROLES.CONTADOR, ROLES.NOMINA), (req, res) => {
+  const { source, periodId } = req.body || {};
+  if (!source || !periodId) return res.status(400).json({ error: 'source y periodId son obligatorios' });
+  try {
+    const result = syncSource(source, periodId, req.user.name);
+    log(req, { action: 'sync', entity: 'variableEntry', detail: `Sincronización ${result.label}: ${result.created} nueva(s), ${result.updated} actualizada(s)` });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
 
 // ---------- Catálogo de conceptos variables ----------
 router.get('/variable-concepts', (_req, res) => {
@@ -30,6 +51,7 @@ router.post('/variable-concepts', requireRole(ROLES.ADMIN, ROLES.CONTADOR), (req
     modo,
     rate: Number(b.rate) || 0,
     department: b.department || '',
+    source: validSource(b.source),
     enabled: b.enabled !== false,
   });
   log(req, { action: 'create', entity: 'variableConcept', entityId: created.id, detail: `Alta de concepto variable ${created.name}` });
@@ -46,6 +68,7 @@ router.put('/variable-concepts/:id', requireRole(ROLES.ADMIN, ROLES.CONTADOR), (
   const b = req.body || {};
   const patch = {};
   for (const k of ['name', 'noiNumber', 'tipo', 'unidad', 'department', 'enabled']) if (k in b) patch[k] = b[k];
+  if ('source' in b) patch.source = validSource(b.source);
   if ('modo' in b && MODES.includes(b.modo)) patch.modo = b.modo;
   if ('rate' in b) patch.rate = Number(b.rate) || 0;
   const updated = db.update('variableConcepts', c.id, patch);
@@ -112,6 +135,7 @@ router.post('/variable-entries', requireRole(ROLES.ADMIN, ROLES.CONTADOR, ROLES.
     rate: rateOverride, // null = usa la tarifa del concepto
     importe,
     note: b.note || '',
+    source: 'manual',
     createdBy: req.user.name,
     createdAt: new Date().toISOString(),
   });

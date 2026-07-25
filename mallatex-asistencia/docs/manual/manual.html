@@ -139,6 +139,10 @@
 <h2>Capturar una percepción</h2>
 <ol><li>Con el periodo <b>Abierto</b>, presione <b>+ Captura</b>.</li><li>Elija el empleado y el concepto.</li><li>Escriba la <b>cantidad</b> (kilómetros, metros cuadrados o monto de ventas). El importe se calcula en vivo.</li><li>Opcional: indique una <b>tarifa o porcentaje distinto</b> para ese empleado (excepción puntual); si se deja vacío, se usa la del concepto.</li><li>Guarde. La captura aparece en la tabla del periodo.</li></ol>
 <div class="note ">Los importes capturados se <b>suman a los movimientos calculados por asistencia</b> y viajan en la misma exportación a Aspel NOI. Sólo se capturan en periodos <b>abiertos</b>; al cerrar el periodo quedan bloqueadas.</div>
+<h2>Fuente de datos y sincronización (conectores)</h2>
+<p>Cada concepto declara su <b>fuente de datos</b>. Hoy la captura es <b>manual</b>; en una <b>fase posterior</b> cada fuente externa se sincroniza automáticamente (tal como la descarga del checador Hikvision está simulada hoy y en producción usa ISAPI/SDK). La columna <b>Origen</b> de cada captura indica de dónde provino (Manual, G3, MES o Aspel).</p>
+<table><thead><tr><th>Fuente</th><th>Alimenta</th><th>Origen en producción (fase posterior)</th></tr></thead><tbody><tr><td>G3</td><td>Kilometraje del conductor</td><td>Telemetría de flotilla (G3 Drive)</td></tr><tr><td>MES</td><td>m² de costura en fabricación</td><td>Plataforma MES (órdenes de producción)</td></tr><tr><td>Aspel</td><td>Base de comisión de ventas</td><td>Aspel (CxC/SAE) al confirmarse el pago de facturas</td></tr></tbody></table>
+<p>Los botones <b>⟳ G3</b>, <b>⟳ MES</b> y <b>⟳ Aspel</b> del encabezado ejecutan la sincronización (hoy en modo <b>simulado</b>). La sincronización hace actualización por identificador externo: <b>re-sincronizar actualiza</b> las capturas de esa fuente sin duplicarlas, y no toca las capturas manuales.</p>
 <div class="page-break"></div>
 <h1 id="s10"><span class="num">10</span> Empleados</h1>
 <p><b>Propósito.</b> Catálogo del personal, con su relación (clave) en Aspel NOI y su identificador en el checador.</p>

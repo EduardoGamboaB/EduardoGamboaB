@@ -139,6 +139,10 @@ p(`Con ${B('+ Concepto')} (Contador/Administrador) se crea un concepto indicando
 h2('Capturar una percepción');
 ol([`Con el periodo ${B('Abierto')}, presione ${B('+ Captura')}.`, 'Elija el empleado y el concepto.', `Escriba la ${B('cantidad')} (kilómetros, metros cuadrados o monto de ventas). El importe se calcula en vivo.`, `Opcional: indique una ${B('tarifa o porcentaje distinto')} para ese empleado (excepción puntual); si se deja vacío, se usa la del concepto.`, `Guarde. La captura aparece en la tabla del periodo.`]);
 note(`Los importes capturados se ${B('suman a los movimientos calculados por asistencia')} y viajan en la misma exportación a Aspel NOI. Sólo se capturan en periodos ${B('abiertos')}; al cerrar el periodo quedan bloqueadas.`);
+h2('Fuente de datos y sincronización (conectores)');
+p(`Cada concepto declara su ${B('fuente de datos')}. Hoy la captura es ${B('manual')}; en una ${B('fase posterior')} cada fuente externa se sincroniza automáticamente (tal como la descarga del checador Hikvision está simulada hoy y en producción usa ISAPI/SDK). La columna ${B('Origen')} de cada captura indica de dónde provino (Manual, G3, MES o Aspel).`);
+table(['Fuente', 'Alimenta', 'Origen en producción (fase posterior)'], [['G3', 'Kilometraje del conductor', 'Telemetría de flotilla (G3 Drive)'], ['MES', 'm² de costura en fabricación', 'Plataforma MES (órdenes de producción)'], ['Aspel', 'Base de comisión de ventas', 'Aspel (CxC/SAE) al confirmarse el pago de facturas']]);
+p(`Los botones ${B('⟳ G3')}, ${B('⟳ MES')} y ${B('⟳ Aspel')} del encabezado ejecutan la sincronización (hoy en modo ${B('simulado')}). La sincronización hace actualización por identificador externo: ${B('re-sincronizar actualiza')} las capturas de esa fuente sin duplicarlas, y no toca las capturas manuales.`);
 sec();
 
 h1(10, 'Empleados');

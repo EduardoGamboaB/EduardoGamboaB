@@ -172,6 +172,10 @@ body.push(step(3, [T('Escriba la '), B('cantidad'), T(' (kilómetros, metros cua
 body.push(step(4, [T('Opcional: indique una '), B('tarifa o porcentaje distinto'), T(' para ese empleado; si se deja vacío, se usa la del concepto.')]));
 body.push(step(5, 'Guarde. La captura aparece en la tabla del periodo.'));
 body.push(callout([T('Los importes capturados se '), B('suman a los movimientos calculados por asistencia'), T(' y viajan en la misma exportación a Aspel NOI. Sólo se capturan en periodos abiertos; al cerrar el periodo quedan bloqueadas.')]));
+body.push(H2('Fuente de datos y sincronización (conectores)'));
+S([T('Cada concepto declara su '), B('fuente de datos'), T('. Hoy la captura es manual; en una '), B('fase posterior'), T(' cada fuente externa se sincroniza automáticamente (tal como la descarga del checador Hikvision está simulada hoy y en producción usa ISAPI/SDK). La columna '), B('Origen'), T(' de cada captura indica de dónde provino.')]);
+body.push(table(['Fuente', 'Alimenta', 'Origen en producción (fase posterior)'], [['G3', 'Kilometraje del conductor', 'Telemetría de flotilla (G3 Drive)'], ['MES', 'm² de costura en fabricación', 'Plataforma MES (órdenes de producción)'], ['Aspel', 'Base de comisión de ventas', 'Aspel (CxC/SAE) al confirmarse el pago de facturas']], [1500, 3200, 3500]));
+S([T('Los botones '), B('⟳ G3'), T(', '), B('⟳ MES'), T(' y '), B('⟳ Aspel'), T(' del encabezado ejecutan la sincronización (hoy en modo simulado). La sincronización hace actualización por identificador externo: re-sincronizar actualiza las capturas de esa fuente sin duplicarlas, y no toca las capturas manuales.')]);
 
 body.push(pageBreak(), H1('10. Empleados'));
 S([B('Propósito. '), T('Catálogo del personal, con su relación (clave) en Aspel NOI y su identificador en el checador.')]);

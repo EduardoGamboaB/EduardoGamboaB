@@ -10,19 +10,22 @@ const MODES = {
   importe: { label: 'Importe directo', hint: 'Se captura el importe ya calculado' },
 };
 
-let ctx = { period: null, concepts: [], entries: [], employees: [] };
+let ctx = { period: null, concepts: [], entries: [], employees: [], sources: [] };
+
+const sourceMap = () => Object.fromEntries(ctx.sources.map((s) => [s.id, s]));
 
 export default async function variablePay(el) {
   clear(el);
   const period = currentPeriod();
   if (!period) { el.appendChild(empty('＄', 'No hay periodos configurados.')); return; }
 
-  const [concepts, entries, employees] = await Promise.all([
+  const [concepts, entries, employees, sources] = await Promise.all([
     api.get('/variable-concepts'),
     api.get(`/variable-entries?periodId=${period.id}`),
     api.get('/employees?active=true'),
+    api.get('/variable-sources'),
   ]);
-  ctx = { period, concepts, entries, employees };
+  ctx = { period, concepts, entries, employees, sources };
 
   el.appendChild(headerCard());
   el.appendChild(entriesCard());
@@ -30,22 +33,48 @@ export default async function variablePay(el) {
 }
 
 function headerCard() {
-  const { period, entries } = ctx;
+  const { period, entries, concepts } = ctx;
   const total = entries.reduce((s, e) => s + (e.importe || 0), 0);
+  const canEdit = period.status !== 'cerrado' && can('admin', 'contador', 'nomina');
+
+  // Fuentes externas con al menos un concepto activo → botón de sincronización
+  const externalSources = ctx.sources.filter((s) => s.external
+    && concepts.some((c) => (c.source || 'manual') === s.id && c.enabled !== false));
+  const syncBtns = canEdit
+    ? externalSources.map((s) => h('button', { class: 'btn', title: s.hint, onClick: () => doSync(s) }, `⟳ ${shortSource(s.id)}`))
+    : [];
+
   return h('div', { class: 'card card-pad mb' },
     h('div', { class: 'row spread' },
       h('div', {},
         h('div', { class: 'row', style: 'gap:10px;align-items:center' }, h('h2', { style: 'margin:0' }, 'Percepciones variables'), stateBadge(period.status)),
         h('div', { class: 'muted mt' }, `${period.name} · ${entries.length} captura(s) · total ${money(total)}`),
       ),
-      period.status !== 'cerrado' && can('admin', 'contador', 'nomina')
-        ? h('button', { class: 'btn btn-primary', onClick: () => entryModal() }, '+ Captura')
-        : null,
+      h('div', { class: 'row', style: 'gap:8px;flex-wrap:wrap;justify-content:flex-end' },
+        ...syncBtns,
+        canEdit ? h('button', { class: 'btn btn-primary', onClick: () => entryModal() }, '+ Captura') : null,
+      ),
     ),
     h('div', { class: 'note-box mt' },
       'Estos importes se suman a los movimientos calculados por asistencia al exportar a ',
       h('b', {}, 'Aspel NOI'), ' (ve a ', h('b', {}, 'Periodos y NOI'), ').'),
+    externalSources.length ? h('div', { class: 'note-box warn mt' },
+      'Las fuentes externas (', externalSources.map((s) => shortSource(s.id)).join(', '),
+      ') están en modo ', h('b', {}, 'simulado'), ': la sincronización real se habilita en una fase posterior (G3 para kilometraje, MES para m² de fabricación, Aspel al caer el pago de facturas).') : null,
   );
+}
+
+function shortSource(id) {
+  return ({ g3: 'G3', mes: 'MES', aspel: 'Aspel', manual: 'Manual' })[id] || id;
+}
+
+async function doSync(source) {
+  if (!await confirmDialog({ title: `Sincronizar ${source.label}`, message: `Se traerán las lecturas de ${source.label} para este periodo (modo ${source.status}). ¿Continuar?`, confirmText: 'Sincronizar' })) return;
+  try {
+    const r = await api.post('/variable-sync', { source: source.id, periodId: ctx.period.id });
+    toast(`${shortSource(source.id)}: ${r.created} nueva(s), ${r.updated} actualizada(s)`, 'ok');
+    reload();
+  } catch (e) { toast(e.message, 'err'); }
 }
 
 function entriesCard() {
@@ -54,12 +83,13 @@ function entriesCard() {
   const body = entries.length
     ? h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
         h('thead', {}, h('tr', {},
-          h('th', {}, 'Empleado'), h('th', {}, 'Concepto'), h('th', { class: 'num' }, 'Cantidad'),
+          h('th', {}, 'Empleado'), h('th', {}, 'Concepto'), h('th', {}, 'Origen'), h('th', { class: 'num' }, 'Cantidad'),
           h('th', {}, 'Unidad'), h('th', { class: 'num' }, 'Tarifa/%'), h('th', { class: 'num' }, 'Importe'),
           h('th', {}, 'Nota'), editable ? h('th', {}, '') : null)),
         h('tbody', {}, ...entries.map((e) => h('tr', {},
           h('td', {}, h('div', { class: 'strong' }, e.employeeName || '—'), h('div', { class: 'muted', style: 'font-size:11px' }, `${e.employeeCode || ''} · ${e.department || ''}`)),
           h('td', {}, h('span', { class: 'mono muted' }, (e.noiNumber || '') + ' '), e.conceptName || '—'),
+          h('td', {}, originBadge(e.source)),
           h('td', { class: 'num mono' }, fmtQty(e)),
           h('td', { class: 'muted' }, e.unidad || ''),
           h('td', { class: 'num mono' }, rateLabel(e)),
@@ -76,6 +106,17 @@ function entriesCard() {
     h('div', { class: 'card-head' }, h('h2', {}, 'Capturas del periodo'), h('span', { class: 'sub' }, ctx.period.name)),
     body,
   );
+}
+
+function originBadge(source) {
+  if (!source || source === 'manual') return h('span', { class: 'badge b-gray' }, 'Manual');
+  return h('span', { class: 'badge b-ok', title: 'Sincronizado (simulado)' }, `⟳ ${shortSource(source)}`);
+}
+
+function sourceBadge(source) {
+  const s = sourceMap()[source] || sourceMap().manual || {};
+  if (!source || source === 'manual') return h('span', { class: 'badge b-gray' }, 'Manual');
+  return h('span', { class: 'badge b-warn', title: `${s.hint || ''} (${s.status || 'simulado'})` }, `${shortSource(source)} · ${s.status || 'simulado'}`);
 }
 
 function fmtQty(e) {
@@ -99,13 +140,14 @@ function conceptsCard() {
     h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
       h('thead', {}, h('tr', {},
         h('th', {}, 'Concepto'), h('th', {}, 'No. NOI'), h('th', {}, 'Cálculo'), h('th', {}, 'Unidad'),
-        h('th', { class: 'num' }, 'Tarifa/%'), h('th', {}, 'Área'), h('th', {}, 'Activo'), admin ? h('th', {}, '') : null)),
+        h('th', { class: 'num' }, 'Tarifa/%'), h('th', {}, 'Fuente'), h('th', {}, 'Área'), h('th', {}, 'Activo'), admin ? h('th', {}, '') : null)),
       h('tbody', {}, ...concepts.map((c) => h('tr', {},
         h('td', { class: 'strong' }, c.name),
         h('td', { class: 'mono' }, c.noiNumber),
         h('td', { class: 'muted', style: 'font-size:12px' }, (MODES[c.modo] || {}).label || c.modo),
         h('td', { class: 'muted' }, c.unidad),
         h('td', { class: 'num mono' }, c.modo === 'porcentaje' ? `${c.rate}%` : (c.modo === 'importe' ? '—' : money(Number(c.rate) || 0))),
+        h('td', {}, sourceBadge(c.source)),
         h('td', { class: 'muted' }, c.department || 'Todas'),
         h('td', {}, c.enabled === false ? h('span', { class: 'badge b-gray' }, 'No') : h('span', { class: 'badge b-ok' }, 'Sí')),
         admin ? h('td', {}, h('div', { class: 'row', style: 'gap:6px' },
@@ -196,10 +238,15 @@ function conceptModal(concept) {
   const rate = h('input', { type: 'number', step: '0.01', min: '0', value: concept ? concept.rate : '' });
   const department = h('input', { value: concept ? concept.department || '' : '', placeholder: 'Todas' });
   const tipo = h('select', {}, ...[['P', 'Percepción'], ['D', 'Deducción'], ['I', 'Informativo']].map(([v, l]) => opt(v, l, concept ? concept.tipo === v : v === 'P')));
+  const curSource = concept ? concept.source || 'manual' : 'manual';
+  const source = h('select', {}, ...ctx.sources.map((s) => opt(s.id, s.label + (s.external ? ` · ${s.status}` : ''), curSource === s.id)));
   const enabled = h('input', { type: 'checkbox' }); enabled.checked = !concept || concept.enabled !== false;
   const modeHint = h('div', { class: 'muted', style: 'font-size:12px' });
+  const sourceHint = h('div', { class: 'muted', style: 'font-size:12px' });
   const syncHint = () => { modeHint.textContent = (MODES[modo.value] || {}).hint || ''; };
+  const syncSrcHint = () => { const s = sourceMap()[source.value] || {}; sourceHint.textContent = s.external ? `${s.hint} · Integración en fase posterior (hoy ${s.status}).` : s.hint || ''; };
   modo.addEventListener('change', syncHint); setTimeout(syncHint, 0);
+  source.addEventListener('change', syncSrcHint); setTimeout(syncSrcHint, 0);
 
   const m = modal({
     title: concept ? `Concepto · ${concept.name}` : 'Nuevo concepto variable',
@@ -210,6 +257,8 @@ function conceptModal(concept) {
       modeHint,
       h('div', { class: 'form-grid two' }, field('Unidad', unidad), field('Tarifa / porcentaje', rate)),
       field('Área sugerida (opcional)', department),
+      field('Fuente de datos', source),
+      sourceHint,
       h('label', { class: 'field' }, h('span', {}, 'Activo'), h('div', { class: 'checks' }, h('label', {}, enabled, ' Disponible para captura'))),
     ),
     footer: [
@@ -219,7 +268,7 @@ function conceptModal(concept) {
         const payload = {
           name: name.value, noiNumber: noiNumber.value, tipo: tipo.value,
           modo: modo.value, unidad: unidad.value, rate: Number(rate.value) || 0,
-          department: department.value, enabled: enabled.checked,
+          department: department.value, source: source.value, enabled: enabled.checked,
         };
         try {
           if (concept) await api.put(`/variable-concepts/${concept.id}`, payload);
