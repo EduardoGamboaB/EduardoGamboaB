@@ -38,7 +38,7 @@
   <div class="cover-sub">Plataforma de Asistencia · Aspel NOI</div>
   <div class="cover-title">MANUAL DE USUARIO</div>
   <div class="cover-desc">Control de asistencia, incidencias, tiempo extra y exportación a nómina</div>
-  <div class="cover-meta">Versión 1.0 · Julio 2026</div>
+  <div class="cover-meta">Versión 1.1 · Julio 2026</div>
   <div class="cover-foot">powered by <b>Evorgyn</b></div>
 </section>
 <div class="page-break"></div>
@@ -71,6 +71,7 @@
 <h2>Cuentas y roles de demostración</h2>
 <table><thead><tr><th>Rol</th><th>Correo</th><th>Contraseña</th></tr></thead><tbody><tr><td>Administrador</td><td>admin@mallatex.mx</td><td>mallatex2026</td></tr><tr><td>Contador general</td><td>contabilidad@mallatex.mx</td><td>mallatex2026</td></tr><tr><td>Responsable de nómina</td><td>nomina@mallatex.mx</td><td>mallatex2026</td></tr></tbody></table>
 <div class="note "><b>Cerrar sesión:</b> use el ícono de encendido (⏻) en la esquina superior derecha, junto a su nombre.</div>
+<div class="note "><b>Seguridad de la sesión:</b> por seguridad, la sesión <b>caduca tras un periodo de inactividad</b> y deberá volver a ingresar. Tras varios intentos fallidos de acceso, el sistema <b>bloquea temporalmente</b> nuevos intentos.</div>
 <div class="page-break"></div>
 <h1 id="s4"><span class="num">4</span> Interfaz general</h1>
 <h2>Barra lateral (navegación)</h2>
@@ -138,9 +139,11 @@
 <p>Con <b>+ Concepto</b> (Contador/Administrador) se crea un concepto indicando nombre, número NOI, forma de cálculo, unidad (km, m², $ ventas…), tarifa/porcentaje y el área sugerida.</p>
 <h2>Capturar una percepción</h2>
 <ol><li>Con el periodo <b>Abierto</b>, presione <b>+ Captura</b>.</li><li>Elija el empleado y el concepto.</li><li>Escriba la <b>cantidad</b> (kilómetros, metros cuadrados o monto de ventas). El importe se calcula en vivo.</li><li>Opcional: indique una <b>tarifa o porcentaje distinto</b> para ese empleado (excepción puntual); si se deja vacío, se usa la del concepto.</li><li>Guarde. La captura aparece en la tabla del periodo.</li></ol>
+<figure class="narrow"><img src="../screenshots/31-captura-percepcion.png"/><figcaption>Captura de una percepción, con el importe calculado en vivo</figcaption></figure>
 <div class="note ">Los importes capturados se <b>suman a los movimientos calculados por asistencia</b> y viajan en la misma exportación a Aspel NOI. Sólo se capturan en periodos <b>abiertos</b>; al cerrar el periodo quedan bloqueadas.</div>
 <h2>Fuente de datos y sincronización (conectores)</h2>
 <p>Cada concepto declara su <b>fuente de datos</b>. Hoy la captura es <b>manual</b>; en una <b>fase posterior</b> cada fuente externa se sincroniza automáticamente (tal como la descarga del checador Hikvision está simulada hoy y en producción usa ISAPI/SDK). La columna <b>Origen</b> de cada captura indica de dónde provino (Manual, G3, MES o Aspel).</p>
+<figure class="narrow"><img src="../screenshots/32-concepto-fuente.png"/><figcaption>Alta de concepto: forma de cálculo y fuente de datos</figcaption></figure>
 <table><thead><tr><th>Fuente</th><th>Alimenta</th><th>Origen en producción (fase posterior)</th></tr></thead><tbody><tr><td>G3</td><td>Kilometraje del conductor</td><td>Telemetría de flotilla (G3 Drive)</td></tr><tr><td>MES</td><td>m² de costura en fabricación</td><td>Plataforma MES (órdenes de producción)</td></tr><tr><td>Aspel</td><td>Base de comisión de ventas</td><td>Aspel (CxC/SAE) al confirmarse el pago de facturas</td></tr></tbody></table>
 <p>Los botones <b>⟳ G3</b>, <b>⟳ MES</b> y <b>⟳ Aspel</b> del encabezado ejecutan la sincronización (hoy en modo <b>simulado</b>). La sincronización hace actualización por identificador externo: <b>re-sincronizar actualiza</b> las capturas de esa fuente sin duplicarlas, y no toca las capturas manuales.</p>
 <div class="page-break"></div>
@@ -242,7 +245,10 @@
 <div class="page-break"></div>
 <h1 id="s22"><span class="num">22</span> Anexo: requisitos e instalación</h1>
 <p>La plataforma es una aplicación web (Node.js + Express) con una interfaz servida por el propio servidor. No requiere instalación en el equipo del usuario final, sólo un navegador moderno.</p>
-<h2>Puesta en marcha (equipo servidor)</h2>
+<h2>Prueba rápida (evaluación)</h2>
 <ol><li>Requiere Node.js 20 o superior.</li><li>En la carpeta del proyecto: <b>npm install</b> y luego <b>npm start</b>.</li><li>Abrir <b>http://localhost:3000</b>. En el primer arranque se cargan los datos demostrativos.</li></ol>
-<p><b>Pruebas:</b> la aplicación incluye 27 pruebas automatizadas (unitarias y de integración) que se ejecutan con <b>npm test</b>.</p>
+<h2>Producción</h2>
+<p>Para un despliegue real, la plataforma incluye <b>empaquetado Docker</b>, <b>PostgreSQL</b> como base de datos (conmutable con la variable <b>STORAGE</b>), reverse-proxy con <b>HTTPS</b> (necesario para la cámara del kiosco), respaldos y verificación de salud. La cámara del kiosco requiere <b>contexto seguro</b> (HTTPS o localhost).</p>
+<ul><li><b>Guía de despliegue:</b> documento <b>DEPLOY.md</b> (Docker/compose, variables de entorno, TLS y respaldos).</li><li><b>Checklist de puesta en marcha:</b> <b>docs/go-live-checklist.md</b> (infraestructura, datos maestros, UAT y corte).</li><li><b>URL pública:</b> <b>docs/hosting-publico.md</b> (publicar en Render u otra plataforma con HTTPS).</li><li><b>Integraciones:</b> <b>docs/integraciones.md</b> (contratos de Hikvision, G3, MES, Aspel CxC y NOI).</li></ul>
+<p><b>Pruebas:</b> la aplicación incluye pruebas automatizadas (unitarias, de integración y de extremo a extremo) que se ejecutan con <b>npm test</b> y <b>npm run e2e</b>.</p>
 <div class="end">Mallatex · Plataforma de Asistencia · Aspel NOI &nbsp;·&nbsp; powered by <b>Evorgyn</b></div></body></html>

@@ -55,7 +55,7 @@ body.push(
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 260, after: 320 }, children: [new TextRun({ text: 'Plataforma de Asistencia · Aspel NOI', color: BLACK, size: 26 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, border: { top: { style: BorderStyle.SINGLE, size: 12, color: RED, space: 10 }, bottom: { style: BorderStyle.SINGLE, size: 12, color: RED, space: 10 } }, children: [new TextRun({ text: 'MANUAL DE USUARIO', bold: true, color: BLACK, size: 40 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 600 }, children: [new TextRun({ text: 'Control de asistencia, incidencias, tiempo extra y exportación a nómina', color: GRAY, size: 22 })] }),
-  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 1600 }, children: [new TextRun({ text: 'Versión 1.0 · Julio 2026', color: INK, size: 20 })] }),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 1600 }, children: [new TextRun({ text: 'Versión 1.1 · Julio 2026', color: INK, size: 20 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 40 }, children: [new TextRun({ text: 'powered by ', color: GRAY, size: 20 }), new TextRun({ text: 'Evorgyn', bold: true, color: BLACK, size: 20 })] }),
   pageBreak(),
   new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { after: 160 }, children: [new TextRun({ text: 'Contenido', bold: true, color: RED, size: 30 })] }),
@@ -93,6 +93,7 @@ body.push(step(3, [T('Presione '), B('Entrar'), T('. Será dirigido al Tablero.'
 body.push(H2('Cuentas y roles de demostración'));
 body.push(table(['Rol', 'Correo', 'Contraseña'], [['Administrador', 'admin@mallatex.mx', 'mallatex2026'], ['Contador general', 'contabilidad@mallatex.mx', 'mallatex2026'], ['Responsable de nómina', 'nomina@mallatex.mx', 'mallatex2026']], [3200, 3800, 3000]));
 body.push(callout([B('Cerrar sesión: '), T('use el ícono de encendido (⏻) en la esquina superior derecha, junto a su nombre.')]));
+body.push(callout([B('Seguridad de la sesión: '), T('por seguridad la sesión caduca tras un periodo de inactividad y deberá volver a ingresar. Tras varios intentos fallidos, el sistema bloquea temporalmente nuevos accesos.')]));
 
 body.push(pageBreak(), H1('4. Interfaz general'), H2('Barra lateral (navegación)'));
 S('Agrupa los módulos en cuatro secciones. Las opciones visibles dependen de su rol.');
@@ -171,11 +172,13 @@ body.push(step(2, 'Elija el empleado y el concepto.'));
 body.push(step(3, [T('Escriba la '), B('cantidad'), T(' (kilómetros, metros cuadrados o monto de ventas). El importe se calcula en vivo.')]));
 body.push(step(4, [T('Opcional: indique una '), B('tarifa o porcentaje distinto'), T(' para ese empleado; si se deja vacío, se usa la del concepto.')]));
 body.push(step(5, 'Guarde. La captura aparece en la tabla del periodo.'));
+body.push(...image('31-captura-percepcion.png', { caption: 'Captura de una percepción, con el importe calculado en vivo', maxH: 520 }));
 body.push(callout([T('Los importes capturados se '), B('suman a los movimientos calculados por asistencia'), T(' y viajan en la misma exportación a Aspel NOI. Sólo se capturan en periodos abiertos; al cerrar el periodo quedan bloqueadas.')]));
 body.push(H2('Fuente de datos y sincronización (conectores)'));
 S([T('Cada concepto declara su '), B('fuente de datos'), T('. Hoy la captura es manual; en una '), B('fase posterior'), T(' cada fuente externa se sincroniza automáticamente (tal como la descarga del checador Hikvision está simulada hoy y en producción usa ISAPI/SDK). La columna '), B('Origen'), T(' de cada captura indica de dónde provino.')]);
 body.push(table(['Fuente', 'Alimenta', 'Origen en producción (fase posterior)'], [['G3', 'Kilometraje del conductor', 'Telemetría de flotilla (G3 Drive)'], ['MES', 'm² de costura en fabricación', 'Plataforma MES (órdenes de producción)'], ['Aspel', 'Base de comisión de ventas', 'Aspel (CxC/SAE) al confirmarse el pago de facturas']], [1500, 3200, 3500]));
 S([T('Los botones '), B('⟳ G3'), T(', '), B('⟳ MES'), T(' y '), B('⟳ Aspel'), T(' del encabezado ejecutan la sincronización (hoy en modo simulado). La sincronización hace actualización por identificador externo: re-sincronizar actualiza las capturas de esa fuente sin duplicarlas, y no toca las capturas manuales.')]);
+body.push(...image('32-concepto-fuente.png', { caption: 'Alta de concepto: forma de cálculo y fuente de datos', maxH: 560 }));
 
 body.push(pageBreak(), H1('10. Empleados'));
 S([B('Propósito. '), T('Catálogo del personal, con su relación (clave) en Aspel NOI y su identificador en el checador.')]);
@@ -256,6 +259,21 @@ body.push(pageBreak(), H1('19. Preguntas frecuentes'));
 body.push(table(['Situación', 'Solución'], [['No veo las checadas de un empleado', 'Verifique checador e ID asignados y sincronice el rango correcto.'], ['Un día aparece como Falta pero asistió', 'Si sólo hay una checada será Omisión. Corrija con motivo o registre la incidencia.'], ['No puedo autorizar una incidencia', 'La autorización corresponde al Contador general o al Administrador.'], ['No me deja exportar a NOI', 'Hay pendientes por autorizar. Autorícelos o fuerce la exportación al confirmar.'], ['No puedo corregir un día', 'El periodo probablemente está cerrado; un Contador/Administrador puede reabrirlo.']], [3600, 5800]));
 body.push(H2('Glosario'));
 body.push(table(['Término', 'Definición'], [['Checada', 'Registro de entrada o salida capturado por el checador.'], ['Tolerancia', 'Minutos de gracia tras la entrada antes de contar retardo.'], ['Omisión', 'Día con una sola checada.'], ['Movimiento NOI', 'Concepto consolidado que se exporta a Aspel NOI.'], ['Bitácora', 'Registro de auditoría de todas las operaciones.']], [2800, 6600]));
+
+body.push(pageBreak(), H1('20. Requisitos, instalación y producción'));
+S([T('La plataforma es una aplicación web (Node.js + Express). El usuario final sólo necesita un navegador moderno.')]);
+body.push(H2('Prueba rápida (evaluación)'));
+body.push(step(1, 'Requiere Node.js 20 o superior.'));
+body.push(step(2, [T('En la carpeta del proyecto: '), B('npm install'), T(' y luego '), B('npm start'), T('.')]));
+body.push(step(3, [T('Abrir '), B('http://localhost:3000'), T('. En el primer arranque se cargan los datos demostrativos.')]));
+body.push(H2('Producción'));
+S([T('Para un despliegue real, la plataforma incluye '), B('empaquetado Docker'), T(', '), B('PostgreSQL'), T(' como base de datos (conmutable con la variable '), B('STORAGE'), T('), reverse-proxy con '), B('HTTPS'), T(' (necesario para la cámara del kiosco), respaldos y verificación de salud.')]);
+body.push(bullet([B('Guía de despliegue: '), T('DEPLOY.md (Docker/compose, variables de entorno, TLS y respaldos).')]));
+body.push(bullet([B('Checklist de puesta en marcha: '), T('docs/go-live-checklist.md (infraestructura, datos maestros, UAT y corte).')]));
+body.push(bullet([B('URL pública: '), T('docs/hosting-publico.md (publicar en Render u otra plataforma con HTTPS).')]));
+body.push(bullet([B('Integraciones: '), T('docs/integraciones.md (contratos de Hikvision, G3, MES, Aspel CxC y NOI).')]));
+S([B('Pruebas: '), T('la aplicación incluye pruebas automatizadas (unitarias, de integración y de extremo a extremo) que se ejecutan con npm test y npm run e2e.')]);
+
 body.push(new Paragraph({ spacing: { before: 500 }, alignment: AlignmentType.CENTER, border: { top: { style: BorderStyle.SINGLE, size: 8, color: RED, space: 12 } }, children: [new TextRun({ text: 'Mallatex · Plataforma de Asistencia · Aspel NOI', bold: true, color: BLACK, size: 20 }), new TextRun({ text: '   ·   powered by ', color: GRAY, size: 20 }), new TextRun({ text: 'Evorgyn', bold: true, color: BLACK, size: 20 })] }));
 
 const doc = new Document({
