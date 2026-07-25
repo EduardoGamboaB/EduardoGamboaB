@@ -152,7 +152,8 @@ npm run seed   # node server/seed.js --reset
 
 ### 🚀 Producción
 
-Para salir a producción, sigue la **[guía de despliegue (`DEPLOY.md`)](DEPLOY.md)**. En resumen:
+Para salir a producción, sigue la **[guía de despliegue (`DEPLOY.md`)](DEPLOY.md)** y el
+**[checklist de go-live (`docs/go-live-checklist.md`)](docs/go-live-checklist.md)**. En resumen:
 
 ```bash
 cp .env.example .env          # ajusta admin, dominio y TLS

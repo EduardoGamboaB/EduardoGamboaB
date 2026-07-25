@@ -9,6 +9,9 @@ reverse-proxy con TLS** (la cámara del kiosco exige HTTPS).
 
 ---
 
+> Para coordinar el arranque paso a paso usa el
+> **[checklist de go-live](docs/go-live-checklist.md)**.
+
 ## 1. Requisitos
 
 - **Node.js ≥ 20** (o Docker).
