@@ -32,6 +32,10 @@ export const config = Object.freeze({
   host: env.HOST || '0.0.0.0',
 
   // Persistencia
+  // storage: 'file' (archivo JSON) o 'postgres'. Por defecto postgres si hay DATABASE_URL.
+  storage: (env.STORAGE || (env.DATABASE_URL ? 'postgres' : 'file')).toLowerCase(),
+  databaseUrl: env.DATABASE_URL || '',
+  pgSsl: bool(env.PGSSL, false),
   dataDir: env.DATA_DIR ? path.resolve(env.DATA_DIR) : path.join(ROOT, 'data'),
   backupOnStart: bool(env.BACKUP_ON_START, isProd),
   backupKeep: num(env.BACKUP_KEEP, 14),
@@ -73,6 +77,7 @@ export function configWarnings() {
     if (!config.seedDemo && !config.bootstrapAdmin.email) warn.push('No hay BOOTSTRAP_ADMIN_EMAIL: si la base está vacía no habrá con quién iniciar sesión.');
     if (config.bootstrapAdmin.password && config.bootstrapAdmin.password.length < 12) warn.push('BOOTSTRAP_ADMIN_PASSWORD es corta (<12 caracteres).');
     if (config.trustProxy === false) warn.push('TRUST_PROXY está desactivado: detrás de un proxy TLS, HSTS y las IP de la bitácora pueden ser incorrectas.');
+    if (config.storage === 'file') warn.push('STORAGE=file en producción: la persistencia es un archivo JSON (una sola instancia). Para alta disponibilidad usa STORAGE=postgres (DATABASE_URL).');
   }
   return warn;
 }

@@ -37,9 +37,30 @@ Claves importantes:
 | `SESSION_TTL_HOURS` | Caducidad de sesión (TTL deslizante). |
 | `LOGIN_RATE_MAX` / `LOGIN_RATE_WINDOW_MIN` | Límite de intentos de acceso (anti fuerza bruta). |
 
+## 2.1 Persistencia: PostgreSQL (recomendado) o archivo
+
+La capa de datos es **conmutable** (`server/db.js`) sin cambiar la lógica de negocio:
+
+| `STORAGE` | Cuándo | Notas |
+|-----------|--------|-------|
+| `postgres` | **Producción** | Durable y apto para varias réplicas. Un `pg_advisory_lock` garantiza un único escritor. Configura `DATABASE_URL`. |
+| `file` | Desarrollo / una sola instancia | Archivo JSON en `DATA_DIR`, con respaldos rotados y candado de instancia única. |
+
+En modo PostgreSQL la aplicación mantiene el estado en memoria y **escribe cada cambio en
+PostgreSQL** (por fila, en orden, vaciando la cola en el mismo ciclo de evento y en el
+apagado ordenado). El `docker-compose.yml` ya incluye el servicio `db` (PostgreSQL 16).
+
+**Migrar de archivo a PostgreSQL** (una sola vez, con la app detenida):
+
+```bash
+DATABASE_URL=postgres://usuario:clave@host:5432/mallatex npm run migrate:pg
+# copia todo db.json a PostgreSQL; luego arranca con STORAGE=postgres
+```
+
 ## 3. Despliegue con Docker (recomendado)
 
-Con [`docker-compose.yml`](docker-compose.yml) se levantan la app y un proxy nginx TLS:
+Con [`docker-compose.yml`](docker-compose.yml) se levantan **PostgreSQL**, la app y un
+proxy nginx TLS:
 
 ```bash
 # 1) Certificados en deploy/certs/ (fullchain.pem, privkey.pem)
@@ -118,15 +139,14 @@ Inicia sesión, **cambia la contraseña**, y da de alta horarios, checador y emp
 
 ## 8. Consideraciones y límites conocidos
 
-- **Una sola instancia por volumen de datos.** La persistencia en archivo JSON no es
-  segura entre procesos; hay un **candado** (`db.lock`) que impide arrancar dos instancias
-  sobre el mismo `DATA_DIR`. Para **alta disponibilidad / escalado horizontal**, migra la
-  capa `server/db.js` a **PostgreSQL** (la API por colecciones —`all/find/get/insert/
-  update/remove`— facilita el cambio sin tocar la lógica de negocio) y mueve las sesiones
-  a un almacén compartido (Redis/JWT).
+- **Persistencia.** En producción usa `STORAGE=postgres` (ver §2.1): durable y con
+  bloqueo de escritor único vía `pg_advisory_lock`. El modo `file` es válido para una sola
+  instancia (candado `db.lock`). Las **sesiones** siguen en memoria de cada proceso; para
+  varias réplicas de la app conviene moverlas a un almacén compartido (Redis/JWT).
 - **Integraciones simuladas.** La descarga del checador **Hikvision** (`server/checador.js`)
   y las fuentes de **percepciones variables** —G3, MES, Aspel— (`server/connectors.js`)
-  están simuladas. En producción se reemplazan por las APIs reales (ISAPI/SDK Hikvision;
-  telemetría G3; órdenes MES; webhook de pago de facturas de Aspel).
+  están simuladas. En producción se reemplazan por las APIs reales; el **contrato exacto**
+  (payloads, mapeos y puntos de implementación) está en
+  [`docs/integraciones.md`](docs/integraciones.md).
 - **Exportación NOI.** Ajusta el layout de la interfaz al de la instalación de Aspel NOI
   del cliente (`server/noi.js`).

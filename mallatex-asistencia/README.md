@@ -93,6 +93,9 @@ Cada captura guarda su **origen** (`Manual` / `G3` / `MES` / `Aspel`) para traza
 la sincronización hace *upsert* por identificador externo (re-sincronizar **actualiza**, no
 duplica) sin tocar las capturas manuales.
 
+> **Contratos de integración** (Hikvision, G3, MES, Aspel CxC y exportación NOI), con
+> payloads y puntos de implementación en el código: [`docs/integraciones.md`](docs/integraciones.md).
+
 ![Percepciones variables](docs/screenshots/30-percepciones-variables.png)
 
 ## 📷 Reconocimiento facial por cámara (modo kiosco)
@@ -171,9 +174,10 @@ HTTPS). Incluye endurecimiento listo para producción:
   (usuario no-root, HEALTHCHECK, volumen de datos). Integración continua en
   [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
-> La persistencia es en archivo JSON (una sola instancia por volumen). Para alta
-> disponibilidad, migra `server/db.js` a PostgreSQL —la API por colecciones facilita el
-> cambio— y las sesiones a un almacén compartido; ver *DEPLOY.md*.
+> **Persistencia conmutable**: `STORAGE=postgres` (**PostgreSQL**, recomendado en
+> producción, con bloqueo de escritor único vía `pg_advisory_lock`) o `STORAGE=file`
+> (archivo JSON, una sola instancia). Migración incluida: `npm run migrate:pg`. Ver
+> *DEPLOY.md* §2.1.
 
 ### Cuentas demo (contraseña: `mallatex2026`)
 

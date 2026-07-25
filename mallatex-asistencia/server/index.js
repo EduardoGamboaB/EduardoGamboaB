@@ -25,7 +25,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
 // ---------- Arranque de datos ----------
-// Candado de instancia única (la persistencia en archivo no es segura entre procesos).
+// Inicializa el backend de datos (obligatorio en modo PostgreSQL).
+try {
+  const info = await db.init();
+  console.log(`Almacenamiento: ${info.mode}`);
+} catch (err) {
+  console.error(`\n  ✖ No se pudo inicializar la base de datos (${db.MODE}): ${err.message}\n`);
+  process.exit(1);
+}
+// Candado de instancia única (archivo). En PostgreSQL lo hace pg_advisory_lock.
 if (!db.acquireLock()) {
   console.error(`\n  ✖ Otra instancia ya usa el directorio de datos (${db.DATA_DIR}).`);
   console.error('    Ejecuta una sola instancia por volumen de datos, o usa un DATA_DIR distinto.\n');
@@ -117,8 +125,8 @@ function shutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log(`\n${signal} recibido: cerrando…`);
-  server.close(() => {
-    try { db.persist(); } catch {}
+  server.close(async () => {
+    try { await db.flush(); await db.close(); } catch (e) { console.error('Error al cerrar la base:', e.message); }
     db.releaseLock();
     console.log('Cierre completado.');
     process.exit(0);
