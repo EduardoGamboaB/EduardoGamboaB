@@ -284,3 +284,43 @@ test('percepciones variables: periodo cerrado rechaza captura (409)', async () =
   const r = await json('POST', '/api/variable-entries', { token: tokens.nomina, body: { periodId: 2, employeeId: emp.id, conceptId: km.id, cantidad: 50 } });
   assert.equal(r.status, 409);
 });
+
+test('campo: catálogo de sitios con geocerca (admin)', async () => {
+  const sites = (await json('GET', '/api/sites', { token: tokens.contador })).data;
+  assert.ok(sites.length >= 3, 'hay sitios sembrados');
+  assert.ok(sites.find((s) => s.name === 'Obra Norte' && s.radiusMeters > 0));
+});
+
+test('campo: check-in de empleado con geocerca dentro y fuera', async () => {
+  const login = await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } });
+  assert.equal(login.status, 200, 'el empleado de campo inicia sesión');
+  const et = login.data.token;
+  const sites = (await json('GET', '/api/field/sites', { token: et })).data;
+  const obra = sites.find((s) => s.name === 'Obra Norte');
+  assert.ok(obra, 'el empleado ve sus sitios permitidos');
+  // Dentro de la geocerca
+  const inside = await json('POST', '/api/field/checkin', { token: et, body: { siteId: obra.id, lat: obra.lat, lng: obra.lng, type: 'entrada' } });
+  assert.equal(inside.status, 201);
+  assert.equal(inside.data.withinGeofence, true);
+  assert.equal(inside.data.distanceMeters, 0);
+  assert.equal(inside.data.type, 'entrada');
+  // Fuera de la geocerca → se registra pero se marca la bandera
+  const outside = await json('POST', '/api/field/checkin', { token: et, body: { siteId: obra.id, lat: 20.0, lng: -103.0, type: 'salida' } });
+  assert.equal(outside.status, 201);
+  assert.equal(outside.data.withinGeofence, false);
+  assert.ok(outside.data.distanceMeters > 1000);
+  assert.ok(outside.data.flags.includes('fuera_de_geocerca'));
+  // Queda registrado como checada de campo
+  const mine = (await json('GET', '/api/field/checkins', { token: et })).data;
+  assert.ok(mine.length >= 2);
+});
+
+test('campo: exige ubicación y es sólo para empleados', async () => {
+  const login = await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } });
+  const et = login.data.token;
+  const noLoc = await json('POST', '/api/field/checkin', { token: et, body: { type: 'entrada' } });
+  assert.equal(noLoc.status, 400);
+  // Un administrativo NO puede usar el endpoint de campo (es del portal del empleado)
+  const asAdmin = await json('POST', '/api/field/checkin', { token: tokens.contador, body: { lat: 20, lng: -103 } });
+  assert.equal(asAdmin.status, 403);
+});

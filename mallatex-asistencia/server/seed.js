@@ -165,6 +165,14 @@ export function seed({ reset = false } = {}) {
   captura('MTX006', 'comision_ventas', 92000, 'Ventas del periodo');      // 92,000 × 3% = 2760
   captura('MTX010', 'comision_ventas', 118000, 'Ventas del periodo');     // 118,000 × 3% = 3540
 
+  // ----- Sitios / geocercas y personal de campo (asistencia remota) -----
+  const obraNorte = db.insert('sites', { name: 'Obra Norte', client: 'Constructora GDL', lat: 20.7000, lng: -103.3900, radiusMeters: 150, active: true });
+  const clienteCentro = db.insert('sites', { name: 'Cliente Centro', client: 'Comercializadora Centro', lat: 20.6597, lng: -103.3496, radiusMeters: 120, active: true });
+  const bodegaSur = db.insert('sites', { name: 'Bodega Sur', client: 'Mallatex', lat: 20.6100, lng: -103.4100, radiusMeters: 200, active: true });
+  if (byCode['MTX013']) db.update('employees', byCode['MTX013'].id, { workMode: 'campo', allowedSiteIds: [obraNorte.id, clienteCentro.id, bodegaSur.id] });
+  if (byCode['MTX006']) db.update('employees', byCode['MTX006'].id, { workMode: 'campo', allowedSiteIds: [clienteCentro.id] });
+  if (byCode['MTX010']) db.update('employees', byCode['MTX010'].id, { workMode: 'hibrido', allowedSiteIds: [clienteCentro.id, obraNorte.id] });
+
   // ----- Algunas incidencias de ejemplo -----
   db.insert('incidents', {
     employeeId: emps[1].id, type: 'vacaciones',

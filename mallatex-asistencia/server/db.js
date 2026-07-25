@@ -25,6 +25,7 @@ const COLLECTIONS = [
   'users',
   'devices',
   'schedules',
+  'sites',
   'employees',
   'checadas',
   'attendance',

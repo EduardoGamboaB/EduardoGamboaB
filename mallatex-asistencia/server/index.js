@@ -18,6 +18,8 @@ import variablePayRoutes from './routes/variablepay.js';
 import auditRoutes from './routes/audit.js';
 import kioskRoutes from './routes/kiosk.js';
 import portalRoutes from './routes/portal.js';
+import fieldRoutes from './routes/field.js';
+import sitesRoutes from './routes/sites.js';
 import rhRoutes from './routes/rh.js';
 import { requireAuth, adminOnly } from './auth.js';
 
@@ -80,7 +82,10 @@ app.use('/api/auth', authRoutes);
 // Portal del empleado: se monta antes que los routers admin genéricos
 // (que capturan cualquier ruta bajo /api) para no ser bloqueado por adminOnly.
 app.use('/api/portal', requireAuth, portalRoutes);
+// Asistencia de campo (app móvil): sesión de empleado, antes de los routers admin.
+app.use('/api/field', requireAuth, fieldRoutes);
 app.use('/api', requireAuth, adminOnly, catalogRoutes);
+app.use('/api', requireAuth, adminOnly, sitesRoutes);
 app.use('/api', requireAuth, adminOnly, operationsRoutes);
 app.use('/api', requireAuth, adminOnly, periodRoutes);
 app.use('/api', requireAuth, adminOnly, variablePayRoutes);
