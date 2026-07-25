@@ -3,7 +3,7 @@
 // También se invoca automáticamente en el primer arranque si la base está vacía.
 
 import * as db from './db.js';
-import { hashPassword, ROLES } from './auth.js';
+import { hashPassword, hashPin, ROLES } from './auth.js';
 import { defaultNoiConcepts, defaultVariableConcepts, computeVariableImporte } from './noi.js';
 import { syncDevice } from './checador.js';
 import { reprocess } from './rules.js';
@@ -108,7 +108,7 @@ export function seed({ reset = false } = {}) {
       scheduleId,
       deviceId: device.id,
       checadorUserId: String(1000 + idx), // id de persona en el Hikvision
-      pin: '1234', // PIN de acceso al portal del empleado (demo)
+      pin: hashPin('1234'), // PIN de acceso al portal del empleado (demo, cifrado)
       dailySalary,
       hireDate: `${hireYears[idx - 1]}-03-01`,
       bonusEligible: true,

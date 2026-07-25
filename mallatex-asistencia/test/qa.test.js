@@ -53,6 +53,26 @@ test('salud del servicio responde', async () => {
   assert.equal(d.ok, true);
 });
 
+test('producción: cabeceras de seguridad presentes', async () => {
+  const r = await fetch(BASE + '/api/health');
+  assert.equal(r.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(r.headers.get('x-frame-options'), 'DENY');
+  assert.ok(r.headers.get('content-security-policy'), 'hay CSP');
+  assert.ok(/camera=\(self\)/.test(r.headers.get('permissions-policy') || ''), 'permite cámara sólo en el sitio');
+  assert.equal(r.headers.get('x-powered-by'), null, 'no expone x-powered-by');
+});
+
+test('producción: límite de intentos de acceso (429)', async () => {
+  // Identificador único: no afecta a las cuentas reales.
+  const body = { email: `bruteforce-${Date.now()}@test.mx`, password: 'x' };
+  let sawTooMany = false;
+  for (let i = 0; i < 20; i++) {
+    const { status } = await json('POST', '/api/auth/login', { body });
+    if (status === 429) { sawTooMany = true; break; }
+  }
+  assert.ok(sawTooMany, 'tras varios intentos fallidos responde 429');
+});
+
 test('acceso: credenciales válidas devuelven token y datos de usuario', async () => {
   assert.ok(tokens.admin && tokens.contador && tokens.nomina);
   const { data } = await json('GET', '/api/auth/me', { token: tokens.nomina });

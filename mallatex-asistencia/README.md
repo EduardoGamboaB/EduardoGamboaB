@@ -147,6 +147,34 @@ Para reiniciar los datos:
 npm run seed   # node server/seed.js --reset
 ```
 
+### 🚀 Producción
+
+Para salir a producción, sigue la **[guía de despliegue (`DEPLOY.md`)](DEPLOY.md)**. En resumen:
+
+```bash
+cp .env.example .env          # ajusta admin, dominio y TLS
+docker compose up -d --build  # app + reverse-proxy nginx (TLS)
+```
+
+Con `NODE_ENV=production` y `SEED_DEMO=false` **no** se cargan datos demostrativos: se
+crean los catálogos base y el **primer administrador** desde `BOOTSTRAP_ADMIN_*`. La
+plataforma se ejecuta **detrás de un reverse-proxy con TLS** (la cámara del kiosco exige
+HTTPS). Incluye endurecimiento listo para producción:
+
+- Contraseñas con **scrypt** y **PIN cifrado**; **sesiones con caducidad**; **límite de
+  intentos de acceso**.
+- **Cabeceras de seguridad** (CSP con nonce, HSTS, `X-Frame-Options`, `Permissions-Policy`…)
+  y CORS configurable.
+- **Configuración por entorno** ([`.env.example`](.env.example)), **respaldos** con rotación,
+  **health/ready checks**, **apagado ordenado** y **candado de instancia única**.
+- Empaquetado en **[`Dockerfile`](Dockerfile)** + **[`docker-compose.yml`](docker-compose.yml)**
+  (usuario no-root, HEALTHCHECK, volumen de datos). Integración continua en
+  [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+> La persistencia es en archivo JSON (una sola instancia por volumen). Para alta
+> disponibilidad, migra `server/db.js` a PostgreSQL —la API por colecciones facilita el
+> cambio— y las sesiones a un almacén compartido; ver *DEPLOY.md*.
+
 ### Cuentas demo (contraseña: `mallatex2026`)
 
 | Rol | Correo | Puede |

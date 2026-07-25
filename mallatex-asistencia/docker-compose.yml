@@ -1,0 +1,35 @@
+# Despliegue de referencia: la app detrás de un reverse-proxy con TLS.
+# La cámara del kiosco (getUserMedia) exige contexto seguro (HTTPS), por eso se termina
+# TLS en el proxy. Ajusta dominios y certificados antes de usar en producción.
+
+services:
+  app:
+    build: .
+    image: mallatex-asistencia:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATA_DIR: /data
+      TRUST_PROXY: "1"
+    volumes:
+      - mallatex-data:/data
+    expose:
+      - "3000"
+    # No se publica el puerto directamente: el acceso es a través del proxy TLS.
+
+  proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/certs:/etc/nginx/certs:ro
+
+volumes:
+  mallatex-data:
