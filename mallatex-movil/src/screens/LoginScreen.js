@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { colors } from '../theme';
 import { api } from '../api';
 import { setToken, getServerUrl, setServerUrl } from '../storage';
@@ -29,7 +29,10 @@ export default function LoginScreen({ onLoggedIn }) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={st.wrap}>
-      <View style={st.logo}><Text style={st.logoTxt}>Mallatex</Text><Text style={st.logoSub}>Campo · Asistencia</Text></View>
+      <View style={st.logo}>
+        <Image source={require('../../assets/logo-word.png')} style={st.logoImg} resizeMode="contain" />
+        <Text style={st.logoSub}>Campo · Asistencia</Text>
+      </View>
 
       <View style={st.card}>
         <Text style={st.title}>Acceso del colaborador</Text>
@@ -58,8 +61,8 @@ export default function LoginScreen({ onLoggedIn }) {
 const st = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', padding: 22 },
   logo: { alignItems: 'center', marginBottom: 22 },
-  logoTxt: { fontSize: 34, fontWeight: '900', color: colors.red, letterSpacing: 1 },
-  logoSub: { color: colors.gray, marginTop: 2, fontWeight: '600' },
+  logoImg: { width: 220, height: 56 },
+  logoSub: { color: colors.gray, marginTop: 6, fontWeight: '600' },
   card: { backgroundColor: colors.white, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.lightGray },
   title: { fontSize: 18, fontWeight: '800', color: colors.black, marginBottom: 8 },
   label: { color: colors.black, fontWeight: '700', marginTop: 12, marginBottom: 6 },

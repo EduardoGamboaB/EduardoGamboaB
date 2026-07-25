@@ -18,11 +18,22 @@ motor de reglas y a la exportación a **Aspel NOI**.
 |---|---|
 | ![Confirmación](docs/screenshots/04-confirmacion.png) | ![Historial](docs/screenshots/05-historial.png) |
 
+| Menú (escalable) | Mi perfil (con biometría) |
+|---|---|
+| ![Menú](docs/screenshots/06-menu.png) | ![Perfil](docs/screenshots/07-perfil.png) |
+
 > Capturas del flujo real (acceso → registro con selfie + GPS → validación de geocerca →
 > historial), tomadas contra el backend con datos demo.
 
 ## Funcionalidades
 
+- **Identidad Mallatex**: logotipo oficial en acceso, encabezado y menú; icono de app,
+  splash y adaptive icon con la marca.
+- **Acceso biométrico** (Face ID / huella, `expo-local-authentication`): tras el primer
+  acceso con código + PIN, la app ofrece activar biometría; al reabrir, la sesión se
+  desbloquea con el sensor del dispositivo. Se administra desde *Mi perfil*.
+- **Menú lateral escalable**: navegación por secciones (Asistencia · Cuenta) con espacio
+  para futuros módulos (Recibos, Vacaciones, Tickets — marcados *pronto*).
 - **Acceso del colaborador** con código + PIN (misma cuenta del portal).
 - **Registro de entrada/salida** desde el campo con:
   - **Selfie** (cámara frontal) como evidencia de identidad.

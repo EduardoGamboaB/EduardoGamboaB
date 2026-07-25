@@ -6,9 +6,11 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "mallatexcampo",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ED3237"
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -16,16 +18,25 @@
       "bundleIdentifier": "mx.mallatex.campo",
       "infoPlist": {
         "NSCameraUsageDescription": "Se usa la cámara para tomar la selfie de verificación al registrar tu asistencia.",
-        "NSLocationWhenInUseUsageDescription": "Se usa tu ubicación sólo al registrar asistencia, para validar el sitio (geocerca)."
+        "NSLocationWhenInUseUsageDescription": "Se usa tu ubicación sólo al registrar asistencia, para validar el sitio (geocerca).",
+        "NSFaceIDUsageDescription": "Se usa Face ID para acceder a la app de forma segura."
       }
     },
     "android": {
       "package": "mx.mallatex.campo",
-      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "USE_BIOMETRIC", "USE_FINGERPRINT"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       ["expo-camera", { "cameraPermission": "Se usa la cámara para tomar la selfie de verificación al registrar tu asistencia." }],
-      ["expo-location", { "locationWhenInUsePermission": "Se usa tu ubicación sólo al registrar asistencia, para validar el sitio (geocerca)." }]
+      ["expo-location", { "locationWhenInUsePermission": "Se usa tu ubicación sólo al registrar asistencia, para validar el sitio (geocerca)." }],
+      ["expo-local-authentication", { "faceIDPermission": "Se usa Face ID para acceder a la app de forma segura." }]
     ]
   }
 }
