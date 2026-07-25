@@ -29,6 +29,36 @@
       <div class="card form-card">
         <h1>Registrar lead</h1>
         <p class="muted">Captura los datos del contacto en el stand de Anaberries.</p>
+
+        <div class="mode-seg" id="mode-seg">
+          <button type="button" class="mode-btn is-active" data-mode="manual">✍️ Manual</button>
+          <button type="button" class="mode-btn" data-mode="gafete">📷 Foto del gafete</button>
+        </div>
+
+        <!-- Panel de captura por foto del gafete (OCR) -->
+        <div class="gafete-panel" id="gafete-panel" hidden>
+          <div class="gafete-stage">
+            <video id="cam-video" playsinline autoplay muted hidden></video>
+            <img id="cam-photo" alt="Foto del gafete" hidden />
+            <div class="gafete-hint" id="gafete-hint">
+              <span class="ico">🪪</span>
+              <p>Toma o sube una foto del gafete. Se extraerán los datos automáticamente.</p>
+            </div>
+            <canvas id="cam-canvas" hidden></canvas>
+          </div>
+          <div class="gafete-actions">
+            <button type="button" class="btn" id="btn-cam-start">📷 Abrir cámara</button>
+            <button type="button" class="btn btn-primary" id="btn-cam-shot" hidden>Tomar foto</button>
+            <button type="button" class="btn" id="btn-cam-retake" hidden>Repetir</button>
+            <label class="btn file-btn">⬆ Subir imagen<input type="file" id="cam-file" accept="image/*" capture="environment" hidden></label>
+            <button type="button" class="btn btn-primary" id="btn-ocr" hidden>✨ Extraer datos</button>
+          </div>
+          <div class="ocr-progress" id="ocr-progress" hidden>
+            <div class="ocr-bar"><span id="ocr-bar-fill"></span></div>
+            <span id="ocr-status">Procesando…</span>
+          </div>
+        </div>
+
         <form id="lead-form" autocomplete="off">
           <div class="grid2">
             <label>Nombre completo *
@@ -154,6 +184,7 @@
   <div id="toast" class="toast hidden"></div>
   <footer class="foot">Mallatex · Evento Anaberries — Captura de leads</footer>
 
+  <script src="/vendor/tesseract/tesseract.min.js"></script>
   <script src="/js/app.js" type="module"></script>
 </body>
 </html>

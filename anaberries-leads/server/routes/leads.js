@@ -1,10 +1,26 @@
 // Rutas de captura de leads.
 
 import { Router } from 'express';
-import { db, save, newId } from '../store.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { db, save, newId, DATA_DIR } from '../store.js';
 import { requireStaff } from '../auth.js';
 
 const router = Router();
+
+const BADGES_DIR = path.join(DATA_DIR, 'badges');
+
+// Guarda la foto del gafete (dataURL JPEG/PNG) en disco y devuelve true si se guardó.
+function guardarFoto(id, dataUrl) {
+  if (!dataUrl || typeof dataUrl !== 'string') return false;
+  const m = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+  if (!m) return false;
+  const buf = Buffer.from(m[2], 'base64');
+  if (buf.length > 6 * 1024 * 1024) return false; // tope de 6 MB
+  if (!fs.existsSync(BADGES_DIR)) fs.mkdirSync(BADGES_DIR, { recursive: true });
+  fs.writeFileSync(path.join(BADGES_DIR, id + '.jpg'), buf);
+  return true;
+}
 
 // Catálogo de intereses (productos/servicios Anaberries · Mallatex).
 export const INTERESES = [
@@ -66,8 +82,11 @@ router.post('/', (req, res) => {
     consentimiento: Boolean(b.consentimiento),
     fuente: FUENTES.includes(b.fuente) ? b.fuente : clean(b.fuente, 60) || 'Stand',
     capturadoPor: clean(b.capturadoPor, 80),
+    metodoCaptura: b.metodoCaptura === 'gafete' ? 'gafete' : 'manual',
     createdAt: new Date().toISOString(),
   };
+  // Foto del gafete opcional (se guarda en disco, no en el JSON).
+  lead.tieneFoto = guardarFoto(lead.id, b.foto);
   data.leads.push(lead);
   save();
   res.status(201).json(lead);
@@ -106,12 +125,20 @@ router.get('/export.csv', (_req, res) => {
   res.send('﻿' + rows.join('\r\n'));
 });
 
+// GET /api/leads/:id/badge — foto del gafete (solo personal).
+router.get('/:id/badge', (req, res) => {
+  const file = path.join(BADGES_DIR, path.basename(req.params.id) + '.jpg');
+  if (!fs.existsSync(file)) return res.status(404).json({ error: 'Sin foto' });
+  res.type('jpeg').sendFile(file);
+});
+
 // DELETE /api/leads/:id — eliminar un lead (corrección de captura).
 router.delete('/:id', (req, res) => {
   const data = db();
   const idx = data.leads.findIndex((l) => l.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Lead no encontrado' });
   data.leads.splice(idx, 1);
+  try { fs.rmSync(path.join(BADGES_DIR, req.params.id + '.jpg')); } catch { /* sin foto */ }
   save();
   res.json({ ok: true });
 });

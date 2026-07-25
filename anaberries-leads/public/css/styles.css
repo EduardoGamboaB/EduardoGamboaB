@@ -25,6 +25,7 @@
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--ink-900); font-size: 14px; -webkit-font-smoothing: antialiased; padding-bottom: 40px; }
 .hidden { display: none !important; }
+[hidden] { display: none !important; }  /* gana sobre display de .btn / flex */
 h1 { font-size: 20px; letter-spacing: -.02em; margin: 0 0 4px; }
 h3 { font-size: 14px; margin: 0 0 12px; color: var(--ink-700); }
 .muted { color: var(--ink-600); font-size: 13px; }
@@ -79,6 +80,31 @@ label.check input { width: auto; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn-primary:hover { background: var(--accent-600); border-color: var(--accent-600); color: #fff; }
 .btn-lg { padding: 14px 28px; font-size: 15px; width: 100%; justify-content: center; margin-top: 18px; }
+
+/* ---------- Selector de modo de captura ---------- */
+.mode-seg { display: inline-flex; background: var(--line-2); border-radius: 999px; padding: 4px; gap: 4px; margin: 14px 0 18px; }
+.mode-btn { border: none; background: transparent; border-radius: 999px; padding: 8px 18px; font-size: 13.5px; font-weight: 600; color: var(--ink-600); cursor: pointer; transition: .15s; }
+.mode-btn.is-active { background: #fff; color: var(--accent); box-shadow: var(--shadow); }
+
+/* ---------- Panel de gafete (OCR) ---------- */
+.gafete-panel { margin-bottom: 20px; }
+.gafete-stage {
+  position: relative; border: 2px dashed var(--line); border-radius: var(--radius);
+  background: var(--accent-050); overflow: hidden; aspect-ratio: 16 / 10; max-height: 320px;
+  display: flex; align-items: center; justify-content: center;
+}
+.gafete-stage video, .gafete-stage img { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.gafete-hint { text-align: center; color: var(--ink-500); padding: 24px; }
+.gafete-hint .ico { font-size: 40px; display: block; margin-bottom: 8px; }
+.gafete-hint p { margin: 0; font-size: 13px; max-width: 280px; }
+.gafete-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.file-btn { position: relative; overflow: hidden; }
+.ocr-progress { margin-top: 14px; display: flex; align-items: center; gap: 12px; }
+.ocr-bar { flex: 1; height: 8px; background: var(--line-2); border-radius: 999px; overflow: hidden; }
+.ocr-bar span { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width .3s; }
+#ocr-status { font-size: 12.5px; color: var(--ink-600); white-space: nowrap; }
+.ocr-filled { animation: flash 1.2s ease; }
+@keyframes flash { 0% { background: var(--accent-050); } 100% { background: #fff; } }
 
 /* ---------- Side card / captura ---------- */
 .side-card h3 { margin-top: 0; }
@@ -141,6 +167,8 @@ label.check input { width: auto; }
 .leads-table tr:hover td { background: var(--accent-050); }
 .leads-table .contact { color: var(--ink-600); font-size: 12px; }
 .tag { display: inline-block; background: var(--line-2); border-radius: 999px; padding: 2px 9px; font-size: 11.5px; color: var(--ink-700); }
+.badge-cam { text-decoration: none; font-size: 13px; margin-left: 6px; }
+.badge-cam:hover { opacity: .7; }
 .del-lead { border: none; background: none; color: var(--ink-400); cursor: pointer; font-size: 15px; }
 .del-lead:hover { color: var(--err); }
 

@@ -7,5 +7,5 @@ export const config = {
   isProd: process.env.NODE_ENV === 'production',
   // PIN del personal para acceder a Sorteo y Dashboard. Si se deja vacío, el acceso es abierto (útil en pruebas).
   staffPin: (process.env.STAFF_PIN || '').trim(),
-  jsonLimit: process.env.JSON_LIMIT || '256kb',
+  jsonLimit: process.env.JSON_LIMIT || '8mb', // permite adjuntar la foto del gafete (base64)
 };

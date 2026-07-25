@@ -6,7 +6,7 @@ sorteo y dashboard para el evento de Anaberries.
 - **Fecha:** 2026-07-25
 - **Versión:** 1.0.0
 - **Entorno de prueba:** Node.js v22, servidor local, almacén JSON temporal.
-- **Resultado global:** ✅ **21/21 pruebas automatizadas aprobadas** + validación visual de las 8 pantallas.
+- **Resultado global:** ✅ **24/24 pruebas automatizadas aprobadas** + validación visual de las pantallas (incluye captura por foto del gafete con OCR).
 
 ## 1. Cómo ejecutar las pruebas
 
@@ -43,13 +43,19 @@ datos temporales, ejerce todos los endpoints y limpia al terminar.
 | 18 | «Evitar repetidos» reduce el pool tras un ganador | Sorteo | ✅ |
 | 19 | Anular un sorteo lo elimina del historial | Sorteo | ✅ |
 | 20 | Elimina un lead por id | Dashboard | ✅ |
-| 21 | Ruta de API inexistente devuelve 404 | Robustez | ✅ |
+| 21 | Lead por gafete guarda la foto y marca `metodoCaptura` | Gafete/OCR | ✅ |
+| 22 | Lead manual no tiene foto (`metodoCaptura` manual, badge 404) | Gafete/OCR | ✅ |
+| 23 | Rechaza foto con dataURL inválido (no guarda foto) | Validación | ✅ |
+| 24 | Ruta de API inexistente devuelve 404 | Robustez | ✅ |
 
 ## 3. Pruebas manuales / visuales (UI)
 
 | Pantalla | Verificación | Evidencia | Resultado |
 |----------|--------------|-----------|-----------|
-| Captura (vacía) | Formulario, catálogos cargados, contador | `screenshots/01-captura.png` | ✅ |
+| Captura (manual) | Selector Manual/Gafete, formulario, catálogos, contador | `screenshots/01-captura.png` | ✅ |
+| Gafete — inicial | Modo foto del gafete, cámara/subir imagen | `screenshots/09-gafete-inicial.png` | ✅ |
+| Gafete — foto | Foto del gafete cargada, listo para extraer | `screenshots/10-gafete-foto.png` | ✅ |
+| Gafete — OCR | Datos extraídos y autocompletados (nombre, empresa, correo, teléfono) | `screenshots/11-gafete-ocr.png` | ✅ |
 | Captura (con datos) | Campos, panel «Últimos registros», contador en 12 | `screenshots/02-captura-formulario.png` | ✅ |
 | Acceso PIN | Modal de PIN al entrar a zona protegida | `screenshots/03-acceso-pin.png` | ✅ |
 | Dashboard | KPIs, 4 gráficas de barras, tabla con búsqueda/filtro | `screenshots/04-dashboard.png` | ✅ |
@@ -63,6 +69,11 @@ datos temporales, ejerce todos los endpoints y limpia al terminar.
 - **Captura de leads:** alta, validación (nombre obligatorio, contacto mínimo,
   formato de correo), normalización de teléfono, detección de duplicados con
   opción de forzar, memoria del captador.
+- **Captura por foto del gafete (OCR):** modo manual/gafete, cámara y subir
+  imagen, OCR en el navegador (Tesseract.js offline), autocompletado de
+  nombre/empresa/correo/teléfono con revisión manual, foto adjunta al lead y
+  consultable desde el dashboard (📷). Probado de extremo a extremo con un
+  gafete sintético (los 4 campos se extrajeron correctamente).
 - **Sorteo:** conteo de elegibles, filtros (consentimiento, evitar repetidos),
   selección aleatoria, registro e historial de ganadores, anulación.
 - **Dashboard:** KPIs (total, del día, consentimiento, tasa, ganadores),
@@ -79,5 +90,8 @@ datos temporales, ejerce todos los endpoints y limpia al terminar.
 - Respaldar `data/db.json` (o exportar CSV) periódicamente durante el evento.
 - Definir un `STAFF_PIN` en producción; sin él, sorteo y dashboard quedan
   abiertos (solo recomendable para pruebas).
+- La **cámara** del navegador requiere contexto seguro (`localhost` o HTTPS). En
+  una red por IP sin HTTPS, usar el botón «Subir imagen». El OCR es asistido:
+  siempre revisar y corregir antes de guardar.
 
 _powered by Mallatex_

@@ -6,9 +6,15 @@ stand, realizar un **sorteo** de premios entre los asistentes y dar
 
 ## Funcionalidades
 
-- **📝 Captura de leads** — formulario rápido (nombre, empresa, contacto,
-  producto de interés, volumen, notas, consentimiento). Detecta duplicados por
-  correo o teléfono y recuerda quién captura.
+- **📝 Captura de leads** — dos modos:
+  - **Manual**: formulario rápido (nombre, empresa, contacto, producto de
+    interés, volumen, notas, consentimiento).
+  - **Foto del gafete (OCR)**: toma o sube una foto del gafete y los datos del
+    lead (nombre, empresa, correo, teléfono) se **extraen automáticamente** con
+    OCR en el navegador (Tesseract.js, funciona sin internet). El texto leído se
+    guarda en Notas para verificación y la foto queda adjunta al lead.
+
+  Detecta duplicados por correo o teléfono y recuerda quién captura.
 - **🎁 Sorteo** — selecciona un ganador al azar entre los leads capturados, con
   animación. Opciones para exigir consentimiento y evitar ganadores repetidos.
   Historial de ganadores y posibilidad de anular un sorteo.
@@ -50,6 +56,20 @@ Ejemplo:
 STAFF_PIN=2026 PORT=8080 npm start
 ```
 
+## Foto del gafete (OCR)
+
+- El OCR corre **100% en el navegador** con Tesseract.js. Los archivos (motor,
+  núcleo WASM y modelos `spa`+`eng`) están vendorizados en
+  `public/vendor/tesseract/`, por lo que **no requiere internet** durante el
+  evento.
+- La **cámara** requiere un *contexto seguro*: funciona en `http://localhost` o
+  bajo **HTTPS**. En una red del evento por IP, publica la app con HTTPS o usa
+  el botón **«Subir imagen»** como alternativa.
+- La foto del gafete se guarda en disco en `data/badges/<id>.jpg` (no dentro del
+  JSON) y se consulta desde el dashboard con el ícono 📷.
+- El OCR es una ayuda: siempre se muestran los campos para **revisar y
+  corregir** antes de guardar.
+
 ## Datos
 
 Se guardan en `data/db.json` (escritura atómica, sin base de datos externa).
@@ -74,7 +94,8 @@ puede exportar todo a CSV.
 |--------|--------------------------|----------|--------------------------------|
 | GET    | `/api/access`            | público  | Estado del acceso (PIN)        |
 | GET    | `/api/leads/meta`        | público  | Catálogos del formulario       |
-| POST   | `/api/leads`             | público  | Registrar lead                 |
+| POST   | `/api/leads`             | público  | Registrar lead (con `foto` y `metodoCaptura` opcionales) |
+| GET    | `/api/leads/:id/badge`   | personal | Foto del gafete del lead       |
 | GET    | `/api/leads`             | personal | Listado con búsqueda/filtros   |
 | GET    | `/api/leads/export.csv`  | personal | Exportar CSV                   |
 | DELETE | `/api/leads/:id`         | personal | Eliminar lead                  |

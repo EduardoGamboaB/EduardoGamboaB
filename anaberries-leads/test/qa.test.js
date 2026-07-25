@@ -183,6 +183,40 @@ test('elimina un lead por id', async () => {
   assert.equal(del.status, 200);
 });
 
+// ---------- Captura por foto del gafete ----------
+// JPEG 1x1 válido en base64 (imagen mínima de prueba).
+const JPEG_1PX = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAAAv/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AT//Z';
+
+test('lead por gafete guarda la foto y marca metodoCaptura', async () => {
+  const r = await api('/api/leads', { method: 'POST', body: {
+    nombre: 'Lead Gafete', telefono: '5544332211', metodoCaptura: 'gafete', foto: JPEG_1PX,
+  }});
+  assert.equal(r.status, 201);
+  const lead = await json(r);
+  assert.equal(lead.metodoCaptura, 'gafete');
+  assert.equal(lead.tieneFoto, true);
+
+  // La foto se sirve solo con PIN.
+  const sinPin = await api(`/api/leads/${lead.id}/badge`);
+  assert.equal(sinPin.status, 401);
+  const conPin = await api(`/api/leads/${lead.id}/badge`, { pin: PIN });
+  assert.equal(conPin.status, 200);
+  assert.match(conPin.headers.get('content-type'), /image\/jpeg/);
+});
+
+test('lead manual no tiene foto (metodoCaptura manual, badge 404)', async () => {
+  const lead = await json(await api('/api/leads', { method: 'POST', body: { nombre: 'Lead Manual', telefono: '5500112233' } }));
+  assert.equal(lead.metodoCaptura, 'manual');
+  assert.equal(lead.tieneFoto, false);
+  const badge = await api(`/api/leads/${lead.id}/badge`, { pin: PIN });
+  assert.equal(badge.status, 404);
+});
+
+test('rechaza foto con dataURL inválido (no guarda foto)', async () => {
+  const lead = await json(await api('/api/leads', { method: 'POST', body: { nombre: 'Foto Mala', telefono: '5599887766', foto: 'no-es-una-imagen' } }));
+  assert.equal(lead.tieneFoto, false);
+});
+
 // ---------- Rutas inexistentes ----------
 test('ruta de API inexistente devuelve 404', async () => {
   assert.equal((await api('/api/no-existe')).status, 404);
