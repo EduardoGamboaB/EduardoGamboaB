@@ -8,6 +8,19 @@ motor de reglas y a la exportación a **Aspel NOI**.
 > React Native compila a una app **nativa real** (no es un WebView ni una PWA): un solo
 > código para iOS y Android.
 
+## Capturas
+
+| Acceso | Registro | Selfie |
+|---|---|---|
+| ![Acceso](docs/screenshots/01-acceso.png) | ![Registro](docs/screenshots/02-registro.png) | ![Selfie](docs/screenshots/03-selfie.png) |
+
+| Confirmación (geocerca validada) | Historial |
+|---|---|
+| ![Confirmación](docs/screenshots/04-confirmacion.png) | ![Historial](docs/screenshots/05-historial.png) |
+
+> Capturas del flujo real (acceso → registro con selfie + GPS → validación de geocerca →
+> historial), tomadas contra el backend con datos demo.
+
 ## Funcionalidades
 
 - **Acceso del colaborador** con código + PIN (misma cuenta del portal).
