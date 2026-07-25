@@ -1,0 +1,44 @@
+# Blueprint de despliegue en Render (https://render.com) — URL pública con HTTPS + PostgreSQL.
+#
+# Uso como Blueprint (un clic): copia este archivo a la RAÍZ del repositorio y en Render
+# elige "New +" → "Blueprint" → selecciona el repo. Render creará el servicio web y la base.
+# (Si prefieres no moverlo, crea el servicio a mano con estos mismos valores — ver
+#  docs/hosting-publico.md.)
+
+databases:
+  - name: mallatex-db
+    plan: free
+    databaseName: mallatex
+    user: mallatex
+
+services:
+  - type: web
+    name: mallatex-asistencia
+    runtime: node
+    plan: free
+    rootDir: mallatex-asistencia
+    buildCommand: npm ci --omit=dev
+    startCommand: node server/index.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STORAGE
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mallatex-db
+          property: connectionString
+      - key: TRUST_PROXY
+        value: "1"
+      - key: ENABLE_HSTS
+        value: "true"
+      - key: SESSION_TTL_HOURS
+        value: "12"
+      # Datos demostrativos para poder probar de inmediato con las cuentas demo.
+      # Para producción real: pon "false" y define BOOTSTRAP_ADMIN_EMAIL/PASSWORD.
+      - key: SEED_DEMO
+        value: "true"
+      - key: COMPANY_NAME
+        value: Mallatex
