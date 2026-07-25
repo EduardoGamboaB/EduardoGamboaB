@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Anaberries · Captura de Leads — Mallatex</title>
+  <meta name="theme-color" content="#ed3237" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="/assets/mallatex-logo.png" alt="Mallatex" class="brand-logo" />
+      <div class="brand-text">
+        <strong>Captura de Leads</strong>
+        <span id="event-name">Evento Anaberries</span>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab is-active" data-view="captura">📝 Captura</button>
+      <button class="tab" data-view="sorteo">🎁 Sorteo</button>
+      <button class="tab" data-view="dashboard">📊 Dashboard</button>
+    </nav>
+  </header>
+
+  <main id="app">
+    <!-- ============ CAPTURA ============ -->
+    <section class="view is-active" id="view-captura">
+      <div class="card form-card">
+        <h1>Registrar lead</h1>
+        <p class="muted">Captura los datos del contacto en el stand de Anaberries.</p>
+        <form id="lead-form" autocomplete="off">
+          <div class="grid2">
+            <label>Nombre completo *
+              <input name="nombre" required maxlength="120" placeholder="Ej. Juan Pérez" />
+            </label>
+            <label>Empresa / rancho
+              <input name="empresa" maxlength="160" placeholder="Ej. Agrícola del Valle" />
+            </label>
+            <label>Teléfono
+              <input name="telefono" type="tel" maxlength="40" inputmode="tel" placeholder="Ej. 55 1234 5678" />
+            </label>
+            <label>Correo
+              <input name="email" type="email" maxlength="160" placeholder="correo@ejemplo.com" />
+            </label>
+            <label>Cargo / puesto
+              <input name="cargo" maxlength="120" placeholder="Ej. Gerente de producción" />
+            </label>
+            <label>Producto de interés
+              <select name="interes" id="sel-interes"></select>
+            </label>
+            <label>Volumen / superficie
+              <input name="volumen" maxlength="120" placeholder="Ej. 5 hectáreas" />
+            </label>
+            <label>¿Cómo nos conoció?
+              <select name="fuente" id="sel-fuente"></select>
+            </label>
+          </div>
+          <label>Notas
+            <textarea name="notas" maxlength="1000" rows="2" placeholder="Necesidad, seguimiento acordado, etc."></textarea>
+          </label>
+          <div class="grid2">
+            <label>Capturado por
+              <input name="capturadoPor" id="captador" maxlength="80" placeholder="Tu nombre (personal)" />
+            </label>
+            <label class="check">
+              <input type="checkbox" name="consentimiento" checked />
+              <span>Acepta recibir información comercial</span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="btn-guardar">Guardar lead</button>
+            <button type="reset" class="btn">Limpiar</button>
+          </div>
+          <p class="form-msg" id="lead-msg"></p>
+        </form>
+      </div>
+      <aside class="card side-card">
+        <div class="stat-big"><span id="cap-count">0</span><small>leads capturados</small></div>
+        <h3>Últimos registros</h3>
+        <ul class="recent" id="recent-list"><li class="muted">Aún no hay registros.</li></ul>
+      </aside>
+    </section>
+
+    <!-- ============ SORTEO ============ -->
+    <section class="view" id="view-sorteo">
+      <div class="card raffle-card">
+        <h1>🎁 Sorteo del evento</h1>
+        <p class="muted">Selecciona un ganador al azar entre los leads capturados.</p>
+        <div class="raffle-config">
+          <label>Premio
+            <input id="premio" maxlength="120" placeholder="Ej. Rollo de malla antigranizo" />
+          </label>
+          <label class="check"><input type="checkbox" id="opt-consent" /><span>Solo con consentimiento</span></label>
+          <label class="check"><input type="checkbox" id="opt-repes" checked /><span>Evitar ganadores repetidos</span></label>
+        </div>
+        <p class="pool-info">Participantes elegibles: <strong id="pool-count">0</strong></p>
+        <div class="raffle-stage" id="raffle-stage">
+          <div class="reel" id="reel">🎉</div>
+        </div>
+        <button class="btn btn-primary btn-lg" id="btn-sortear">Iniciar sorteo</button>
+      </div>
+      <aside class="card side-card">
+        <h3>Ganadores</h3>
+        <ul class="winners" id="winners-list"><li class="muted">Aún no hay ganadores.</li></ul>
+      </aside>
+    </section>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="view" id="view-dashboard">
+      <div class="dash-head">
+        <h1>📊 Seguimiento de leads</h1>
+        <div class="dash-actions">
+          <a class="btn" id="btn-export" href="#">⬇ Exportar CSV</a>
+          <button class="btn" id="btn-refresh">↻ Actualizar</button>
+        </div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="dash-grid">
+        <div class="card"><h3>Por producto de interés</h3><div class="bars" id="bars-interes"></div></div>
+        <div class="card"><h3>Por fuente</h3><div class="bars" id="bars-fuente"></div></div>
+        <div class="card"><h3>Captura por hora</h3><div class="bars" id="bars-timeline"></div></div>
+        <div class="card"><h3>Por captador</h3><div class="bars" id="bars-captador"></div></div>
+      </div>
+      <div class="card">
+        <div class="table-toolbar">
+          <input id="search" placeholder="Buscar por nombre, empresa, correo…" />
+          <select id="filter-interes"><option value="">Todos los productos</option></select>
+        </div>
+        <div class="table-wrap">
+          <table class="leads-table">
+            <thead><tr><th>Nombre</th><th>Empresa</th><th>Contacto</th><th>Interés</th><th>Fuente</th><th>Fecha</th><th></th></tr></thead>
+            <tbody id="leads-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ Modal PIN ============ -->
+  <div class="modal-backdrop hidden" id="pin-modal">
+    <div class="modal">
+      <h2>Acceso del personal</h2>
+      <p class="muted">Ingresa el PIN para ver Sorteo y Dashboard.</p>
+      <input id="pin-input" type="password" inputmode="numeric" placeholder="PIN" />
+      <p class="form-msg" id="pin-msg"></p>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="pin-ok">Entrar</button>
+        <button class="btn" id="pin-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <footer class="foot">Mallatex · Evento Anaberries — Captura de leads</footer>
+
+  <script src="/js/app.js" type="module"></script>
+</body>
+</html>
