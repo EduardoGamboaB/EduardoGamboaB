@@ -10,11 +10,13 @@ router.post('/login', (req, res) => {
   if (code || pin) {
     const result = loginEmployee(code, pin);
     if (!result) return res.status(401).json({ error: 'Código o PIN incorrectos' });
+    req.rateLimitForgive?.();
     res.json(result);
     return;
   }
   const result = login(email, password);
   if (!result) return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
+  req.rateLimitForgive?.();
   req.user = result.user;
   log(req, { action: 'login', entity: 'auth', entityId: result.user.id, detail: `Inicio de sesión (${result.user.email})` });
   res.json(result);

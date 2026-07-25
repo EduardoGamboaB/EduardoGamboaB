@@ -1,11 +1,26 @@
-// Autenticación sencilla por token en memoria + control de roles.
+// Autenticación por token opaco en memoria + control de roles.
 // Dos tipos de sesión: administrativa (users) y de empleado (portal).
-// Para un prototipo esto es suficiente; en producción se sustituye por JWT + hash.
+// Los tokens caducan (TTL deslizante) y se limpian periódicamente. En un despliegue con
+// varias réplicas conviene mover las sesiones a un almacén compartido (Redis/JWT).
 
 import crypto from 'node:crypto';
 import * as db from './db.js';
+import { config } from './config.js';
 
-const sessions = new Map(); // token -> { type:'admin'|'empleado', id }
+const sessions = new Map(); // token -> { type:'admin'|'empleado', id, exp }
+
+// Limpieza periódica de sesiones caducadas.
+const cleanup = setInterval(() => {
+  const now = Date.now();
+  for (const [token, s] of sessions) if (s.exp <= now) sessions.delete(token);
+}, 10 * 60 * 1000);
+if (cleanup.unref) cleanup.unref();
+
+function newSession(type, id) {
+  const token = crypto.randomBytes(24).toString('hex');
+  sessions.set(token, { type, id, exp: Date.now() + config.sessionTtlMs });
+  return token;
+}
 
 export const ROLES = {
   ADMIN: 'admin',
@@ -27,28 +42,39 @@ export function hashPassword(password, salt = crypto.randomBytes(16).toString('h
 export function verifyPassword(password, stored) {
   if (!stored || !stored.includes(':')) return false;
   const [salt] = stored.split(':');
-  return crypto.timingSafeEqual(Buffer.from(stored), Buffer.from(hashPassword(password, salt)));
+  const a = Buffer.from(stored);
+  const b = Buffer.from(hashPassword(password, salt));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// PIN del portal del empleado. Se guarda cifrado (scrypt); se acepta también el formato
+// plano heredado (datos demo) para compatibilidad.
+export function hashPin(pin) {
+  return hashPassword(String(pin));
+}
+export function verifyPin(pin, stored) {
+  if (stored == null) return false;
+  const s = String(stored);
+  if (s.includes(':')) return verifyPassword(String(pin), s);
+  return s === String(pin); // formato plano heredado
 }
 
 // ---- Sesión administrativa ----
 export function login(email, password) {
   const user = db.find('users', (u) => u.email.toLowerCase() === String(email).toLowerCase() && u.active !== false);
   if (!user || !verifyPassword(password, user.password)) return null;
-  const token = crypto.randomBytes(24).toString('hex');
-  sessions.set(token, { type: 'admin', id: user.id });
-  return { token, user: publicUser(user), principal: 'admin' };
+  return { token: newSession('admin', user.id), user: publicUser(user), principal: 'admin' };
 }
 
 // ---- Sesión de empleado (portal) ----
 export function loginEmployee(code, pin) {
   const emp = db.find('employees', (e) => e.active !== false && e.code && e.code.toLowerCase() === String(code).toLowerCase());
-  if (!emp || !emp.pin || String(emp.pin) !== String(pin)) return null;
-  const token = crypto.randomBytes(24).toString('hex');
-  sessions.set(token, { type: 'empleado', id: emp.id });
-  return { token, employee: publicEmployee(emp), principal: 'empleado' };
+  if (!emp || !emp.pin || !verifyPin(pin, emp.pin)) return null;
+  return { token: newSession('empleado', emp.id), employee: publicEmployee(emp), principal: 'empleado' };
 }
 
 export function logout(token) { sessions.delete(token); }
+export function sessionCount() { return sessions.size; }
 
 export function publicUser(user) {
   if (!user) return null;
@@ -67,6 +93,8 @@ export function requireAuth(req, res, next) {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || req.headers['x-auth-token'];
   const s = sessions.get(token);
   if (!s) return res.status(401).json({ error: 'No autenticado' });
+  if (s.exp <= Date.now()) { sessions.delete(token); return res.status(401).json({ error: 'Sesión expirada' }); }
+  s.exp = Date.now() + config.sessionTtlMs; // TTL deslizante por actividad
   req.token = token;
   req.principal = s.type;
   if (s.type === 'admin') {

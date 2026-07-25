@@ -53,6 +53,51 @@ Además, transversalmente:
 - **Usuarios y roles**: Administrador, Contador general y Responsable de nómina (hasta 5 usuarios administrativos, plan *Renta Operativa*).
 - **Cierre de periodo**: exige autorizar los movimientos pendientes y bloquea correcciones posteriores.
 
+## 💲 Percepciones variables (kilometraje, costura por m², comisiones)
+
+Además de la asistencia, la plataforma administra **percepciones que no dependen del
+reloj** sino de una cantidad capturada por periodo. Cada tipo de pago es un **concepto
+configurable** con su número de Aspel NOI y su forma de cálculo:
+
+| Caso de uso | Concepto | Cálculo | Ejemplo |
+|-------------|----------|---------|---------|
+| **Conductor** — pago por kilometraje | Bono por kilometraje | `cantidad × tarifa` | 640 km × $2.50 = **$1,600** |
+| **Operador de producción** — costura extra | Costura extra por m² | `cantidad × tarifa` | 45 m² × $12 = **$540** |
+| **Vendedor** — comisión | Comisión sobre ventas | `base × %` | $92,000 × 3 % = **$2,760** |
+
+- **Catálogo de conceptos**: modo de cálculo (`tarifa por unidad`, `porcentaje sobre base`
+  o `importe directo`), unidad, tarifa/porcentaje por defecto, número de concepto NOI y área.
+- **Captura por periodo** (*Nómina → Percepciones variables*): se registra la cantidad por
+  empleado; el importe se calcula en vivo. Se admite una **tarifa/porcentaje distinto por
+  empleado** (excepción puntual) sin cambiar el concepto.
+- **Integración con NOI**: estos importes se suman a los movimientos calculados por
+  asistencia y viajan en la misma interfaz de exportación (`.txt` / `.csv`).
+- Sólo se capturan en **periodos abiertos**; al cerrar el periodo quedan bloqueadas.
+
+### Fuente de datos por concepto (conectores)
+
+Es **un solo módulo configurable**: cada concepto declara su **fuente de datos**. Hoy la
+captura es **manual**; en una fase posterior cada fuente externa se **sincroniza
+automáticamente** —igual que la descarga del checador Hikvision está simulada hoy y en
+producción usaría ISAPI/SDK. La capa de conectores vive en
+[`server/connectors.js`](server/connectors.js) (sincronización simulada, lista para
+conectar la API real):
+
+| Fuente | Alimenta | Origen en producción (fase posterior) |
+|--------|----------|----------------------------------------|
+| **G3** | Kilometraje del conductor | Telemetría de flotilla (G3 Drive) |
+| **MES** | m² de costura en fabricación | Plataforma MES (órdenes de producción) |
+| **Aspel** | Base de comisión de ventas | Aspel (CxC/SAE) al confirmarse el **pago de facturas** |
+
+Cada captura guarda su **origen** (`Manual` / `G3` / `MES` / `Aspel`) para trazabilidad, y
+la sincronización hace *upsert* por identificador externo (re-sincronizar **actualiza**, no
+duplica) sin tocar las capturas manuales.
+
+> **Contratos de integración** (Hikvision, G3, MES, Aspel CxC y exportación NOI), con
+> payloads y puntos de implementación en el código: [`docs/integraciones.md`](docs/integraciones.md).
+
+![Percepciones variables](docs/screenshots/30-percepciones-variables.png)
+
 ## 📷 Reconocimiento facial por cámara (modo kiosco)
 
 El registro de entrada/salida del empleado se hace por **reconocimiento facial con la
@@ -95,14 +140,45 @@ npm start
 ```
 
 Abre <http://localhost:3000>. En el primer arranque se cargan automáticamente los
-**datos demostrativos de Mallatex** (12 empleados, 3 turnos, checador Hikvision,
-~6 semanas de checadas simuladas y dos periodos de nómina).
+**datos demostrativos de Mallatex** (13 empleados —incluido un conductor de reparto—,
+3 turnos, checador Hikvision, ~6 semanas de checadas simuladas, dos periodos de nómina
+y capturas de percepciones variables de ejemplo).
 
 Para reiniciar los datos:
 
 ```bash
 npm run seed   # node server/seed.js --reset
 ```
+
+### 🚀 Producción
+
+Para salir a producción, sigue la **[guía de despliegue (`DEPLOY.md`)](DEPLOY.md)** y el
+**[checklist de go-live (`docs/go-live-checklist.md`)](docs/go-live-checklist.md)**. En resumen:
+
+```bash
+cp .env.example .env          # ajusta admin, dominio y TLS
+docker compose up -d --build  # app + reverse-proxy nginx (TLS)
+```
+
+Con `NODE_ENV=production` y `SEED_DEMO=false` **no** se cargan datos demostrativos: se
+crean los catálogos base y el **primer administrador** desde `BOOTSTRAP_ADMIN_*`. La
+plataforma se ejecuta **detrás de un reverse-proxy con TLS** (la cámara del kiosco exige
+HTTPS). Incluye endurecimiento listo para producción:
+
+- Contraseñas con **scrypt** y **PIN cifrado**; **sesiones con caducidad**; **límite de
+  intentos de acceso**.
+- **Cabeceras de seguridad** (CSP con nonce, HSTS, `X-Frame-Options`, `Permissions-Policy`…)
+  y CORS configurable.
+- **Configuración por entorno** ([`.env.example`](.env.example)), **respaldos** con rotación,
+  **health/ready checks**, **apagado ordenado** y **candado de instancia única**.
+- Empaquetado en **[`Dockerfile`](Dockerfile)** + **[`docker-compose.yml`](docker-compose.yml)**
+  (usuario no-root, HEALTHCHECK, volumen de datos). Integración continua en
+  [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+> **Persistencia conmutable**: `STORAGE=postgres` (**PostgreSQL**, recomendado en
+> producción, con bloqueo de escritor único vía `pg_advisory_lock`) o `STORAGE=file`
+> (archivo JSON, una sola instancia). Migración incluida: `npm run migrate:pg`. Ver
+> *DEPLOY.md* §2.1.
 
 ### Cuentas demo (contraseña: `mallatex2026`)
 
@@ -152,6 +228,7 @@ mallatex-asistencia/
 │   ├── audit.js            # Bitácora / trazabilidad
 │   ├── rules.js            # Motor de reglas de asistencia
 │   ├── checador.js         # Integración/sincronización Hikvision (simulada)
+│   ├── connectors.js       # Fuentes de percepciones variables (G3/MES/Aspel, simuladas)
 │   ├── noi.js              # Conceptos y generación de interfaz NOI
 │   ├── seed.js             # Datos demostrativos de Mallatex
 │   └── routes/             # auth · catalog · operations · periods · audit

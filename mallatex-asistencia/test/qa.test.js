@@ -53,6 +53,26 @@ test('salud del servicio responde', async () => {
   assert.equal(d.ok, true);
 });
 
+test('producción: cabeceras de seguridad presentes', async () => {
+  const r = await fetch(BASE + '/api/health');
+  assert.equal(r.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(r.headers.get('x-frame-options'), 'DENY');
+  assert.ok(r.headers.get('content-security-policy'), 'hay CSP');
+  assert.ok(/camera=\(self\)/.test(r.headers.get('permissions-policy') || ''), 'permite cámara sólo en el sitio');
+  assert.equal(r.headers.get('x-powered-by'), null, 'no expone x-powered-by');
+});
+
+test('producción: límite de intentos de acceso (429)', async () => {
+  // Identificador único: no afecta a las cuentas reales.
+  const body = { email: `bruteforce-${Date.now()}@test.mx`, password: 'x' };
+  let sawTooMany = false;
+  for (let i = 0; i < 20; i++) {
+    const { status } = await json('POST', '/api/auth/login', { body });
+    if (status === 429) { sawTooMany = true; break; }
+  }
+  assert.ok(sawTooMany, 'tras varios intentos fallidos responde 429');
+});
+
 test('acceso: credenciales válidas devuelven token y datos de usuario', async () => {
   assert.ok(tokens.admin && tokens.contador && tokens.nomina);
   const { data } = await json('GET', '/api/auth/me', { token: tokens.nomina });
@@ -82,9 +102,9 @@ test('roles: administrador SÍ puede listar usuarios', async () => {
   assert.ok(!('password' in data[0]), 'la contraseña no debe exponerse');
 });
 
-test('catálogo: hay 12 empleados demo mapeados a NOI', async () => {
+test('catálogo: hay 13 empleados demo mapeados a NOI', async () => {
   const { data } = await json('GET', '/api/employees?active=true', { token: tokens.nomina });
-  assert.equal(data.length, 12);
+  assert.equal(data.length, 13);
   assert.ok(data.every((e) => e.noiKey), 'todo empleado tiene clave NOI');
 });
 
@@ -165,6 +185,56 @@ test('horas extra: autorización con horas ajustadas', async () => {
   assert.equal(auth.data.authorizedMinutes, 60);
 });
 
+test('percepciones variables: catálogo demo y capturas del periodo', async () => {
+  const concepts = (await json('GET', '/api/variable-concepts', { token: tokens.nomina })).data;
+  assert.ok(concepts.find((c) => c.key === 'km_conductor' && c.modo === 'tarifa'), 'concepto de kilometraje');
+  assert.ok(concepts.find((c) => c.key === 'costura_m2' && c.modo === 'tarifa'), 'concepto de costura por m²');
+  assert.ok(concepts.find((c) => c.key === 'comision_ventas' && c.modo === 'porcentaje'), 'concepto de comisión');
+  const entries = (await json('GET', '/api/variable-entries?periodId=2', { token: tokens.nomina })).data;
+  assert.ok(entries.length >= 5, 'hay capturas demo del periodo');
+  const comision = entries.find((e) => e.conceptKey === 'comision_ventas');
+  assert.ok(comision && comision.importe > 0, 'la comisión tiene importe calculado');
+});
+
+test('percepciones variables: captura, override de tarifa y reflejo en NOI', async () => {
+  const emp = (await json('GET', '/api/employees?active=true', { token: tokens.nomina })).data.find((e) => e.code === 'MTX013');
+  const km = (await json('GET', '/api/variable-concepts', { token: tokens.nomina })).data.find((c) => c.key === 'km_conductor');
+  // captura: 100 km × 2.5 = 250
+  const created = await json('POST', '/api/variable-entries', { token: tokens.nomina, body: { periodId: 2, employeeId: emp.id, conceptId: km.id, cantidad: 100 } });
+  assert.equal(created.status, 201);
+  assert.equal(created.data.importe, 250);
+  // edición con tarifa distinta (excepción por empleado): 100 km × 3 = 300
+  const upd = await json('PUT', `/api/variable-entries/${created.data.id}`, { token: tokens.nomina, body: { rate: 3 } });
+  assert.equal(upd.data.importe, 300);
+  // aparece en la vista previa de movimientos NOI del periodo
+  const prev = (await json('GET', '/api/periods/2/noi/preview', { token: tokens.contador })).data;
+  assert.ok(prev.movements.some((m) => m.noiNumber === km.noiNumber && m.employeeId === emp.id), 'el movimiento variable llega a NOI');
+  // limpieza para no alterar el resto del flujo
+  const del = await json('DELETE', `/api/variable-entries/${created.data.id}`, { token: tokens.nomina });
+  assert.equal(del.status, 200);
+});
+
+test('percepciones variables: un concepto con capturas no se elimina (409)', async () => {
+  const inUse = (await json('GET', '/api/variable-concepts', { token: tokens.contador })).data.find((c) => c.key === 'comision_ventas');
+  const del = await json('DELETE', `/api/variable-concepts/${inUse.id}`, { token: tokens.contador });
+  assert.equal(del.status, 409);
+});
+
+test('percepciones variables: fuentes de datos y sincronización simulada (upsert)', async () => {
+  const sources = (await json('GET', '/api/variable-sources', { token: tokens.nomina })).data;
+  for (const id of ['g3', 'mes', 'aspel']) assert.ok(sources.find((s) => s.id === id && s.external), `fuente ${id}`);
+  // sincroniza G3 (kilometraje, área Reparto → MTX013)
+  const r = await json('POST', '/api/variable-sync', { token: tokens.nomina, body: { source: 'g3', periodId: 2 } });
+  assert.equal(r.status, 200);
+  assert.ok(r.data.created + r.data.updated >= 1, 'sincroniza al menos una lectura');
+  const g3Count = () => (json('GET', '/api/variable-entries?periodId=2', { token: tokens.nomina }).then((x) => x.data.filter((e) => e.source === 'g3').length));
+  const before = await g3Count();
+  assert.ok(before >= 1, 'hay capturas con origen G3');
+  // re-sincronizar no duplica (upsert por externalId)
+  await json('POST', '/api/variable-sync', { token: tokens.nomina, body: { source: 'g3', periodId: 2 } });
+  assert.equal(await g3Count(), before, 're-sincronizar no duplica');
+});
+
 test('periodo: no se cierra con pendientes salvo forzado', async () => {
   const blocked = await json('POST', '/api/periods/2/close', { token: tokens.contador, body: {} });
   assert.equal(blocked.status, 409);
@@ -205,4 +275,52 @@ test('NOI: los conceptos están mapeados y son configurables', async () => {
   const concepts = (await json('GET', '/api/noi/concepts', { token: tokens.contador })).data;
   assert.ok(concepts.find((c) => c.key === 'falta' && c.tipo === 'D'));
   assert.ok(concepts.find((c) => c.key === 'bono_puntualidad' && c.tipo === 'P'));
+});
+
+test('percepciones variables: periodo cerrado rechaza captura (409)', async () => {
+  // El periodo 2 quedó cerrado por el flujo completo anterior.
+  const km = (await json('GET', '/api/variable-concepts', { token: tokens.nomina })).data.find((c) => c.key === 'km_conductor');
+  const emp = (await json('GET', '/api/employees?active=true', { token: tokens.nomina })).data[0];
+  const r = await json('POST', '/api/variable-entries', { token: tokens.nomina, body: { periodId: 2, employeeId: emp.id, conceptId: km.id, cantidad: 50 } });
+  assert.equal(r.status, 409);
+});
+
+test('campo: catálogo de sitios con geocerca (admin)', async () => {
+  const sites = (await json('GET', '/api/sites', { token: tokens.contador })).data;
+  assert.ok(sites.length >= 3, 'hay sitios sembrados');
+  assert.ok(sites.find((s) => s.name === 'Obra Norte' && s.radiusMeters > 0));
+});
+
+test('campo: check-in de empleado con geocerca dentro y fuera', async () => {
+  const login = await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } });
+  assert.equal(login.status, 200, 'el empleado de campo inicia sesión');
+  const et = login.data.token;
+  const sites = (await json('GET', '/api/field/sites', { token: et })).data;
+  const obra = sites.find((s) => s.name === 'Obra Norte');
+  assert.ok(obra, 'el empleado ve sus sitios permitidos');
+  // Dentro de la geocerca
+  const inside = await json('POST', '/api/field/checkin', { token: et, body: { siteId: obra.id, lat: obra.lat, lng: obra.lng, type: 'entrada' } });
+  assert.equal(inside.status, 201);
+  assert.equal(inside.data.withinGeofence, true);
+  assert.equal(inside.data.distanceMeters, 0);
+  assert.equal(inside.data.type, 'entrada');
+  // Fuera de la geocerca → se registra pero se marca la bandera
+  const outside = await json('POST', '/api/field/checkin', { token: et, body: { siteId: obra.id, lat: 20.0, lng: -103.0, type: 'salida' } });
+  assert.equal(outside.status, 201);
+  assert.equal(outside.data.withinGeofence, false);
+  assert.ok(outside.data.distanceMeters > 1000);
+  assert.ok(outside.data.flags.includes('fuera_de_geocerca'));
+  // Queda registrado como checada de campo
+  const mine = (await json('GET', '/api/field/checkins', { token: et })).data;
+  assert.ok(mine.length >= 2);
+});
+
+test('campo: exige ubicación y es sólo para empleados', async () => {
+  const login = await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } });
+  const et = login.data.token;
+  const noLoc = await json('POST', '/api/field/checkin', { token: et, body: { type: 'entrada' } });
+  assert.equal(noLoc.status, 400);
+  // Un administrativo NO puede usar el endpoint de campo (es del portal del empleado)
+  const asAdmin = await json('POST', '/api/field/checkin', { token: tokens.contador, body: { lat: 20, lng: -103 } });
+  assert.equal(asAdmin.status, 403);
 });

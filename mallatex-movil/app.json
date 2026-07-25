@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Mallatex Campo",
+    "slug": "mallatex-movil",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "mallatexcampo",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ED3237"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "mx.mallatex.campo",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Se usa la cámara para tomar la selfie de verificación al registrar tu asistencia.",
+        "NSLocationWhenInUseUsageDescription": "Se usa tu ubicación sólo al registrar asistencia, para validar el sitio (geocerca)."
+      }
+    },
+    "android": {
+      "package": "mx.mallatex.campo",
+      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "plugins": [
+      ["expo-camera", { "cameraPermission": "Se usa la cámara para tomar la selfie de verificación al registrar tu asistencia." }],
+      ["expo-location", { "locationWhenInUsePermission": "Se usa tu ubicación sólo al registrar asistencia, para validar el sitio (geocerca)." }]
+    ]
+  }
+}

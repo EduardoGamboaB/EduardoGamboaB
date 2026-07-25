@@ -26,7 +26,7 @@ w(`<section class="cover">
   <div class="cover-sub">Plataforma de Asistencia · Aspel NOI</div>
   <div class="cover-title">MANUAL DE USUARIO</div>
   <div class="cover-desc">Control de asistencia, incidencias, tiempo extra y exportación a nómina</div>
-  <div class="cover-meta">Versión 1.0 · Julio 2026</div>
+  <div class="cover-meta">Versión 1.1 · Julio 2026</div>
   <div class="cover-foot">powered by <b>Evorgyn</b></div>
 </section>`);
 sec();
@@ -64,6 +64,7 @@ p(`Los botones de ${B('Cuentas demo')} (Administrador, Contador general, Nómina
 h2('Cuentas y roles de demostración');
 table(['Rol', 'Correo', 'Contraseña'], [['Administrador', 'admin@mallatex.mx', 'mallatex2026'], ['Contador general', 'contabilidad@mallatex.mx', 'mallatex2026'], ['Responsable de nómina', 'nomina@mallatex.mx', 'mallatex2026']]);
 note(`${B('Cerrar sesión:')} use el ícono de encendido (⏻) en la esquina superior derecha, junto a su nombre.`);
+note(`${B('Seguridad de la sesión:')} por seguridad, la sesión ${B('caduca tras un periodo de inactividad')} y deberá volver a ingresar. Tras varios intentos fallidos de acceso, el sistema ${B('bloquea temporalmente')} nuevos intentos.`);
 sec();
 
 h1(4, 'Interfaz general');
@@ -127,6 +128,24 @@ ol(['Verifique que no haya pendientes (la alerta lo indica).', `Presione ${B('Ex
 note(`Si existen incidencias u horas extra pendientes, la exportación se ${B('bloquea')}; puede forzarse de forma explícita cuando se confirma.`);
 h2('Cerrar y reabrir el periodo');
 ul([`${B('Cerrar periodo:')} bloquea correcciones. Si hay pendientes, pide confirmación.`, `${B('Reabrir')} (Contador/Administrador): vuelve el periodo a Abierto.`, `${B('+ Periodo:')} crea un nuevo periodo indicando nombre y fechas.`]);
+sec();
+
+h2('9.1 Percepciones variables (kilometraje, costura por m², comisiones)');
+p(`${B('Propósito.')} Administrar pagos que ${B('no dependen del reloj checador')} sino de una cantidad capturada por periodo: el ${B('bono por kilometraje')} del conductor, la ${B('costura extra por metro cuadrado')} del operador de producción y la ${B('comisión sobre ventas')} del vendedor. Se abre en ${B('Nómina → Percepciones variables')}.`);
+img('30-percepciones-variables.png', 'Percepciones variables: capturas del periodo y catálogo de conceptos', 'tall');
+h2('Conceptos variables');
+p('Cada tipo de pago es un concepto configurable con su número de Aspel NOI y su forma de cálculo:');
+table(['Forma de cálculo', 'Cómo se obtiene el importe', 'Ejemplo'], [[`${B('Tarifa por unidad')}`, 'cantidad × tarifa', '640 km × $2.50 = $1,600'], [`${B('Porcentaje sobre base')}`, 'base × (porcentaje ÷ 100)', '$92,000 × 3 % = $2,760'], [`${B('Importe directo')}`, 'se captura el importe ya calculado', '—']]);
+p(`Con ${B('+ Concepto')} (Contador/Administrador) se crea un concepto indicando nombre, número NOI, forma de cálculo, unidad (km, m², $ ventas…), tarifa/porcentaje y el área sugerida.`);
+h2('Capturar una percepción');
+ol([`Con el periodo ${B('Abierto')}, presione ${B('+ Captura')}.`, 'Elija el empleado y el concepto.', `Escriba la ${B('cantidad')} (kilómetros, metros cuadrados o monto de ventas). El importe se calcula en vivo.`, `Opcional: indique una ${B('tarifa o porcentaje distinto')} para ese empleado (excepción puntual); si se deja vacío, se usa la del concepto.`, `Guarde. La captura aparece en la tabla del periodo.`]);
+img('31-captura-percepcion.png', 'Captura de una percepción, con el importe calculado en vivo', 'narrow');
+note(`Los importes capturados se ${B('suman a los movimientos calculados por asistencia')} y viajan en la misma exportación a Aspel NOI. Sólo se capturan en periodos ${B('abiertos')}; al cerrar el periodo quedan bloqueadas.`);
+h2('Fuente de datos y sincronización (conectores)');
+p(`Cada concepto declara su ${B('fuente de datos')}. Hoy la captura es ${B('manual')}; en una ${B('fase posterior')} cada fuente externa se sincroniza automáticamente (tal como la descarga del checador Hikvision está simulada hoy y en producción usa ISAPI/SDK). La columna ${B('Origen')} de cada captura indica de dónde provino (Manual, G3, MES o Aspel).`);
+img('32-concepto-fuente.png', 'Alta de concepto: forma de cálculo y fuente de datos', 'narrow');
+table(['Fuente', 'Alimenta', 'Origen en producción (fase posterior)'], [['G3', 'Kilometraje del conductor', 'Telemetría de flotilla (G3 Drive)'], ['MES', 'm² de costura en fabricación', 'Plataforma MES (órdenes de producción)'], ['Aspel', 'Base de comisión de ventas', 'Aspel (CxC/SAE) al confirmarse el pago de facturas']]);
+p(`Los botones ${B('⟳ G3')}, ${B('⟳ MES')} y ${B('⟳ Aspel')} del encabezado ejecutan la sincronización (hoy en modo ${B('simulado')}). La sincronización hace actualización por identificador externo: ${B('re-sincronizar actualiza')} las capturas de esa fuente sin duplicarlas, y no toca las capturas manuales.`);
 sec();
 
 h1(10, 'Empleados');
@@ -247,9 +266,12 @@ sec();
 
 h1(22, 'Anexo: requisitos e instalación');
 p('La plataforma es una aplicación web (Node.js + Express) con una interfaz servida por el propio servidor. No requiere instalación en el equipo del usuario final, sólo un navegador moderno.');
-h2('Puesta en marcha (equipo servidor)');
+h2('Prueba rápida (evaluación)');
 ol(['Requiere Node.js 20 o superior.', `En la carpeta del proyecto: ${B('npm install')} y luego ${B('npm start')}.`, `Abrir ${B('http://localhost:3000')}. En el primer arranque se cargan los datos demostrativos.`]);
-p(`${B('Pruebas:')} la aplicación incluye 27 pruebas automatizadas (unitarias y de integración) que se ejecutan con ${B('npm test')}.`);
+h2('Producción');
+p(`Para un despliegue real, la plataforma incluye ${B('empaquetado Docker')}, ${B('PostgreSQL')} como base de datos (conmutable con la variable ${B('STORAGE')}), reverse-proxy con ${B('HTTPS')} (necesario para la cámara del kiosco), respaldos y verificación de salud. La cámara del kiosco requiere ${B('contexto seguro')} (HTTPS o localhost).`);
+ul([`${B('Guía de despliegue:')} documento ${B('DEPLOY.md')} (Docker/compose, variables de entorno, TLS y respaldos).`, `${B('Checklist de puesta en marcha:')} ${B('docs/go-live-checklist.md')} (infraestructura, datos maestros, UAT y corte).`, `${B('URL pública:')} ${B('docs/hosting-publico.md')} (publicar en Render u otra plataforma con HTTPS).`, `${B('Integraciones:')} ${B('docs/integraciones.md')} (contratos de Hikvision, G3, MES, Aspel CxC y NOI).`]);
+p(`${B('Pruebas:')} la aplicación incluye pruebas automatizadas (unitarias, de integración y de extremo a extremo) que se ejecutan con ${B('npm test')} y ${B('npm run e2e')}.`);
 w('<div class="end">Mallatex · Plataforma de Asistencia · Aspel NOI &nbsp;·&nbsp; powered by <b>Evorgyn</b></div>');
 
 const css = `

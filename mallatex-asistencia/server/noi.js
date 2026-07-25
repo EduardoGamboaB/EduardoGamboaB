@@ -28,6 +28,39 @@ export function getConcepts() {
   return stored.length ? stored : defaultNoiConcepts();
 }
 
+// ----- Percepciones variables (captura por periodo) -----
+// Casos que no dependen de la asistencia sino de una cantidad capturada por periodo:
+// kilometraje del conductor, costura extra por metro cuadrado, comisión de ventas, etc.
+// modo:
+//   'tarifa'     → importe = cantidad × tarifa      (unidad: km, m², pieza…)
+//   'porcentaje' → importe = base × (tarifa / 100)   (cantidad = base en $, tarifa = %)
+//   'importe'    → importe = cantidad                (se captura el importe ya calculado)
+// source: fuente de datos del concepto. 'manual' hoy; en una fase posterior cada
+// fuente externa se sincroniza automáticamente (ver server/connectors.js).
+export function defaultVariableConcepts() {
+  return [
+    { key: 'km_conductor', name: 'Bono por kilometraje (conductor)', noiNumber: '2101', tipo: 'P', unidad: 'km', modo: 'tarifa', rate: 2.5, department: 'Reparto', source: 'g3', enabled: true },
+    { key: 'costura_m2', name: 'Costura extra por metro cuadrado', noiNumber: '2102', tipo: 'P', unidad: 'm²', modo: 'tarifa', rate: 12, department: 'Producción', source: 'mes', enabled: true },
+    { key: 'comision_ventas', name: 'Comisión sobre ventas', noiNumber: '2103', tipo: 'P', unidad: '$ ventas', modo: 'porcentaje', rate: 3, department: 'Ventas', source: 'aspel', enabled: true },
+  ];
+}
+
+export function getVariableConcepts() {
+  const stored = db.all('variableConcepts');
+  return stored.length ? stored : defaultVariableConcepts();
+}
+
+// Calcula el importe de una captura variable según el modo del concepto.
+// rateOverride permite una tarifa/porcentaje distinto para un empleado puntual.
+export function computeVariableImporte(concept, cantidad, rateOverride) {
+  const qty = Number(cantidad) || 0;
+  const hasOverride = rateOverride !== undefined && rateOverride !== null && rateOverride !== '';
+  const rate = hasOverride ? Number(rateOverride) : Number(concept.rate) || 0;
+  if (concept.modo === 'importe') return round2(qty);
+  if (concept.modo === 'porcentaje') return round2((qty * rate) / 100);
+  return round2(qty * rate); // 'tarifa'
+}
+
 function conceptByKey(concepts, key) {
   return concepts.find((c) => c.key === key) || null;
 }
@@ -46,6 +79,12 @@ export function buildMovements(period) {
   const movements = [];
   const byEmployee = [];
   const pending = { overtime: 0, incidents: 0 };
+
+  // Percepciones variables capturadas para este periodo, agrupadas por empleado
+  const varEntriesByEmp = {};
+  for (const en of db.all('variableEntries', (v) => v.periodId === period.id)) {
+    (varEntriesByEmp[en.employeeId] ||= []).push(en);
+  }
 
   // Incidencias pendientes de autorizar dentro del periodo
   pending.incidents = db.all(
@@ -119,6 +158,27 @@ export function buildMovements(period) {
 
     // Bono de puntualidad / asistencia (importe) si es elegible
     if (summary.bonusEligible) push('bono_puntualidad', bonusAmount, 'bono íntegro');
+
+    // Percepciones variables capturadas (kilometraje, costura por m², comisiones…)
+    for (const en of varEntriesByEmp[emp.id] || []) {
+      const vc = db.get('variableConcepts', en.conceptId);
+      if (!vc || vc.enabled === false) continue;
+      const mov = {
+        employeeId: emp.id,
+        noiKey: emp.noiKey || emp.code,
+        empName: emp.name,
+        conceptKey: vc.key,
+        noiNumber: vc.noiNumber,
+        tipo: vc.tipo || 'P',
+        descripcion: vc.name,
+        unidad: vc.unidad,
+        cantidad: Number(en.cantidad) || 0,
+        importe: Number(en.importe) || 0,
+        referencia: en.note || `${en.cantidad} ${vc.unidad}`,
+      };
+      movements.push(mov);
+      empMovs.push(mov);
+    }
 
     byEmployee.push({ employee: emp, summary, movements: empMovs });
   }

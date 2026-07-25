@@ -9,6 +9,7 @@ export const ROUTES = [
   { key: 'incidents', label: 'Faltas e incidencias', icon: '⚑', group: 'Operación', principal: 'admin', load: () => import('./views/incidents.js'), badge: 'incidents' },
   { key: 'overtime', label: 'Horas extra', icon: '⏱', group: 'Operación', principal: 'admin', load: () => import('./views/overtime.js'), badge: 'overtime' },
   { key: 'periods', label: 'Periodos y NOI', icon: '⇄', group: 'Nómina', principal: 'admin', load: () => import('./views/noi.js') },
+  { key: 'variable-pay', label: 'Percepciones variables', icon: '＄', group: 'Nómina', principal: 'admin', load: () => import('./views/variablepay.js') },
   { key: 'rh-recibos', label: 'Recibos', icon: '🧾', group: 'Recursos Humanos', principal: 'admin', load: () => import('./views/rh/recibos.js') },
   { key: 'rh-vacaciones', label: 'Vacaciones (saldos)', icon: '🌴', group: 'Recursos Humanos', principal: 'admin', load: () => import('./views/rh/vacaciones.js') },
   { key: 'rh-tickets', label: 'Tickets RH', icon: '🎫', group: 'Recursos Humanos', principal: 'admin', load: () => import('./views/rh/tickets.js') },
