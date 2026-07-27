@@ -49,6 +49,18 @@ npm start
 
 Abre `http://localhost:4000`.
 
+## Pruebas
+
+```bash
+npm test    # 37 pruebas de API (captura, autoregistro, sorteo, dashboard, evento, seguridad)
+npm run e2e # prueba end-to-end de la jornada completa en un navegador real (Playwright)
+```
+
+La prueba E2E recorre: autoregistro por QR → administración del evento → Términos
+y Condiciones dinámicos → landing con premio → captura del staff → sorteo →
+dashboard → exportación CSV. Si no hay Chromium disponible, la prueba se omite en
+vez de fallar.
+
 ## Configuración (variables de entorno)
 
 Copia `.env.example` y ajústalo, o expórtalas antes de arrancar:

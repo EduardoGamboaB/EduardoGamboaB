@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/qa.test.js",
+    "e2e": "node --test test/e2e.test.js"
   },
   "engines": {
     "node": ">=20"
@@ -16,5 +17,8 @@
     "express": "^4.19.2"
   },
   "author": "Mallatex",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "playwright": "^1.62.0"
+  }
 }

@@ -13,11 +13,30 @@ sorteo y dashboard para el evento de Anaberries.
 ```bash
 cd anaberries-leads
 npm install
-npm test        # suite automatizada de API (node --test)
+npm test        # 37 pruebas de API (node --test)
+npm run e2e     # prueba end-to-end en navegador real (Playwright)
 ```
 
 La suite (`test/qa.test.js`) arranca el servidor en un puerto y directorio de
-datos temporales, ejerce todos los endpoints y limpia al terminar.
+datos temporales, ejerce todos los endpoints y limpia al terminar. La prueba E2E
+(`test/e2e.test.js`) recorre la jornada completa en un navegador y se omite
+automáticamente si no hay Chromium disponible.
+
+### Prueba End-to-End (jornada completa) — ✅ aprobada
+
+Recorre en un navegador real: **autoregistro por QR** (landing) → **administración
+del evento** → **Términos y Condiciones dinámicos** (reflejan el premio) →
+**landing con tarjeta de premio** → **captura del staff** → **sorteo** (ganador) →
+**dashboard** (KPIs) → **exportación CSV** (contiene ambos leads). Todas las
+aserciones pasan.
+
+### Smoke test en modo producción — ✅ aprobado
+
+Con `NODE_ENV=production`: `/api/health` responde; cabeceras de seguridad
+presentes (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`);
+`Cache-Control` de estáticos a 1 h; páginas públicas 200; Sorteo/Dashboard exigen
+PIN (401/200); JSON malformado → 400; `X-Powered-By` oculto. `npm ci --omit=dev`
+instala solo dependencias de producción (sin Playwright).
 
 ## 2. Pruebas automatizadas (API)
 
