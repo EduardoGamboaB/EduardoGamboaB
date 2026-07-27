@@ -34,7 +34,7 @@ export const INTERESES = [
   'Otro',
 ];
 
-const FUENTES = ['Stand', 'Conferencia', 'Recorrido', 'Referido', 'Redes sociales', 'Otro'];
+const FUENTES = ['Stand', 'Conferencia', 'Recorrido', 'Referido', 'Redes sociales', 'Autoregistro (QR)', 'Otro'];
 
 function clean(v, max = 500) {
   return (v == null ? '' : String(v)).trim().slice(0, max);
@@ -46,6 +46,7 @@ function normPhone(v) {
   return clean(v, 40).replace(/[^\d+]/g, '');
 }
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const numDigitos = (s) => (String(s).match(/\d/g) || []).length;
 
 // POST /api/leads — registra un lead (público).
 router.post('/', (req, res) => {
@@ -92,6 +93,53 @@ router.post('/', (req, res) => {
   res.status(201).json(lead);
 });
 
+// POST /api/leads/registro — autoregistro del visitante desde la landing (público).
+// Exige correo y celular válidos (por ahí se contacta al ganador) y aceptación de
+// términos y aviso de privacidad.
+router.post('/registro', (req, res) => {
+  const b = req.body || {};
+  // Honeypot anti-bots: campo oculto que un humano no llena.
+  if (b.website) return res.status(400).json({ error: 'Solicitud inválida' });
+
+  const nombre = clean(b.nombre, 120);
+  const email = normEmail(b.email);
+  const telefono = normPhone(b.telefono);
+
+  if (!nombre) return res.status(400).json({ error: 'Escribe tu nombre completo' });
+  if (!email || !EMAIL_RE.test(email)) return res.status(400).json({ error: 'Ingresa un correo válido' });
+  if (!telefono || numDigitos(telefono) < 10) return res.status(400).json({ error: 'Ingresa un celular válido a 10 dígitos' });
+  if (!b.aceptaTerminos || !b.aceptaPrivacidad) return res.status(400).json({ error: 'Debes aceptar los términos y el aviso de privacidad' });
+
+  const data = db();
+  // Si ya está registrado, respondemos de forma amistosa (no es un error para el visitante).
+  const dup = data.leads.find((l) => (email && l.email === email) || (telefono && l.telefono === telefono));
+  if (dup) return res.status(200).json({ ok: true, yaRegistrado: true });
+
+  const lead = {
+    id: newId('lead'),
+    nombre,
+    empresa: clean(b.empresa, 160),
+    email,
+    telefono,
+    cargo: '',
+    interes: INTERESES.includes(b.interes) ? b.interes : clean(b.interes, 120),
+    volumen: '',
+    notas: '',
+    consentimiento: true,
+    aceptaTerminos: true,
+    aceptaPrivacidad: true,
+    consentimientoAt: new Date().toISOString(),
+    fuente: 'Autoregistro (QR)',
+    capturadoPor: '',
+    metodoCaptura: 'autoregistro',
+    tieneFoto: false,
+    createdAt: new Date().toISOString(),
+  };
+  data.leads.push(lead);
+  save();
+  res.status(201).json({ ok: true });
+});
+
 // GET /api/leads/meta — catálogos para el formulario (público).
 router.get('/meta', (_req, res) => {
   res.json({ intereses: INTERESES, fuentes: FUENTES, event: db().event });
@@ -116,7 +164,7 @@ router.get('/', (req, res) => {
 
 // GET /api/leads/export.csv — exportación CSV.
 router.get('/export.csv', (_req, res) => {
-  const cols = ['nombre', 'empresa', 'cargo', 'email', 'telefono', 'interes', 'volumen', 'fuente', 'consentimiento', 'capturadoPor', 'createdAt'];
+  const cols = ['nombre', 'empresa', 'cargo', 'email', 'telefono', 'interes', 'volumen', 'fuente', 'metodoCaptura', 'consentimiento', 'capturadoPor', 'createdAt'];
   const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const rows = [cols.join(',')];
   for (const l of db().leads) rows.push(cols.map((c) => esc(l[c])).join(','));

@@ -6,7 +6,14 @@ stand, realizar un **sorteo** de premios entre los asistentes y dar
 
 ## Funcionalidades
 
-- **📝 Captura de leads** — dos modos:
+- **📱 Autoregistro por QR (landing pública)** — el visitante escanea el código
+  QR del stand, abre la landing `/registro` (mobile-first) y se registra solo:
+  nombre, empresa, celular y correo **válidos** (con disclaimer de que por ese
+  medio se contacta al ganador), producto de interés y aceptación de
+  **Términos y Condiciones** y **Aviso de Privacidad**. Página `/qr` imprimible
+  para el stand. Si un visitante **no puede escanear**, el personal lo registra
+  desde la app (captura manual o por foto del gafete).
+- **📝 Captura de leads** (personal) — dos modos:
   - **Manual**: formulario rápido (nombre, empresa, contacto, producto de
     interés, volumen, notas, consentimiento).
   - **Foto del gafete (OCR)**: toma o sube una foto del gafete y los datos del
@@ -56,6 +63,18 @@ Ejemplo:
 STAFF_PIN=2026 PORT=8080 npm start
 ```
 
+## Producción
+
+La app está lista para publicarse con URL pública y HTTPS. Incluye `Dockerfile`,
+`render.yaml` (Blueprint de Render) y `.dockerignore`. Consulta la guía completa
+en **[DEPLOY.md](DEPLOY.md)** (checklist, variables de entorno, disco persistente
+y proxy TLS). Puntos clave:
+
+- **HTTPS obligatorio** en producción: lo requieren la cámara del gafete y el
+  escaneo del QR desde teléfonos.
+- Define **`STAFF_PIN`** y monta un **volumen persistente** en `DATA_DIR`.
+- Corre en **una sola instancia** (almacén en archivo). Respalda `DATA_DIR`.
+
 ## Foto del gafete (OCR)
 
 - El OCR corre **100% en el navegador** con Tesseract.js. Los archivos (motor,
@@ -94,6 +113,8 @@ puede exportar todo a CSV.
 |--------|--------------------------|----------|--------------------------------|
 | GET    | `/api/access`            | público  | Estado del acceso (PIN)        |
 | GET    | `/api/leads/meta`        | público  | Catálogos del formulario       |
+| GET    | `/registro` · `/qr` · `/terminos` · `/aviso-privacidad` | público | Landing de autoregistro, QR y legales |
+| POST   | `/api/leads/registro`    | público  | Autoregistro del visitante (valida correo y celular; exige consentimientos; anti-spam) |
 | POST   | `/api/leads`             | público  | Registrar lead (con `foto` y `metodoCaptura` opcionales) |
 | GET    | `/api/leads/:id/badge`   | personal | Foto del gafete del lead       |
 | GET    | `/api/leads`             | personal | Listado con búsqueda/filtros   |

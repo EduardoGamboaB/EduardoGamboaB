@@ -6,7 +6,7 @@ sorteo y dashboard para el evento de Anaberries.
 - **Fecha:** 2026-07-25
 - **Versión:** 1.0.0
 - **Entorno de prueba:** Node.js v22, servidor local, almacén JSON temporal.
-- **Resultado global:** ✅ **24/24 pruebas automatizadas aprobadas** + validación visual de las pantallas (incluye captura por foto del gafete con OCR).
+- **Resultado global:** ✅ **32/32 pruebas automatizadas aprobadas** + validación visual de las pantallas (incluye captura por foto del gafete con OCR y la landing pública de autoregistro por QR).
 
 ## 1. Cómo ejecutar las pruebas
 
@@ -46,12 +46,25 @@ datos temporales, ejerce todos los endpoints y limpia al terminar.
 | 21 | Lead por gafete guarda la foto y marca `metodoCaptura` | Gafete/OCR | ✅ |
 | 22 | Lead manual no tiene foto (`metodoCaptura` manual, badge 404) | Gafete/OCR | ✅ |
 | 23 | Rechaza foto con dataURL inválido (no guarda foto) | Validación | ✅ |
-| 24 | Ruta de API inexistente devuelve 404 | Robustez | ✅ |
+| 24 | Páginas públicas responden HTML (registro, legales, qr) | Landing | ✅ |
+| 25 | Autoregistro válido crea lead con fuente y consentimientos | Autoregistro | ✅ |
+| 26 | Autoregistro sin aceptar términos/privacidad (400) | Autoregistro | ✅ |
+| 27 | Autoregistro con correo inválido (400) | Validación | ✅ |
+| 28 | Autoregistro con celular < 10 dígitos (400) | Validación | ✅ |
+| 29 | Autoregistro con honeypot lleno (400) | Anti-spam | ✅ |
+| 30 | Autoregistro duplicado responde amistoso (200, `yaRegistrado`) | Autoregistro | ✅ |
+| 31 | Limitador de tasa del autoregistro devuelve 429 ante ráfagas | Anti-spam | ✅ |
+| 32 | Ruta de API inexistente devuelve 404 | Robustez | ✅ |
 
 ## 3. Pruebas manuales / visuales (UI)
 
 | Pantalla | Verificación | Evidencia | Resultado |
 |----------|--------------|-----------|-----------|
+| Landing — móvil | Autoregistro mobile-first, disclaimer, consentimientos | `screenshots/12-landing-movil.png` | ✅ |
+| Landing — éxito | Confirmación de registro | `screenshots/13-landing-exito-movil.png` | ✅ |
+| Código QR | Página imprimible que apunta a `/registro` | `screenshots/14-qr.png` | ✅ |
+| Términos / Aviso | Páginas legales enlazadas desde la landing | `screenshots/15-terminos.png` | ✅ |
+| Landing — desktop | Adaptativo en pantalla grande | `screenshots/16-landing-desktop.png` | ✅ |
 | Captura (manual) | Selector Manual/Gafete, formulario, catálogos, contador | `screenshots/01-captura.png` | ✅ |
 | Gafete — inicial | Modo foto del gafete, cámara/subir imagen | `screenshots/09-gafete-inicial.png` | ✅ |
 | Gafete — foto | Foto del gafete cargada, listo para extraer | `screenshots/10-gafete-foto.png` | ✅ |
@@ -66,6 +79,11 @@ datos temporales, ejerce todos los endpoints y limpia al terminar.
 
 ## 4. Cobertura funcional
 
+- **Autoregistro por QR (landing pública):** landing mobile-first y adaptativa,
+  validación estricta de correo y celular (10 dígitos), aceptación obligatoria de
+  términos y aviso de privacidad, disclaimer de contacto, protección anti-spam
+  (honeypot + limitador de tasa por IP), manejo amistoso de duplicados, y páginas
+  legales + QR imprimible. Fallback: registro por el personal.
 - **Captura de leads:** alta, validación (nombre obligatorio, contacto mínimo,
   formato de correo), normalización de teléfono, detección de duplicados con
   opción de forzar, memoria del captador.
@@ -93,5 +111,10 @@ datos temporales, ejerce todos los endpoints y limpia al terminar.
 - La **cámara** del navegador requiere contexto seguro (`localhost` o HTTPS). En
   una red por IP sin HTTPS, usar el botón «Subir imagen». El OCR es asistido:
   siempre revisar y corregir antes de guardar.
+- **Producción:** publicar con **HTTPS** (necesario para cámara y QR). Antes del
+  evento, completar los textos legales (`terminos.html`, `aviso-privacidad.html`)
+  con la información de Mallatex. Guía en `DEPLOY.md`.
+- El **límite anti-spam** del autoregistro es generoso (60/min por IP) para no
+  bloquear el tráfico legítimo detrás del NAT del venue; ajustable por entorno.
 
 _powered by Mallatex_

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { load, flush } from './store.js';
 import { requireStaff, staffInfo } from './auth.js';
+import { rateLimiter } from './security.js';
 import leadsRoutes from './routes/leads.js';
 import raffleRoutes from './routes/raffle.js';
 import statsRoutes from './routes/stats.js';
@@ -19,6 +20,7 @@ load();
 
 const app = express();
 app.disable('x-powered-by');
+if (config.trustProxy) app.set('trust proxy', config.trustProxy);
 app.use(express.json({ limit: config.jsonLimit }));
 
 // Cabeceras de seguridad básicas.
@@ -34,6 +36,12 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOS
 // Estado de acceso: indica si se requiere PIN y valida el que envía el personal.
 app.get('/api/access', (req, res) => res.json(staffInfo(req)));
 
+// Autoregistro de la landing: limitador de tasa por IP (backstop anti-spam).
+app.use('/api/leads/registro', rateLimiter({
+  max: config.registroRateMax,
+  windowMs: config.registroRateWindowMs,
+}));
+
 // Captura de leads: pública (stand/kiosco del evento).
 app.use('/api/leads', leadsRoutes);
 
@@ -43,6 +51,19 @@ app.use('/api/stats', requireStaff, statsRoutes);
 
 // Frontend estático.
 app.use(express.static(PUBLIC_DIR, { maxAge: config.isProd ? '1h' : 0 }));
+
+// Páginas públicas con URL limpia (landing de autoregistro, legales y QR).
+const PAGES = {
+  '/registro': 'registro.html',
+  '/terminos': 'terminos.html',
+  '/aviso-privacidad': 'aviso-privacidad.html',
+  '/qr': 'qr.html',
+};
+for (const [route, file] of Object.entries(PAGES)) {
+  app.get(route, (_req, res) => res.sendFile(path.join(PUBLIC_DIR, file)));
+}
+
+// SPA del personal (captura/sorteo/dashboard) para el resto de rutas.
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));

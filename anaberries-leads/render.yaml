@@ -1,0 +1,32 @@
+# Blueprint de despliegue en Render (https://render.com) — URL pública con HTTPS.
+#
+# Uso: en Render elige "New +" → "Blueprint" → selecciona el repo. Se creará el
+# servicio web con un disco persistente para los datos del evento.
+#
+# HTTPS lo provee Render automáticamente, requisito para que la cámara del gafete
+# funcione desde los teléfonos de los visitantes.
+
+services:
+  - type: web
+    name: anaberries-leads
+    runtime: node
+    plan: starter            # el plan gratuito no incluye disco persistente
+    rootDir: anaberries-leads
+    buildCommand: npm ci --omit=dev
+    startCommand: node server/index.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: anaberries-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /data
+      - key: TRUST_PROXY
+        value: "1"
+      # Define un PIN del personal para proteger Sorteo y Dashboard.
+      - key: STAFF_PIN
+        sync: false          # se captura en el panel de Render (secreto)

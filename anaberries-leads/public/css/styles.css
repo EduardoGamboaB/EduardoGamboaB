@@ -48,6 +48,7 @@ h3 { font-size: 14px; margin: 0 0 12px; color: var(--ink-700); }
 }
 .tab:hover { border-color: var(--accent); color: var(--accent); }
 .tab.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tab-link { text-decoration: none; display: inline-flex; align-items: center; }
 
 /* ---------- Layout ---------- */
 main { max-width: 1120px; margin: 22px auto; padding: 0 20px; }

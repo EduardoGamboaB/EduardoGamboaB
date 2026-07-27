@@ -217,6 +217,79 @@ test('rechaza foto con dataURL inválido (no guarda foto)', async () => {
   assert.equal(lead.tieneFoto, false);
 });
 
+// ---------- Landing pública y páginas legales ----------
+test('las páginas públicas responden HTML (registro, legales, qr)', async () => {
+  for (const ruta of ['/registro', '/terminos', '/aviso-privacidad', '/qr']) {
+    const r = await fetch(BASE + ruta);
+    assert.equal(r.status, 200, `ruta ${ruta}`);
+    assert.match(r.headers.get('content-type'), /text\/html/, `ruta ${ruta}`);
+  }
+});
+
+// ---------- Autoregistro (landing) ----------
+test('autoregistro válido crea lead con fuente y consentimientos', async () => {
+  const r = await api('/api/leads/registro', { method: 'POST', body: {
+    nombre: 'Visitante QR', email: 'visitante.qr@correo.mx', telefono: '55 6677 8899',
+    interes: 'Malla sombra', aceptaTerminos: true, aceptaPrivacidad: true,
+  }});
+  assert.equal(r.status, 201);
+  assert.equal((await json(r)).ok, true);
+  // Verifica en el listado (personal).
+  const lista = await json(await api('/api/leads?q=visitante.qr', { pin: PIN }));
+  const lead = lista.items[0];
+  assert.equal(lead.fuente, 'Autoregistro (QR)');
+  assert.equal(lead.metodoCaptura, 'autoregistro');
+  assert.equal(lead.aceptaTerminos, true);
+  assert.equal(lead.aceptaPrivacidad, true);
+  assert.equal(lead.consentimiento, true);
+});
+
+test('autoregistro sin aceptar términos/privacidad es rechazado (400)', async () => {
+  const r = await api('/api/leads/registro', { method: 'POST', body: {
+    nombre: 'Sin Consentimiento', email: 'sc@correo.mx', telefono: '5511112222', aceptaTerminos: false, aceptaPrivacidad: true,
+  }});
+  assert.equal(r.status, 400);
+});
+
+test('autoregistro con correo inválido es rechazado (400)', async () => {
+  const r = await api('/api/leads/registro', { method: 'POST', body: {
+    nombre: 'Correo Malo', email: 'no-es-correo', telefono: '5511112222', aceptaTerminos: true, aceptaPrivacidad: true,
+  }});
+  assert.equal(r.status, 400);
+});
+
+test('autoregistro con celular de menos de 10 dígitos es rechazado (400)', async () => {
+  const r = await api('/api/leads/registro', { method: 'POST', body: {
+    nombre: 'Cel Corto', email: 'cc@correo.mx', telefono: '123', aceptaTerminos: true, aceptaPrivacidad: true,
+  }});
+  assert.equal(r.status, 400);
+});
+
+test('autoregistro con honeypot lleno es rechazado (400)', async () => {
+  const r = await api('/api/leads/registro', { method: 'POST', body: {
+    nombre: 'Bot', email: 'bot@correo.mx', telefono: '5511112222', website: 'http://spam', aceptaTerminos: true, aceptaPrivacidad: true,
+  }});
+  assert.equal(r.status, 400);
+});
+
+test('autoregistro duplicado responde amistoso (200, yaRegistrado)', async () => {
+  const r = await api('/api/leads/registro', { method: 'POST', body: {
+    nombre: 'Visitante QR Otra Vez', email: 'visitante.qr@correo.mx', telefono: '5500009999', aceptaTerminos: true, aceptaPrivacidad: true,
+  }});
+  assert.equal(r.status, 200);
+  assert.equal((await json(r)).yaRegistrado, true);
+});
+
+test('el limitador de tasa del autoregistro devuelve 429 ante ráfagas', async () => {
+  // Dispara muchas solicitudes (honeypot para no crear leads) y espera al menos un 429.
+  let got429 = false;
+  for (let i = 0; i < 75; i++) {
+    const r = await api('/api/leads/registro', { method: 'POST', body: { website: 'x', nombre: 'r', email: 'r@r.mx', telefono: '5511112222', aceptaTerminos: true, aceptaPrivacidad: true } });
+    if (r.status === 429) { got429 = true; break; }
+  }
+  assert.equal(got429, true);
+});
+
 // ---------- Rutas inexistentes ----------
 test('ruta de API inexistente devuelve 404', async () => {
   assert.equal((await api('/api/no-existe')).status, 404);
