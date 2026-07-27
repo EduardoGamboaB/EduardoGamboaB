@@ -1,0 +1,116 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>
+  :root{ --red:#ED3237; --red2:#9B3234; --black:#232121; --ink:#3f3d3d; --gray:#606062; --line:#d2d3d5; --line2:#eeeef0; }
+  *{ box-sizing:border-box; } html,body{ margin:0; }
+  body{ font-family:'Segoe UI',system-ui,Arial,sans-serif; color:var(--ink); font-size:12.5px; line-height:1.55; }
+  h1{ color:var(--red); font-size:22px; margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--red); }
+  h1 .num{ display:inline-grid; place-items:center; width:30px; height:30px; background:var(--red); color:#fff; border-radius:8px; font-size:15px; margin-right:8px; vertical-align:middle; }
+  h1.toc-title{ }
+  h2{ color:var(--black); font-size:15px; margin:18px 0 7px; }
+  p{ margin:0 0 9px; } b{ color:var(--black); }
+  ul,ol{ margin:0 0 10px; padding-left:20px; } li{ margin:0 0 5px; }
+  .note{ background:#fbf3f3; border-left:3px solid var(--red); padding:9px 12px; border-radius:0 6px 6px 0; margin:8px 0 12px; }
+  .note.warn{ background:#fff7e6; border-left-color:#d97706; }
+  .note.ok{ background:#f0fdf4; border-left-color:#15803d; }
+  table{ width:100%; border-collapse:collapse; margin:6px 0 14px; font-size:11.5px; }
+  th{ background:var(--red); color:#fff; text-align:left; padding:7px 10px; font-weight:600; }
+  td{ padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:nth-child(even){ background:var(--line2); }
+  figure{ margin:10px 0 16px; text-align:center; }
+  figure img{ max-width:100%; border:1px solid var(--line); border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  figure.narrow img{ max-width:60%; } figure.phone img{ max-width:230px; }
+  figcaption{ color:var(--gray); font-style:italic; font-size:10.5px; margin-top:5px; }
+  .row2{ display:flex; gap:12px; align-items:flex-start; }
+  .row2 figure{ flex:1; margin:10px 0; }
+  .page-break{ page-break-after:always; }
+  .cover{ height:975px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .cover-imago{ width:420px; max-width:72%; margin-bottom:30px; }
+  .cover-sub{ font-size:18px; color:var(--black); margin-bottom:30px; }
+  .cover-title{ font-size:34px; font-weight:800; color:var(--black); border-top:3px solid var(--red); border-bottom:3px solid var(--red); padding:10px 26px; letter-spacing:1px; }
+  .cover-desc{ color:var(--gray); font-size:15px; margin-top:26px; max-width:470px; }
+  .cover-meta{ margin-top:120px; color:var(--ink); font-size:14px; }
+  .cover-foot{ margin-top:6px; color:var(--gray); font-size:14px; } .cover-foot b{ color:var(--red2); }
+  .toc-item{ display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px dotted var(--line); font-size:13px; }
+  .toc-item span{ color:var(--black); }
+  .end{ margin-top:40px; padding-top:14px; border-top:2px solid var(--red); text-align:center; color:var(--gray); font-size:12px; } .end b{ color:var(--red2); }
+</style></head><body><section class="cover">
+  <img class="cover-imago" src="../manual-assets/mallatex-logo.png"/>
+  <div class="cover-sub">Captura de Leads · Evento Anaberries</div>
+  <div class="cover-title">MANUAL DEL STAFF</div>
+  <div class="cover-desc">Guía de usabilidad para el personal del stand: autoregistro por QR, captura de leads, sorteo y seguimiento.</div>
+  <div class="cover-meta">Versión 1.0 · Julio 2026</div>
+  <div class="cover-foot">Mallatex · <b>Protegemos lo que siembras</b></div>
+</section>
+<div class="page-break"></div>
+<h1 class="toc-title">Contenido</h1><nav class="toc"><div class="toc-item"><span>1. Introducción</span></div><div class="toc-item"><span>2. Preparación antes del evento</span></div><div class="toc-item"><span>3. Acceso del personal (PIN)</span></div><div class="toc-item"><span>4. Autoregistro del visitante por QR</span></div><div class="toc-item"><span>5. Registro por el staff (respaldo)</span></div><div class="toc-item"><span>6. El sorteo</span></div><div class="toc-item"><span>7. Dashboard de seguimiento</span></div><div class="toc-item"><span>8. Buenas prácticas en el stand</span></div><div class="toc-item"><span>9. Solución de problemas</span></div><div class="toc-item"><span>10. Checklist rápido</span></div></nav>
+<div class="page-break"></div>
+<h1 id="s1"><span class="num">1</span> Introducción</h1>
+<p>Esta plataforma permite <b>capturar los datos de los visitantes (leads)</b> del stand de Mallatex en el evento Anaberries, realizar un <b>sorteo</b> de premios entre ellos y dar <b>seguimiento</b> desde un panel. Este manual está dirigido al <b>personal del stand (staff)</b> y explica el uso diario paso a paso.</p>
+<h2>Dos formas de registrar a un visitante</h2>
+<table><thead><tr><th>Forma</th><th>Quién la usa</th><th>Cómo</th></tr></thead><tbody><tr><td><b>Autoregistro por QR</b></td><td>El propio visitante</td><td>Escanea el código QR del stand con su teléfono y llena sus datos en la landing.</td></tr><tr><td><b>Registro por el staff</b></td><td>El personal del stand</td><td>Si el visitante no puede escanear, el staff captura los datos (a mano o tomando foto del gafete).</td></tr></tbody></table>
+<div class="note "><b>Objetivo:</b> que ningún visitante se quede sin registrar. El QR agiliza; el registro por staff es el respaldo.</div>
+<h2>Las tres secciones de la app del staff</h2>
+<ul><li><b>📝 Captura</b> — registrar leads manualmente o por foto del gafete.</li><li><b>🎁 Sorteo</b> — elegir un ganador al azar entre los leads.</li><li><b>📊 Dashboard</b> — ver estadísticas, buscar leads y exportar a Excel/CSV.</li></ul>
+<div class="page-break"></div>
+<h1 id="s2"><span class="num">2</span> Preparación antes del evento</h1>
+<ol><li><b>Publicar la plataforma</b> con una dirección web e <b>HTTPS</b> (candado de seguridad). Es indispensable para que la cámara y el QR funcionen desde los teléfonos.</li><li><b>Definir el PIN del personal</b> que protege el Sorteo y el Dashboard. Compártelo solo con el staff.</li><li><b>Imprimir el código QR</b>: abre la página <b>/qr</b> y usa el botón <b>Imprimir póster</b>. Colócalo visible en el stand.</li><li><b>Revisar los textos legales</b> (Términos y Aviso de Privacidad) con la información de Mallatex.</li><li><b>Probar un registro</b> de principio a fin desde un teléfono antes de abrir el stand.</li></ol>
+<figure class="narrow"><img src="../screenshots/14-qr.png"/><figcaption>Página /qr: código para imprimir y colocar en el stand.</figcaption></figure>
+<div class="note ok"><b>Consejo:</b> pega el QR a la altura de los ojos y agrega una frase llamativa como “Escanea y participa en el sorteo”.</div>
+<div class="page-break"></div>
+<h1 id="s3"><span class="num">3</span> Acceso del personal (PIN)</h1>
+<p>La <b>Captura</b> de leads está abierta para agilizar el stand. El <b>Sorteo</b> y el <b>Dashboard</b> piden un <b>PIN</b> para proteger la información.</p>
+<ol><li>Abre la app del staff en el navegador.</li><li>Toca la pestaña <b>Sorteo</b> o <b>Dashboard</b>.</li><li>Escribe el <b>PIN</b> y presiona <b>Entrar</b>. Quedará recordado en ese dispositivo.</li></ol>
+<figure class="narrow"><img src="../screenshots/03-acceso-pin.png"/><figcaption>Ventana de acceso del personal por PIN.</figcaption></figure>
+<div class="note ">Si el PIN se ingresó en un dispositivo compartido, ciérralo al terminar borrando los datos del navegador, o usa un dispositivo exclusivo del staff.</div>
+<div class="page-break"></div>
+<h1 id="s4"><span class="num">4</span> Autoregistro del visitante por QR</h1>
+<p>El visitante escanea el QR con la cámara de su teléfono y abre la landing de registro. Es <b>mobile-first</b>: se ve bien en cualquier celular.</p>
+<h2>Qué llena el visitante</h2>
+<ul><li>Nombre completo, empresa o rancho.</li><li><b>Celular y correo válidos</b> — la landing muestra un aviso de que por ese medio se contactará al ganador.</li><li>Producto de interés.</li><li>Aceptación de <b>Términos y Condiciones</b> y <b>Aviso de Privacidad</b> (obligatoria).</li></ul>
+<figure class="phone"><img src="../screenshots/12-landing-movil.png"/><figcaption>Landing de autoregistro (vista en celular) con el aviso de contacto.</figcaption></figure>
+<p>Al enviar, el visitante ve una confirmación y queda participando en el sorteo:</p>
+<figure class="phone"><img src="../screenshots/13-landing-exito-movil.png"/><figcaption>Confirmación de registro exitoso.</figcaption></figure>
+<div class="note ">Si alguien intenta registrarse dos veces con el mismo correo o celular, el sistema lo reconoce y muestra “¡Ya estabas registrado!” sin duplicar.</div>
+<div class="page-break"></div>
+<h1 id="s5"><span class="num">5</span> Registro por el staff (respaldo)</h1>
+<p>Usa esta opción cuando un visitante <b>no puede escanear el QR</b> (sin cámara, sin datos, batería baja, etc.). En la pestaña <b>📝 Captura</b> elige el modo <b>Manual</b> o <b>Foto del gafete</b>.</p>
+<figure class=""><img src="../screenshots/01-captura.png"/><figcaption>Pantalla de Captura con el selector Manual / Foto del gafete.</figcaption></figure>
+<h2>5.1 Captura manual</h2>
+<ol><li>Selecciona el modo <b>✍️ Manual</b>.</li><li>Escribe al menos el <b>nombre</b> y un medio de contacto (celular o correo).</li><li>Completa empresa, cargo, producto de interés y notas si aplica.</li><li>Escribe tu nombre en <b>Capturado por</b> (queda recordado).</li><li>Presiona <b>Guardar lead</b>. Verás la confirmación y el contador aumentará.</li></ol>
+<div class="note ">Si el correo o el celular ya existen, el sistema avisa que es un <b>duplicado</b> y te pregunta si deseas guardarlo de todas formas.</div>
+<h2>5.2 Captura por foto del gafete (OCR)</h2>
+<p>El sistema puede <b>leer el gafete</b> y llenar los datos automáticamente.</p>
+<ol><li>Selecciona el modo <b>📷 Foto del gafete</b>.</li><li>Toca <b>Abrir cámara</b> y <b>Tomar foto</b>, o usa <b>Subir imagen</b>.</li><li>Presiona <b>✨ Extraer datos</b> y espera unos segundos.</li><li>El nombre, empresa, correo y teléfono se llenan solos. <b>Revisa y corrige</b> lo necesario.</li><li>Completa el producto de interés y presiona <b>Guardar lead</b>.</li></ol>
+<div class="row2">
+<figure class=""><img src="../screenshots/10-gafete-foto.png"/><figcaption>Foto del gafete lista para extraer.</figcaption></figure>
+<figure class=""><img src="../screenshots/11-gafete-ocr.png"/><figcaption>Datos autocompletados por el lector (OCR).</figcaption></figure>
+</div>
+<div class="note ok"><b>Para una mejor lectura:</b> buena luz, gafete plano y encuadrado, sin reflejos ni sombras. El OCR es una ayuda; siempre verifica el correo y el celular antes de guardar.</div>
+<div class="page-break"></div>
+<h1 id="s6"><span class="num">6</span> El sorteo</h1>
+<p>En la pestaña <b>🎁 Sorteo</b> eliges un ganador al azar entre los leads capturados.</p>
+<ol><li>Escribe el <b>premio</b> (ej. “Rollo de malla antigranizo”).</li><li>Opcional: activa <b>Solo con consentimiento</b> y/o <b>Evitar ganadores repetidos</b>.</li><li>Verifica el número de <b>participantes elegibles</b>.</li><li>Presiona <b>Iniciar sorteo</b>. Tras la animación aparece el ganador.</li></ol>
+<div class="row2">
+<figure class=""><img src="../screenshots/05-sorteo.png"/><figcaption>Configuración del sorteo.</figcaption></figure>
+<figure class=""><img src="../screenshots/06-sorteo-ganador.png"/><figcaption>Ganador anunciado y guardado en el historial.</figcaption></figure>
+</div>
+<div class="note ">El ganador queda en el <b>historial</b> con su premio. Si necesitas repetir un sorteo, puedes <b>anular</b> el resultado desde la lista de ganadores (botón ✕).</div>
+<div class="page-break"></div>
+<h1 id="s7"><span class="num">7</span> Dashboard de seguimiento</h1>
+<p>La pestaña <b>📊 Dashboard</b> muestra el avance del stand en tiempo real.</p>
+<ul><li><b>Indicadores:</b> leads totales, del día, con consentimiento, tasa de consentimiento y ganadores.</li><li><b>Gráficas:</b> por producto de interés, por fuente (incluye “Autoregistro (QR)”), por hora y por captador.</li><li><b>Tabla de leads:</b> búsqueda por nombre/empresa/correo y filtro por producto. El ícono <b>📷</b> abre la foto del gafete.</li><li><b>Exportar CSV:</b> descarga todos los leads para abrirlos en Excel y darles seguimiento comercial.</li></ul>
+<figure class=""><img src="../screenshots/04-dashboard.png"/><figcaption>Dashboard con indicadores, gráficas y tabla de leads.</figcaption></figure>
+<div class="page-break"></div>
+<h1 id="s8"><span class="num">8</span> Buenas prácticas en el stand</h1>
+<ul><li>Invita a todos a <b>escanear el QR</b>; ten el póster siempre visible.</li><li>Ten un <b>dispositivo del staff</b> listo para registrar a quien no pueda escanear.</li><li>Confirma en voz alta el <b>correo y el celular</b>: por ahí se contacta al ganador.</li><li>Anota el <b>producto de interés</b>; es clave para el seguimiento comercial.</li><li>Revisa el <b>Dashboard</b> durante el día para conocer el avance.</li><li>Realiza el <b>sorteo</b> en el horario anunciado y comparte al ganador.</li></ul>
+<div class="page-break"></div>
+<h1 id="s9"><span class="num">9</span> Solución de problemas</h1>
+<table><thead><tr><th>Situación</th><th>Qué hacer</th></tr></thead><tbody><tr><td>La cámara no abre</td><td>Verifica que la página use HTTPS y da permiso de cámara al navegador. Alternativa: usa <b>Subir imagen</b>.</td></tr><tr><td>El visitante no puede escanear el QR</td><td>Regístralo tú desde <b>📝 Captura</b> (manual o foto del gafete).</td></tr><tr><td>El OCR no leyó bien</td><td>Toma la foto con buena luz y gafete plano; corrige los campos a mano antes de guardar.</td></tr><tr><td>Dice que el lead está duplicado</td><td>Es normal si ya se registró. Puedes continuar o descartarlo.</td></tr><tr><td>No entra al Sorteo/Dashboard</td><td>Ingresa el <b>PIN</b> del personal. Si lo olvidaste, pídelo al responsable.</td></tr><tr><td>No hay internet en el stand</td><td>La captura por gafete (OCR) funciona sin internet; el autoregistro por QR y el guardado requieren conexión al servidor.</td></tr></tbody></table>
+<div class="page-break"></div>
+<h1 id="s10"><span class="num">10</span> Checklist rápido</h1>
+<h2>Antes de abrir</h2>
+<ul><li>QR impreso y colocado.</li><li>PIN del personal a la mano.</li><li>Dispositivo del staff con la app abierta y probada.</li><li>Textos legales revisados.</li></ul>
+<h2>Durante el evento</h2>
+<ul><li>Invitar a escanear el QR.</li><li>Registrar a quien no pueda escanear.</li><li>Verificar correo y celular de cada lead.</li><li>Revisar el Dashboard periódicamente.</li></ul>
+<h2>Al cierre</h2>
+<ul><li>Realizar el sorteo y anunciar al ganador.</li><li>Exportar el CSV de leads.</li><li>Respaldar la información del evento.</li></ul>
+<div class="end">Mallatex · Evento Anaberries — Manual del Staff · <b>Protegemos lo que siembras</b></div></body></html>
