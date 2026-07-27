@@ -12,6 +12,7 @@ import { rateLimiter } from './security.js';
 import leadsRoutes from './routes/leads.js';
 import raffleRoutes from './routes/raffle.js';
 import statsRoutes from './routes/stats.js';
+import eventRoutes from './routes/event.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -44,6 +45,9 @@ app.use('/api/leads/registro', rateLimiter({
 
 // Captura de leads: pública (stand/kiosco del evento).
 app.use('/api/leads', leadsRoutes);
+
+// Configuración del evento: GET público (landing/términos) + edición por staff (dentro del router).
+app.use('/api/event', eventRoutes);
 
 // Sorteo y Dashboard: protegidos por PIN del personal (si está configurado).
 app.use('/api/raffle', requireStaff, raffleRoutes);

@@ -28,6 +28,12 @@ stand, realizar un **sorteo** de premios entre los asistentes y dar
 - **📊 Dashboard** — KPIs (totales, del día, consentimiento, ganadores),
   gráficas por producto/fuente/hora/captador, tabla con búsqueda y filtros, y
   **exportación a CSV**.
+- **⚙️ Administrar evento** — configura el evento actual o uno futuro: nombre,
+  tipo/Expo, edición, sede, **fecha y hora del concurso**, **premio** e
+  **imagen del premio**, **dinámica** y plazo de contacto al ganador. Al
+  guardar, los **Términos y Condiciones** (`/terminos`) y la landing se
+  **actualizan dinámicamente** con esa información. Reutilizable para próximos
+  eventos.
 
 ## Requisitos
 
@@ -125,5 +131,8 @@ puede exportar todo a CSV.
 | GET    | `/api/raffle/winners`    | personal | Historial de ganadores         |
 | DELETE | `/api/raffle/winners/:id`| personal | Anular sorteo                  |
 | GET    | `/api/stats`             | personal | Métricas del dashboard         |
+| GET    | `/api/event/public`      | público  | Config del evento (landing y términos) |
+| GET    | `/api/event/premio-imagen` | público | Imagen del premio               |
+| GET · PUT | `/api/event`          | personal | Ver / actualizar la configuración del evento |
 
 _powered by Mallatex_

@@ -290,6 +290,44 @@ test('el limitador de tasa del autoregistro devuelve 429 ante ráfagas', async (
   assert.equal(got429, true);
 });
 
+// ---------- Administración del evento ----------
+test('event/public devuelve la configuración pública', async () => {
+  const e = await json(await api('/api/event/public'));
+  assert.ok('premio' in e && 'dinamica' in e && 'fecha' in e && 'premioImagen' in e);
+});
+
+test('GET /api/event (completo) requiere PIN (401)', async () => {
+  assert.equal((await api('/api/event')).status, 401);
+});
+
+test('PUT /api/event sin PIN es rechazado (401)', async () => {
+  assert.equal((await api('/api/event', { method: 'PUT', body: { premio: 'x' } })).status, 401);
+});
+
+test('PUT /api/event con PIN actualiza los datos y se reflejan en público', async () => {
+  const r = await api('/api/event', { method: 'PUT', pin: PIN, body: {
+    tipo: 'Expo agrícola', premio: 'Rollo de malla antigranizo', dinamica: 'Regístrate y participa.',
+    fecha: '2026-08-15', hora: '17:30', lugar: 'Centro de Convenciones', plazoContactoDias: '5',
+  }});
+  assert.equal(r.status, 200);
+  const pub = await json(await api('/api/event/public'));
+  assert.equal(pub.tipo, 'Expo agrícola');
+  assert.equal(pub.premio, 'Rollo de malla antigranizo');
+  assert.equal(pub.fecha, '2026-08-15');
+  assert.equal(pub.plazoContactoDias, '5');
+});
+
+test('la imagen del premio se guarda y se sirve; luego se puede quitar', async () => {
+  const up = await json(await api('/api/event', { method: 'PUT', pin: PIN, body: { premioImagen: JPEG_1PX } }));
+  assert.equal(up.premioImagen, true);
+  const img = await api('/api/event/premio-imagen', { pin: PIN });
+  assert.equal(img.status, 200);
+  assert.match(img.headers.get('content-type'), /image\/jpeg/);
+  const del = await json(await api('/api/event', { method: 'PUT', pin: PIN, body: { premioImagen: false } }));
+  assert.equal(del.premioImagen, false);
+  assert.equal((await api('/api/event/premio-imagen')).status, 404);
+});
+
 // ---------- Rutas inexistentes ----------
 test('ruta de API inexistente devuelve 404', async () => {
   assert.equal((await api('/api/no-existe')).status, 404);

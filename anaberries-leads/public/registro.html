@@ -25,6 +25,16 @@
           si resultas ganador del sorteo, <strong>por ese medio te contactaremos</strong>.</div>
       </div>
 
+      <!-- Tarjeta del premio (se muestra si el evento tiene premio configurado) -->
+      <div class="prize-card" id="prize-card" hidden>
+        <img id="prize-img" alt="Premio" hidden />
+        <div class="prize-body">
+          <span class="prize-tag">🎁 Premio del sorteo</span>
+          <p id="prize-text"></p>
+          <p class="prize-when" id="prize-when"></p>
+        </div>
+      </div>
+
       <div class="card">
         <form id="registro-form" autocomplete="on" novalidate>
           <label>Nombre completo <span class="req">*</span>

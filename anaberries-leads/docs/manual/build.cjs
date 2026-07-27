@@ -35,9 +35,9 @@ sec();
 // ---------- Contenido ----------
 const toc = [
   '1. Introducción', '2. Preparación antes del evento', '3. Acceso del personal (PIN)',
-  '4. Autoregistro del visitante por QR', '5. Registro por el staff (respaldo)',
-  '6. El sorteo', '7. Dashboard de seguimiento', '8. Buenas prácticas en el stand',
-  '9. Solución de problemas', '10. Checklist rápido',
+  '4. Administrar el evento', '5. Autoregistro del visitante por QR', '6. Registro por el staff (respaldo)',
+  '7. El sorteo', '8. Dashboard de seguimiento', '9. Buenas prácticas en el stand',
+  '10. Solución de problemas', '11. Checklist rápido',
 ];
 w('<h1 class="toc-title">Contenido</h1><nav class="toc">' + toc.map((t) => `<div class="toc-item"><span>${esc(t)}</span></div>`).join('') + '</nav>');
 sec();
@@ -84,8 +84,29 @@ img('03-acceso-pin.png', 'Ventana de acceso del personal por PIN.', 'narrow');
 note(`Si el PIN se ingresó en un dispositivo compartido, ciérralo al terminar borrando los datos del navegador, o usa un dispositivo exclusivo del staff.`);
 sec();
 
-// ---------- 4. Autoregistro QR ----------
-h1(4, 'Autoregistro del visitante por QR');
+// ---------- 4. Administrar el evento ----------
+h1(4, 'Administrar el evento');
+p(`En la pestaña ${B('⚙️ Evento')} configuras los datos del evento actual o de uno futuro. Al guardar, los ${B('Términos y Condiciones')} y la ${B('landing')} se actualizan automáticamente con esta información.`);
+h2('Datos que puedes definir');
+ul([
+  `${B('Nombre del evento')}, ${B('tipo o Expo')} (p. ej. «Expo agrícola») y ${B('edición/año')}.`,
+  `${B('Sede/lugar')} y ${B('fecha y hora del concurso')} (del sorteo).`,
+  `${B('Premio')} y su ${B('imagen')} (se muestran en la landing y en los Términos).`,
+  `${B('Dinámica/mecánica')} del sorteo y ${B('días para contactar al ganador')}.`,
+]);
+ol([
+  'Completa los campos del evento.',
+  'Sube la <b>imagen del premio</b> (opcional) con <b>Subir imagen</b>; puedes quitarla con <b>Quitar imagen</b>.',
+  'Presiona <b>Guardar evento</b>.',
+  'Usa <b>Ver Términos y Condiciones</b> y <b>Ver landing</b> para confirmar que reflejan los datos.',
+]);
+img('17-evento-admin.png', 'Pantalla «Administrar evento» con la imagen del premio.');
+note(`${B('Reutilizable:')} para un próximo evento solo actualiza estos campos; no necesitas cambiar la aplicación. Los Términos y Condiciones se regeneran solos con la nueva información.`);
+img('18-terminos-dinamico.png', 'Los Términos y Condiciones se arman con los datos capturados.', 'narrow');
+sec();
+
+// ---------- 5. Autoregistro QR ----------
+h1(5, 'Autoregistro del visitante por QR');
 p(`El visitante escanea el QR con la cámara de su teléfono y abre la landing de registro. Es ${B('mobile-first')}: se ve bien en cualquier celular.`);
 h2('Qué llena el visitante');
 ul([
@@ -100,12 +121,12 @@ img('13-landing-exito-movil.png', 'Confirmación de registro exitoso.', 'phone')
 note(`Si alguien intenta registrarse dos veces con el mismo correo o celular, el sistema lo reconoce y muestra “¡Ya estabas registrado!” sin duplicar.`);
 sec();
 
-// ---------- 5. Registro por staff ----------
-h1(5, 'Registro por el staff (respaldo)');
+// ---------- 6. Registro por staff ----------
+h1(6, 'Registro por el staff (respaldo)');
 p(`Usa esta opción cuando un visitante ${B('no puede escanear el QR')} (sin cámara, sin datos, batería baja, etc.). En la pestaña ${B('📝 Captura')} elige el modo ${B('Manual')} o ${B('Foto del gafete')}.`);
 img('01-captura.png', 'Pantalla de Captura con el selector Manual / Foto del gafete.');
 
-h2('5.1 Captura manual');
+h2('6.1 Captura manual');
 ol([
   'Selecciona el modo <b>✍️ Manual</b>.',
   'Escribe al menos el <b>nombre</b> y un medio de contacto (celular o correo).',
@@ -115,7 +136,7 @@ ol([
 ]);
 note(`Si el correo o el celular ya existen, el sistema avisa que es un ${B('duplicado')} y te pregunta si deseas guardarlo de todas formas.`);
 
-h2('5.2 Captura por foto del gafete (OCR)');
+h2('6.2 Captura por foto del gafete (OCR)');
 p(`El sistema puede ${B('leer el gafete')} y llenar los datos automáticamente.`);
 ol([
   'Selecciona el modo <b>📷 Foto del gafete</b>.',
@@ -131,8 +152,8 @@ w('</div>');
 tip(`${B('Para una mejor lectura:')} buena luz, gafete plano y encuadrado, sin reflejos ni sombras. El OCR es una ayuda; siempre verifica el correo y el celular antes de guardar.`);
 sec();
 
-// ---------- 6. Sorteo ----------
-h1(6, 'El sorteo');
+// ---------- 7. Sorteo ----------
+h1(7, 'El sorteo');
 p(`En la pestaña ${B('🎁 Sorteo')} eliges un ganador al azar entre los leads capturados.`);
 ol([
   'Escribe el <b>premio</b> (ej. “Rollo de malla antigranizo”).',
@@ -147,8 +168,8 @@ w('</div>');
 note(`El ganador queda en el ${B('historial')} con su premio. Si necesitas repetir un sorteo, puedes ${B('anular')} el resultado desde la lista de ganadores (botón ✕).`);
 sec();
 
-// ---------- 7. Dashboard ----------
-h1(7, 'Dashboard de seguimiento');
+// ---------- 8. Dashboard ----------
+h1(8, 'Dashboard de seguimiento');
 p(`La pestaña ${B('📊 Dashboard')} muestra el avance del stand en tiempo real.`);
 ul([
   `${B('Indicadores:')} leads totales, del día, con consentimiento, tasa de consentimiento y ganadores.`,
@@ -159,8 +180,8 @@ ul([
 img('04-dashboard.png', 'Dashboard con indicadores, gráficas y tabla de leads.');
 sec();
 
-// ---------- 8. Buenas prácticas ----------
-h1(8, 'Buenas prácticas en el stand');
+// ---------- 9. Buenas prácticas ----------
+h1(9, 'Buenas prácticas en el stand');
 ul([
   'Invita a todos a <b>escanear el QR</b>; ten el póster siempre visible.',
   'Ten un <b>dispositivo del staff</b> listo para registrar a quien no pueda escanear.',
@@ -171,8 +192,8 @@ ul([
 ]);
 sec();
 
-// ---------- 9. Solución de problemas ----------
-h1(9, 'Solución de problemas');
+// ---------- 10. Solución de problemas ----------
+h1(10, 'Solución de problemas');
 table(['Situación', 'Qué hacer'], [
   ['La cámara no abre', 'Verifica que la página use HTTPS y da permiso de cámara al navegador. Alternativa: usa <b>Subir imagen</b>.'],
   ['El visitante no puede escanear el QR', 'Regístralo tú desde <b>📝 Captura</b> (manual o foto del gafete).'],
@@ -183,8 +204,8 @@ table(['Situación', 'Qué hacer'], [
 ]);
 sec();
 
-// ---------- 10. Checklist ----------
-h1(10, 'Checklist rápido');
+// ---------- 11. Checklist ----------
+h1(11, 'Checklist rápido');
 h2('Antes de abrir');
 ul(['QR impreso y colocado.', 'PIN del personal a la mano.', 'Dispositivo del staff con la app abierta y probada.', 'Textos legales revisados.']);
 h2('Durante el evento');

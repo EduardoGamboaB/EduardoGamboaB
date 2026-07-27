@@ -11,8 +11,17 @@ const DATA_FILE = path.join(DATA_DIR, 'db.json');
 
 const DEFAULT_DATA = {
   event: {
-    name: 'Anaberries · Expo',
-    edition: '2026',
+    name: 'Anaberries · Expo',   // nombre del evento (compatibilidad)
+    edition: '2026',             // edición/año (compatibilidad)
+    tipo: '',                    // tipo de evento o Expo (p. ej. "Expo agrícola")
+    premio: '',                  // descripción del premio
+    premioImagen: false,         // hay imagen del premio guardada en disco
+    dinamica: '',                // dinámica / mecánica del sorteo
+    fecha: '',                   // fecha del concurso/sorteo (YYYY-MM-DD)
+    hora: '',                    // hora del concurso/sorteo (HH:MM)
+    lugar: '',                   // sede/ubicación (opcional)
+    plazoContactoDias: '',       // días para contactar al ganador (opcional)
+    actualizadoAt: '',           // último cambio de la configuración
   },
   leads: [],   // { id, nombre, empresa, email, telefono, cargo, interes, volumen, notas, consentimiento, fuente, capturadoPor, createdAt }
   draws: [],   // { id, premio, leadId, nombre, empresa, createdAt }
@@ -32,6 +41,8 @@ export function load() {
       data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
       // Rellena claves faltantes ante actualizaciones del esquema.
       data = { ...structuredClone(DEFAULT_DATA), ...data };
+      // Merge profundo de la configuración del evento (para adquirir campos nuevos).
+      data.event = { ...structuredClone(DEFAULT_DATA.event), ...(data.event || {}) };
     } else {
       data = structuredClone(DEFAULT_DATA);
       persist();

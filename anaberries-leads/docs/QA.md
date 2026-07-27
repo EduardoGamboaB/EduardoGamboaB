@@ -6,7 +6,7 @@ sorteo y dashboard para el evento de Anaberries.
 - **Fecha:** 2026-07-25
 - **Versión:** 1.0.0
 - **Entorno de prueba:** Node.js v22, servidor local, almacén JSON temporal.
-- **Resultado global:** ✅ **32/32 pruebas automatizadas aprobadas** + validación visual de las pantallas (incluye captura por foto del gafete con OCR y la landing pública de autoregistro por QR).
+- **Resultado global:** ✅ **37/37 pruebas automatizadas aprobadas** + validación visual de las pantallas (incluye captura por foto del gafete con OCR, la landing pública de autoregistro por QR y la administración del evento con Términos y Condiciones dinámicos).
 
 ## 1. Cómo ejecutar las pruebas
 
@@ -54,7 +54,12 @@ datos temporales, ejerce todos los endpoints y limpia al terminar.
 | 29 | Autoregistro con honeypot lleno (400) | Anti-spam | ✅ |
 | 30 | Autoregistro duplicado responde amistoso (200, `yaRegistrado`) | Autoregistro | ✅ |
 | 31 | Limitador de tasa del autoregistro devuelve 429 ante ráfagas | Anti-spam | ✅ |
-| 32 | Ruta de API inexistente devuelve 404 | Robustez | ✅ |
+| 32 | `event/public` devuelve la configuración pública | Evento | ✅ |
+| 33 | `GET /api/event` (completo) requiere PIN (401) | Seguridad | ✅ |
+| 34 | `PUT /api/event` sin PIN es rechazado (401) | Seguridad | ✅ |
+| 35 | `PUT /api/event` actualiza datos y se reflejan en público | Evento | ✅ |
+| 36 | Imagen del premio se guarda, se sirve y se puede quitar | Evento | ✅ |
+| 37 | Ruta de API inexistente devuelve 404 | Robustez | ✅ |
 
 ## 3. Pruebas manuales / visuales (UI)
 
@@ -65,6 +70,9 @@ datos temporales, ejerce todos los endpoints y limpia al terminar.
 | Código QR | Página imprimible que apunta a `/registro` | `screenshots/14-qr.png` | ✅ |
 | Términos / Aviso | Páginas legales enlazadas desde la landing | `screenshots/15-terminos.png` | ✅ |
 | Landing — desktop | Adaptativo en pantalla grande | `screenshots/16-landing-desktop.png` | ✅ |
+| Administrar evento | Formulario del evento con imagen del premio | `screenshots/17-evento-admin.png` | ✅ |
+| Términos dinámicos | T&C generados con los datos del evento | `screenshots/18-terminos-dinamico.png` | ✅ |
+| Landing con premio | Tarjeta de premio y fecha del sorteo en la landing | `screenshots/19-landing-premio-movil.png` | ✅ |
 | Captura (manual) | Selector Manual/Gafete, formulario, catálogos, contador | `screenshots/01-captura.png` | ✅ |
 | Gafete — inicial | Modo foto del gafete, cámara/subir imagen | `screenshots/09-gafete-inicial.png` | ✅ |
 | Gafete — foto | Foto del gafete cargada, listo para extraer | `screenshots/10-gafete-foto.png` | ✅ |
@@ -79,6 +87,10 @@ datos temporales, ejerce todos los endpoints y limpia al terminar.
 
 ## 4. Cobertura funcional
 
+- **Administrar evento:** configuración de nombre, tipo/Expo, edición, sede,
+  fecha y hora del concurso, premio, imagen del premio, dinámica y plazo de
+  contacto; lectura pública para la landing y **Términos y Condiciones
+  dinámicos**; imagen del premio guardada/servida/eliminable. Protegido por PIN.
 - **Autoregistro por QR (landing pública):** landing mobile-first y adaptativa,
   validación estricta de correo y celular (10 dígitos), aceptación obligatoria de
   términos y aviso de privacidad, disclaimer de contacto, protección anti-spam

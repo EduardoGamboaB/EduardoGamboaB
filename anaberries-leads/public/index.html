@@ -20,6 +20,7 @@
       <button class="tab is-active" data-view="captura">📝 Captura</button>
       <button class="tab" data-view="sorteo">🎁 Sorteo</button>
       <button class="tab" data-view="dashboard">📊 Dashboard</button>
+      <button class="tab" data-view="evento">⚙️ Evento</button>
       <a class="tab tab-link" href="/qr" target="_blank" rel="noopener" title="Código QR para autoregistro de visitantes">🔳 QR</a>
     </nav>
   </header>
@@ -164,6 +165,63 @@
             <tbody id="leads-tbody"></tbody>
           </table>
         </div>
+      </div>
+    </section>
+
+    <!-- ============ EVENTO (administración) ============ -->
+    <section class="view" id="view-evento">
+      <div class="card evento-card">
+        <h1>⚙️ Administrar evento</h1>
+        <p class="muted">Configura los datos del evento actual (o de uno futuro). Al guardar, los
+          <b>Términos y Condiciones</b> se actualizan automáticamente con esta información.</p>
+        <form id="evento-form" autocomplete="off">
+          <div class="grid2">
+            <label>Nombre del evento
+              <input name="name" maxlength="120" placeholder="Ej. Anaberries · Expo" />
+            </label>
+            <label>Edición / año
+              <input name="edition" maxlength="40" placeholder="Ej. 2026" />
+            </label>
+            <label>Tipo de evento / Expo
+              <input name="tipo" maxlength="80" placeholder="Ej. Expo agrícola" />
+            </label>
+            <label>Sede / lugar (opcional)
+              <input name="lugar" maxlength="160" placeholder="Ej. Centro de convenciones" />
+            </label>
+            <label>Fecha del concurso
+              <input name="fecha" type="date" />
+            </label>
+            <label>Hora del concurso
+              <input name="hora" type="time" />
+            </label>
+            <label>Premio
+              <input name="premio" maxlength="300" placeholder="Ej. Rollo de malla antigranizo 4×50 m" />
+            </label>
+            <label>Días para contactar al ganador (opcional)
+              <input name="plazoContactoDias" type="number" min="1" max="9999" placeholder="Ej. 5" />
+            </label>
+          </div>
+          <label>Dinámica / mecánica del sorteo
+            <textarea name="dinamica" rows="3" maxlength="2000" placeholder="Describe cómo participar y cómo se elige al ganador. Si lo dejas vacío, se usa un texto estándar."></textarea>
+          </label>
+
+          <label>Imagen del premio
+            <div class="premio-upload">
+              <div class="premio-preview" id="premio-preview"><span class="ph">Sin imagen</span></div>
+              <div class="premio-actions">
+                <label class="btn file-btn">⬆ Subir imagen<input type="file" id="premio-file" accept="image/*" hidden></label>
+                <button type="button" class="btn" id="premio-clear" hidden>Quitar imagen</button>
+              </div>
+            </div>
+          </label>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="btn-evento-guardar">Guardar evento</button>
+            <a class="btn" href="/terminos" target="_blank" rel="noopener">Ver Términos y Condiciones</a>
+            <a class="btn" href="/registro" target="_blank" rel="noopener">Ver landing</a>
+          </div>
+          <p class="form-msg" id="evento-msg"></p>
+        </form>
       </div>
     </section>
   </main>

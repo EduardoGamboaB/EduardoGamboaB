@@ -44,7 +44,7 @@ function fmtDate(iso) {
 
 // ---------- Navegación ----------
 async function goto(view) {
-  if ((view === 'sorteo' || view === 'dashboard') && state.pinRequired && !state.authorized) {
+  if ((view === 'sorteo' || view === 'dashboard' || view === 'evento') && state.pinRequired && !state.authorized) {
     state.pendingView = view;
     openPinModal();
     return;
@@ -53,6 +53,7 @@ async function goto(view) {
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === 'view-' + view));
   if (view === 'sorteo') { loadPool(); loadWinners(); }
   if (view === 'dashboard') loadDashboard();
+  if (view === 'evento') loadEvento();
 }
 
 $('#tabs').addEventListener('click', (e) => {
@@ -482,6 +483,86 @@ $('#btn-export').addEventListener('click', (e) => {
   e.preventDefault();
   const url = '/api/leads/export.csv' + (state.pin ? '?pin=' + encodeURIComponent(state.pin) : '');
   window.open(url, '_blank');
+});
+
+// ---------- Evento (administración) ----------
+const evento = { premioImagen: undefined }; // undefined=sin cambio, string=nueva, false=quitar
+
+async function loadEvento() {
+  try {
+    const e = await api('/event', { staff: true });
+    const f = $('#evento-form');
+    ['name', 'edition', 'tipo', 'lugar', 'fecha', 'hora', 'premio', 'plazoContactoDias', 'dinamica'].forEach((k) => {
+      if (f[k]) f[k].value = e[k] || '';
+    });
+    evento.premioImagen = undefined;
+    renderPremioPreview(e.premioImagen ? ('/api/event/premio-imagen?ts=' + Date.now()) : null);
+  } catch (err) { if (err.status !== 401) toast(err.message, 'err'); }
+}
+
+function renderPremioPreview(src) {
+  const box = $('#premio-preview');
+  const clear = $('#premio-clear');
+  if (src) {
+    box.innerHTML = `<img src="${src}" alt="Premio" />`;
+    clear.hidden = false;
+  } else {
+    box.innerHTML = '<span class="ph">Sin imagen</span>';
+    clear.hidden = true;
+  }
+}
+
+$('#premio-file').addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    // Reescala a máx. 1000px y convierte a JPEG para no enviar archivos enormes.
+    const scale = Math.min(1, 1000 / img.naturalWidth);
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * scale);
+    c.height = Math.round(img.naturalHeight * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    evento.premioImagen = c.toDataURL('image/jpeg', 0.85);
+    renderPremioPreview(evento.premioImagen);
+  };
+  img.src = URL.createObjectURL(file);
+});
+
+$('#premio-clear').addEventListener('click', () => {
+  evento.premioImagen = false;
+  renderPremioPreview(null);
+});
+
+$('#evento-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const body = {
+    name: f.name.value.trim(),
+    edition: f.edition.value.trim(),
+    tipo: f.tipo.value.trim(),
+    lugar: f.lugar.value.trim(),
+    fecha: f.fecha.value,
+    hora: f.hora.value,
+    premio: f.premio.value.trim(),
+    plazoContactoDias: f.plazoContactoDias.value,
+    dinamica: f.dinamica.value.trim(),
+  };
+  if (evento.premioImagen !== undefined) body.premioImagen = evento.premioImagen; // string o false
+  const btn = $('#btn-evento-guardar');
+  const msg = $('#evento-msg');
+  btn.disabled = true;
+  try {
+    await api('/event', { method: 'PUT', body, staff: true });
+    msg.textContent = '✓ Evento guardado. Los Términos y Condiciones ya reflejan estos datos.';
+    msg.className = 'form-msg ok';
+    // Refleja el nombre del evento en la barra superior.
+    if (body.name) $('#event-name').textContent = body.name;
+    evento.premioImagen = undefined;
+  } catch (err) {
+    msg.textContent = err.message || 'No se pudo guardar';
+    msg.className = 'form-msg err';
+  } finally { btn.disabled = false; }
 });
 
 // ---------- Init ----------

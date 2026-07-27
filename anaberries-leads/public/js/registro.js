@@ -16,6 +16,26 @@ const digits = (s) => (String(s).match(/\d/g) || []).length;
   } catch { /* la landing funciona sin catálogos */ }
 })();
 
+// Mostrar el premio del evento (si está configurado).
+(async function initPremio() {
+  try {
+    const e = await (await fetch('/api/event/public')).json();
+    if (e.name) $('#evento').textContent = [e.name, e.edition].filter(Boolean).join(' · ');
+    const hayTexto = !!e.premio, hayImg = !!e.premioImagen;
+    if (!hayTexto && !hayImg) return;
+    if (hayImg) { const img = $('#prize-img'); img.src = '/api/event/premio-imagen'; img.hidden = false; }
+    $('#prize-text').textContent = e.premio || 'Participa por el premio del stand.';
+    if (e.fecha) {
+      const [y, m, d] = e.fecha.split('-').map(Number);
+      const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      let cuando = 'Sorteo el ' + d + ' de ' + meses[m - 1];
+      if (e.hora) cuando += ' a las ' + e.hora + ' h';
+      $('#prize-when').textContent = cuando;
+    }
+    $('#prize-card').hidden = false;
+  } catch { /* opcional */ }
+})();
+
 function markInvalid(name, bad) {
   const el = document.querySelector(`[name=${name}]`);
   if (el) el.classList.toggle('invalid', bad);

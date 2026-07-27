@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Términos y Condiciones · Anaberries — Mallatex</title>
+  <title>Términos y Condiciones · Mallatex</title>
   <meta name="theme-color" content="#ed3237" />
   <link rel="stylesheet" href="/css/landing.css" />
 </head>
@@ -11,43 +11,116 @@
   <main class="legal">
     <a class="back" href="/registro">← Volver al registro</a>
     <h1>Términos y Condiciones del Sorteo</h1>
-
-    <p class="nota">⚠️ Pendiente de completar por Mallatex antes de publicar los datos entre corchetes
-      <code>[ ]</code>: edición/año del evento, descripción del premio y plazo de contacto al ganador.</p>
+    <p class="muted" id="tyc-evento">Evento Anaberries</p>
 
     <h2>1. Organizador</h2>
-    <p>El presente sorteo es organizado por <strong>Tejidos Técnicos Mallatex S.A. de C.V.</strong>, con domicilio en
-      Avenida Iturbide (El Colli) 5210, Colonia El Colli Urbano, C.P. 45070, Zapopan, Jalisco, México
-      (en adelante, «Mallatex»), en el marco del evento <strong>Anaberries [EDICIÓN/AÑO]</strong>.</p>
+    <p>El presente sorteo (la «Dinámica») es organizado por <strong>Tejidos Técnicos Mallatex S.A. de C.V.</strong>
+      (en adelante, «Mallatex»), con domicilio en Avenida Iturbide (El Colli) 5210, Colonia El Colli Urbano, C.P. 45070,
+      Zapopan, Jalisco, México, en el marco del evento <strong id="tyc-nombre">Anaberries</strong><span id="tyc-tipo"></span>.</p>
 
-    <h2>2. Participantes</h2>
-    <p>Podrán participar las personas mayores de edad que visiten el stand de Mallatex y completen su registro
-      con datos verídicos, ya sea mediante el formulario en línea (código QR) o con apoyo del personal del stand.</p>
+    <h2>2. Vigencia</h2>
+    <p>La Dinámica es válida durante el desarrollo del evento. El sorteo se realizará
+      <strong id="tyc-fechahora">en la fecha y hora anunciadas en el stand de Mallatex</strong><span id="tyc-lugar"></span>.</p>
 
-    <h2>3. Mecánica</h2>
-    <p>Cada visitante podrá registrarse una sola vez. El registro con un correo o celular ya utilizado no genera una
-      participación adicional. El ganador será seleccionado <strong>al azar</strong> entre los registros válidos
-      durante el evento.</p>
+    <h2>3. Participantes</h2>
+    <p>Podrán participar las personas mayores de edad que visiten el stand de Mallatex y completen su registro con
+      datos verídicos, ya sea mediante el formulario en línea (código QR) o con apoyo del personal del stand. La
+      participación es gratuita y no está condicionada a la compra de producto alguno.</p>
 
-    <h2>4. Premio</h2>
-    <p>El premio consiste en <strong>[DESCRIPCIÓN DEL PREMIO]</strong>. El premio no es transferible ni canjeable por
-      dinero en efectivo, salvo que Mallatex indique lo contrario.</p>
+    <h2>4. Mecánica / Dinámica</h2>
+    <p id="tyc-dinamica">Cada visitante podrá registrarse una sola vez proporcionando su nombre, empresa, correo
+      electrónico y número celular válidos. El registro con un correo o celular ya utilizado no genera una
+      participación adicional. El ganador será seleccionado <strong>al azar</strong> entre los registros válidos.</p>
 
-    <h2>5. Contacto y entrega</h2>
-    <p>El ganador será contactado a través del <strong>correo electrónico y/o número celular</strong> proporcionados
-      en su registro, por lo que es responsabilidad del participante que dichos datos sean correctos y estén activos.
-      Si no es posible contactar al ganador en un plazo de <strong>[N] días</strong>, Mallatex podrá seleccionar a un
-      nuevo ganador.</p>
+    <h2>5. Premio</h2>
+    <p id="tyc-premio">El premio será el anunciado por Mallatex en el stand durante el evento.</p>
+    <figure id="tyc-premio-figura" hidden>
+      <img id="tyc-premio-img" alt="Imagen del premio" />
+      <figcaption>Imagen ilustrativa del premio.</figcaption>
+    </figure>
+    <p>El premio es único, personal e intransferible, y no es canjeable por dinero en efectivo ni por otro producto,
+      salvo que Mallatex indique lo contrario. La imagen del premio, en su caso, es de carácter ilustrativo.</p>
 
-    <h2>6. Datos personales</h2>
-    <p>El tratamiento de los datos personales se rige por el <a href="/aviso-privacidad">Aviso de Privacidad</a>.</p>
+    <h2>6. Selección del ganador</h2>
+    <p>La selección del ganador se realiza mediante un mecanismo aleatorio entre los participantes registrados y
+      elegibles al momento del sorteo. La decisión y su registro por parte de Mallatex son definitivos.</p>
 
-    <h2>7. Aceptación</h2>
-    <p>La participación en el sorteo implica la aceptación total de estos Términos y Condiciones. Cualquier situación
-      no prevista será resuelta por Mallatex.</p>
+    <h2>7. Contacto y entrega del premio</h2>
+    <p>El ganador será contactado a través del <strong>correo electrónico y/o número celular</strong> proporcionados en
+      su registro; por ello es responsabilidad del participante que dichos datos sean correctos y estén activos.
+      <span id="tyc-plazo">Si no es posible contactar al ganador en un plazo razonable, Mallatex podrá seleccionar a un
+      nuevo ganador.</span> La forma y el lugar de entrega del premio serán acordados con el ganador.</p>
 
-    <p style="margin-top:28px;color:var(--ink-400);font-size:13px">Última actualización: [FECHA].</p>
+    <h2>8. Restricciones</h2>
+    <p>No podrán participar personas que proporcionen datos falsos o incompletos. Mallatex podrá descalificar cualquier
+      registro que incumpla estos Términos o que presente indicios de fraude o automatización.</p>
+
+    <h2>9. Datos personales</h2>
+    <p>El tratamiento de los datos personales de los participantes se rige por el
+      <a href="/aviso-privacidad">Aviso de Privacidad</a> de Mallatex.</p>
+
+    <h2>10. Modificaciones</h2>
+    <p>Mallatex se reserva el derecho de modificar estos Términos o cualquier aspecto de la Dinámica por causas
+      justificadas, notificándolo por los mismos medios. Cualquier situación no prevista será resuelta por Mallatex.</p>
+
+    <h2>11. Aceptación</h2>
+    <p>La participación en el sorteo implica el conocimiento y la aceptación total de estos Términos y Condiciones.</p>
+
+    <p class="muted" id="tyc-actualizado" style="margin-top:24px;font-size:13px"></p>
   </main>
-  <p class="foot">Mallatex · Evento Anaberries</p>
+  <p class="foot">Tejidos Técnicos Mallatex S.A. de C.V. · <span id="tyc-foot-evento">Evento Anaberries</span></p>
+
+  <script>
+    (async function () {
+      const $ = (id) => document.getElementById(id);
+      try {
+        const e = await (await fetch('/api/event/public')).json();
+        const nombre = e.name || 'Anaberries';
+        $('tyc-evento').textContent = [nombre, e.edition].filter(Boolean).join(' · ');
+        $('tyc-foot-evento').textContent = nombre;
+        $('tyc-nombre').textContent = nombre;
+        if (e.tipo) $('tyc-tipo').textContent = ' (' + e.tipo + ')';
+
+        // Fecha y hora del concurso
+        if (e.fecha) {
+          let txt = 'el ' + formatFecha(e.fecha);
+          if (e.hora) txt += ' a las ' + e.hora + ' h';
+          $('tyc-fechahora').textContent = txt;
+        }
+        if (e.lugar) $('tyc-lugar').textContent = ', en ' + e.lugar;
+
+        // Dinámica (si se especificó, reemplaza el texto por defecto conservando el cierre)
+        if (e.dinamica) {
+          $('tyc-dinamica').innerHTML = escapeHtml(e.dinamica).replace(/\n/g, '<br>') +
+            '<br><br>El registro con un correo o celular ya utilizado no genera una participación adicional. ' +
+            'El ganador será seleccionado <strong>al azar</strong> entre los registros válidos.';
+        }
+
+        // Premio
+        if (e.premio) $('tyc-premio').innerHTML = 'El premio consiste en <strong>' + escapeHtml(e.premio) + '</strong>.';
+        if (e.premioImagen) {
+          $('tyc-premio-img').src = '/api/event/premio-imagen';
+          $('tyc-premio-figura').hidden = false;
+        }
+
+        // Plazo de contacto
+        if (e.plazoContactoDias) {
+          $('tyc-plazo').textContent = 'Si no es posible contactar al ganador en un plazo de ' + e.plazoContactoDias +
+            ' día(s) naturales, Mallatex podrá seleccionar a un nuevo ganador.';
+        }
+
+        if (e.actualizadoAt) { /* sello opcional; se omite por privacidad */ }
+      } catch { /* si falla, quedan los textos por defecto */ }
+
+      function formatFecha(iso) {
+        try {
+          const [y, m, d] = iso.split('-').map(Number);
+          const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+          return d + ' de ' + meses[m - 1] + ' de ' + y;
+        } catch { return iso; }
+      }
+      function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+    })();
+  </script>
 </body>
 </html>
