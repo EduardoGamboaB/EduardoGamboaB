@@ -16,8 +16,8 @@ dispositivo).
 ## Antes de publicar (checklist)
 
 - [ ] Definir `STAFF_PIN` (protege Sorteo y Dashboard). **No** dejarlo vacío en producción.
-- [ ] Completar los textos legales: `public/terminos.html` y
-      `public/aviso-privacidad.html` (razón social, domicilio, premio, correo ARCO, fechas).
+- [x] `public/aviso-privacidad.html` — Aviso de Privacidad oficial de Mallatex (ya cargado).
+- [ ] `public/terminos.html` — completar edición/año del evento, descripción del premio y plazo de contacto al ganador.
 - [ ] Confirmar el nombre del evento en `data/db.json` → `event.name` (o dejar el valor por defecto).
 - [ ] Asegurar **HTTPS** y un **volumen/disco persistente** montado en `DATA_DIR` (`/data`).
 - [ ] Verificar el QR abriendo `/qr` en el dominio final y escaneándolo con un teléfono.
