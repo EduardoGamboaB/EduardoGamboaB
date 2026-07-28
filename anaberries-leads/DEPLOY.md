@@ -33,6 +33,21 @@ dispositivo).
 | `TRUST_PROXY` | Nº de proxies de confianza | `1` (detrás de nginx/Render) |
 | `REGISTRO_RATE_MAX` / `REGISTRO_RATE_WINDOW_MS` | Límite anti-spam del autoregistro | `60` / `60000` |
 
+## Opción A0 — Railway
+
+El repo incluye `anaberries-leads/railway.json` (build por Dockerfile + healthcheck).
+Pasos:
+
+1. Crea un servicio desde el repo `EduardoGamboaB/EduardoGamboaB`.
+2. En **Settings → Root Directory** pon `anaberries-leads`.
+3. En **Variables** define: `NODE_ENV=production`, `TRUST_PROXY=1`,
+   `DATA_DIR=/data`, `STAFF_PIN=<tu-pin>` (Railway inyecta `PORT` solo).
+4. En **Volumes** agrega un volumen montado en **`/data`** (persistencia de leads
+   y fotos de gafetes). Sin volumen, los datos se pierden en cada redeploy.
+5. Genera un dominio público (**Settings → Networking → Generate Domain**).
+   Railway da HTTPS automático (necesario para cámara y QR).
+6. Verifica `/api/health` y abre `/qr` en el dominio para imprimir el póster.
+
 ## Opción A — Render (Blueprint, 1 clic)
 
 El repo incluye `anaberries-leads/render.yaml`. En Render: **New + → Blueprint →**
