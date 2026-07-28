@@ -32,6 +32,7 @@ export function nuevoEvento(over = {}) {
     plazoContactoDias: '',
     // ¿Los ganadores de OTROS eventos pueden participar en éste? (default: sí)
     permiteGanadoresPrevios: true,
+    finalizado: false, // true = evento culminado (pasa al histórico)
     createdAt: new Date().toISOString(),
     actualizadoAt: '',
     ...over,
@@ -43,6 +44,8 @@ const DEFAULT_DATA = {
   activeEventId: '', // evento seleccionado por defecto en el staff
   leads: [],         // [{ ..., eventId }]
   draws: [],         // [{ ..., eventId, folio, email, emailEnviado }]
+  users: [],         // [{ id, email, name, role, passwordHash, activo, createdAt }]
+  authSecret: '',    // secreto para firmar tokens (se genera al primer arranque)
 };
 
 let data = null;
@@ -54,6 +57,8 @@ function withEventDefaults(d) {
   d = { ...structuredClone(DEFAULT_DATA), ...(d || {}) };
   if (!Array.isArray(d.leads)) d.leads = [];
   if (!Array.isArray(d.draws)) d.draws = [];
+  if (!Array.isArray(d.users)) d.users = [];
+  if (typeof d.authSecret !== 'string') d.authSecret = '';
 
   // Migración desde el esquema de evento único (d.event) a múltiples eventos.
   if (!Array.isArray(d.events) || d.events.length === 0) {
@@ -183,6 +188,11 @@ export function db() {
 export function getEvents() { return db().events; }
 export function getEvent(id) { return db().events.find((e) => e.id === id) || null; }
 export function activeEvent() { const d = db(); return getEvent(d.activeEventId) || d.events[0]; }
+
+// Helpers de usuarios.
+export function getUsers() { return db().users; }
+export function getUserById(id) { return db().users.find((u) => u.id === id) || null; }
+export function getUserByEmail(email) { const e = String(email || '').toLowerCase(); return db().users.find((u) => u.email === e) || null; }
 
 // ---------- Blobs (imágenes) ----------
 function blobFile(key) { return path.join(BLOBS_DIR, key.replace(/[^\w.-]/g, '_') + '.bin'); }

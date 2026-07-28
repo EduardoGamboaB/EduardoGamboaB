@@ -22,4 +22,11 @@ export const config = {
     pass: process.env.SMTP_PASS || '',
   },
   mailFrom: process.env.MAIL_FROM || 'Mallatex <no-reply@mallatex.com.mx>',
+  // Autenticación de usuarios.
+  authSecret: (process.env.AUTH_SECRET || '').trim(), // si se omite, se genera y guarda en la base
+  authTtlHours: Number(process.env.AUTH_TTL_HOURS) || 12,
+  // Administrador inicial (se crea al primer arranque si no hay usuarios).
+  adminEmail: (process.env.ADMIN_EMAIL || 'admin@mallatex.com').trim().toLowerCase(),
+  adminPassword: process.env.ADMIN_PASSWORD || process.env.STAFF_PIN || 'mallatex',
+  adminName: process.env.ADMIN_NAME || 'Administrador',
 };

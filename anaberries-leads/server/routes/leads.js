@@ -2,7 +2,7 @@
 
 import { Router } from 'express';
 import { db, save, newId, putBlob, getBlob, delBlob, getEvent, activeEvent } from '../store.js';
-import { requireStaff } from '../auth.js';
+import { requireAuth } from '../auth.js';
 
 const router = Router();
 
@@ -58,8 +58,8 @@ function normPhone(v) {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const numDigitos = (s) => (String(s).match(/\d/g) || []).length;
 
-// POST /api/leads — registra un lead (público).
-router.post('/', async (req, res) => {
+// POST /api/leads — captura de un lead por el personal (requiere sesión).
+router.post('/', requireAuth, async (req, res) => {
   const b = req.body || {};
   const nombre = clean(b.nombre, 120);
   const empresa = clean(b.empresa, 160);
@@ -118,8 +118,8 @@ router.post('/registro', (req, res) => {
   const telefono = normPhone(b.telefono);
 
   if (!nombre) return res.status(400).json({ error: 'Escribe tu nombre completo' });
-  if (!email || !EMAIL_RE.test(email)) return res.status(400).json({ error: 'Ingresa un correo válido' });
-  if (!telefono || numDigitos(telefono) < 10) return res.status(400).json({ error: 'Ingresa un celular válido a 10 dígitos' });
+  if (!email || !EMAIL_RE.test(email)) return res.status(400).json({ error: 'Ingresa un correo empresarial válido' });
+  if (!telefono || numDigitos(telefono) !== 10) return res.status(400).json({ error: 'El celular debe tener exactamente 10 dígitos' });
   if (!b.aceptaTerminos || !b.aceptaPrivacidad) return res.status(400).json({ error: 'Debes aceptar los términos y el aviso de privacidad' });
 
   const data = db();
@@ -160,8 +160,8 @@ router.get('/meta', (_req, res) => {
   res.json({ intereses: INTERESES, fuentes: FUENTES, event: { name: ev.name, id: ev.id } });
 });
 
-// A partir de aquí, solo personal (listado y exportación).
-router.use(requireStaff);
+// A partir de aquí, solo con sesión (listado y exportación).
+router.use(requireAuth);
 
 // GET /api/leads — listado con búsqueda y filtros (opcionalmente por evento).
 router.get('/', (req, res) => {

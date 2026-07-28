@@ -15,14 +15,18 @@ const ROOT = path.join(__dirname, '..');
 
 const PORT = 4519;
 const PIN = '2026';
+const ADMIN_EMAIL = 'admin@test.com';
+const ADMIN_PASSWORD = 'admin1234';
 const BASE = `http://127.0.0.1:${PORT}`;
 let DATA_DIR;
 let server;
+let TOKEN = '';
 
+// El parámetro `pin` (compatibilidad) ahora significa "autenticado": adjunta el token de sesión.
 function api(pathname, { method = 'GET', body, pin } = {}) {
   const headers = {};
   if (body) headers['Content-Type'] = 'application/json';
-  if (pin) headers['x-staff-pin'] = pin;
+  if (pin) headers['Authorization'] = 'Bearer ' + TOKEN;
   return fetch(BASE + pathname, { method, headers, body: body ? JSON.stringify(body) : undefined });
 }
 async function json(res) { try { return await res.json(); } catch { return null; } }
@@ -32,15 +36,19 @@ before(async () => {
   DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'ana-qa-'));
   server = spawn('node', ['server/index.js'], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(PORT), STAFF_PIN: PIN, DATA_DIR, NODE_ENV: 'test' },
+    env: { ...process.env, PORT: String(PORT), STAFF_PIN: PIN, ADMIN_EMAIL, ADMIN_PASSWORD, DATA_DIR, NODE_ENV: 'test' },
     stdio: 'ignore',
   });
   // Espera a que el servidor responda.
+  let up = false;
   for (let i = 0; i < 50; i++) {
-    try { const r = await fetch(BASE + '/api/health'); if (r.ok) return; } catch { /* aún no */ }
+    try { const r = await fetch(BASE + '/api/health'); if (r.ok) { up = true; break; } } catch { /* aún no */ }
     await wait(100);
   }
-  throw new Error('El servidor no arrancó a tiempo');
+  if (!up) throw new Error('El servidor no arrancó a tiempo');
+  // Inicia sesión como admin para obtener el token.
+  const r = await fetch(BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }) });
+  TOKEN = (await r.json()).token;
 });
 
 after(() => {
@@ -48,22 +56,30 @@ after(() => {
   try { fs.rmSync(DATA_DIR, { recursive: true, force: true }); } catch { /* ignore */ }
 });
 
-// ---------- Salud y acceso ----------
+// ---------- Salud y sesión ----------
 test('health responde ok', async () => {
   const r = await api('/api/health');
   assert.equal(r.status, 200);
   assert.equal((await json(r)).ok, true);
 });
 
-test('access indica que se requiere PIN y no autoriza sin él', async () => {
-  const info = await json(await api('/api/access'));
-  assert.equal(info.pinRequired, true);
-  assert.equal(info.authorized, false);
+test('login con credenciales correctas devuelve token y usuario admin', async () => {
+  const r = await fetch(BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }) });
+  assert.equal(r.status, 200);
+  const d = await r.json();
+  assert.ok(d.token);
+  assert.equal(d.user.role, 'admin');
 });
 
-test('access autoriza con el PIN correcto', async () => {
-  const info = await json(await api('/api/access', { pin: PIN }));
-  assert.equal(info.authorized, true);
+test('login con credenciales incorrectas es rechazado (401)', async () => {
+  const r = await fetch(BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ADMIN_EMAIL, password: 'malo' }) });
+  assert.equal(r.status, 401);
+});
+
+test('GET /api/auth/me requiere token y lo valida', async () => {
+  assert.equal((await api('/api/auth/me')).status, 401);
+  const me = await json(await api('/api/auth/me', { pin: PIN }));
+  assert.equal(me.user.email, ADMIN_EMAIL);
 });
 
 // ---------- Metadatos ----------
@@ -79,7 +95,7 @@ test('crea un lead válido (201)', async () => {
   const r = await api('/api/leads', { method: 'POST', body: {
     nombre: 'Juan Pérez', empresa: 'Agrícola del Valle', telefono: '55 1234 5678',
     interes: 'Malla antigranizo', fuente: 'Stand', consentimiento: true, capturadoPor: 'Ana',
-  }});
+  }, pin: PIN });
   assert.equal(r.status, 201);
   const lead = await json(r);
   assert.ok(lead.id.startsWith('lead_'));
@@ -87,24 +103,24 @@ test('crea un lead válido (201)', async () => {
 });
 
 test('rechaza lead sin nombre (400)', async () => {
-  const r = await api('/api/leads', { method: 'POST', body: { telefono: '5599999999' } });
+  const r = await api('/api/leads', { method: 'POST', body: { telefono: '5599999999' } , pin: PIN });
   assert.equal(r.status, 400);
 });
 
 test('rechaza lead sin teléfono ni correo (400)', async () => {
-  const r = await api('/api/leads', { method: 'POST', body: { nombre: 'Sin contacto' } });
+  const r = await api('/api/leads', { method: 'POST', body: { nombre: 'Sin contacto' } , pin: PIN });
   assert.equal(r.status, 400);
 });
 
 test('rechaza correo con formato inválido (400)', async () => {
-  const r = await api('/api/leads', { method: 'POST', body: { nombre: 'Correo malo', email: 'no-es-correo' } });
+  const r = await api('/api/leads', { method: 'POST', body: { nombre: 'Correo malo', email: 'no-es-correo' } , pin: PIN });
   assert.equal(r.status, 400);
 });
 
 test('detecta duplicado por teléfono (409) y permite forzar', async () => {
-  const dup = await api('/api/leads', { method: 'POST', body: { nombre: 'Otro Juan', telefono: '5512345678' } });
+  const dup = await api('/api/leads', { method: 'POST', body: { nombre: 'Otro Juan', telefono: '5512345678' } , pin: PIN });
   assert.equal(dup.status, 409);
-  const forced = await api('/api/leads', { method: 'POST', body: { nombre: 'Otro Juan', telefono: '5512345678', forzar: true } });
+  const forced = await api('/api/leads', { method: 'POST', body: { nombre: 'Otro Juan', telefono: '5512345678', forzar: true } , pin: PIN });
   assert.equal(forced.status, 201);
 });
 
@@ -178,7 +194,7 @@ test('anular un sorteo lo elimina del historial', async () => {
 
 // ---------- Eliminación de leads ----------
 test('elimina un lead por id', async () => {
-  const created = await json(await api('/api/leads', { method: 'POST', body: { nombre: 'Borrable', telefono: '5500000000' } }));
+  const created = await json(await api('/api/leads', { method: 'POST', body: { nombre: 'Borrable', telefono: '5500000000' } , pin: PIN }));
   const del = await api('/api/leads/' + created.id, { method: 'DELETE', pin: PIN });
   assert.equal(del.status, 200);
 });
@@ -190,7 +206,7 @@ const JPEG_1PX = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP/////
 test('lead por gafete guarda la foto y marca metodoCaptura', async () => {
   const r = await api('/api/leads', { method: 'POST', body: {
     nombre: 'Lead Gafete', telefono: '5544332211', metodoCaptura: 'gafete', foto: JPEG_1PX,
-  }});
+  }, pin: PIN });
   assert.equal(r.status, 201);
   const lead = await json(r);
   assert.equal(lead.metodoCaptura, 'gafete');
@@ -205,7 +221,7 @@ test('lead por gafete guarda la foto y marca metodoCaptura', async () => {
 });
 
 test('lead manual no tiene foto (metodoCaptura manual, badge 404)', async () => {
-  const lead = await json(await api('/api/leads', { method: 'POST', body: { nombre: 'Lead Manual', telefono: '5500112233' } }));
+  const lead = await json(await api('/api/leads', { method: 'POST', body: { nombre: 'Lead Manual', telefono: '5500112233' } , pin: PIN }));
   assert.equal(lead.metodoCaptura, 'manual');
   assert.equal(lead.tieneFoto, false);
   const badge = await api(`/api/leads/${lead.id}/badge`, { pin: PIN });
@@ -213,7 +229,7 @@ test('lead manual no tiene foto (metodoCaptura manual, badge 404)', async () => 
 });
 
 test('rechaza foto con dataURL inválido (no guarda foto)', async () => {
-  const lead = await json(await api('/api/leads', { method: 'POST', body: { nombre: 'Foto Mala', telefono: '5599887766', foto: 'no-es-una-imagen' } }));
+  const lead = await json(await api('/api/leads', { method: 'POST', body: { nombre: 'Foto Mala', telefono: '5599887766', foto: 'no-es-una-imagen' } , pin: PIN }));
   assert.equal(lead.tieneFoto, false);
 });
 
@@ -346,7 +362,7 @@ test('crear, activar y eliminar un evento; registro y sorteo por evento con foli
   assert.equal(act.activeEventId, ev2.id); // crear deja activo
 
   // Captura (staff) hacia el evento indicado (el limitador solo aplica a /registro).
-  await api('/api/leads', { method: 'POST', body: { event: ev2.id, nombre: 'Part Ev2', email: 'part.ev2@correo.mx', telefono: '5512121212' } });
+  await api('/api/leads', { method: 'POST', body: { event: ev2.id, nombre: 'Part Ev2', email: 'part.ev2@correo.mx', telefono: '5512121212' } , pin: PIN });
   const leadsEv2 = await json(await api('/api/leads?event=' + ev2.id, { pin: PIN }));
   assert.ok(leadsEv2.items.some((l) => l.email === 'part.ev2@correo.mx'));
 
@@ -361,6 +377,33 @@ test('crear, activar y eliminar un evento; registro y sorteo por evento con foli
   // Volver a activar el primero y eliminar ev2 tras quitar su lead.
   const first = act.items.find((e) => e.id !== ev2.id) || (await json(await api('/api/events', { pin: PIN }))).items[0];
   await api('/api/events/' + first.id + '/activate', { method: 'POST', pin: PIN });
+});
+
+// ---------- Usuarios y roles ----------
+test('admin crea un usuario staff; el staff inicia sesión y no accede a /api/users (403)', async () => {
+  // Solo admin lista usuarios.
+  assert.equal((await api('/api/users')).status, 401);
+  const created = await json(await api('/api/users', { method: 'POST', pin: PIN, body: { name: 'Staff Uno', email: 'staff1@test.com', password: 'staff123', role: 'staff' } }));
+  assert.equal(created.role, 'staff');
+  // El staff inicia sesión.
+  const lr = await fetch(BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'staff1@test.com', password: 'staff123' }) });
+  const staffToken = (await lr.json()).token;
+  const h = { Authorization: 'Bearer ' + staffToken };
+  // Puede capturar leads pero NO administrar usuarios.
+  assert.equal((await fetch(BASE + '/api/users', { headers: h })).status, 403);
+  assert.equal((await fetch(BASE + '/api/leads', { headers: h })).status, 200);
+});
+
+test('no se puede crear usuario con correo duplicado (409) ni contraseña corta (400)', async () => {
+  assert.equal((await api('/api/users', { method: 'POST', pin: PIN, body: { email: 'staff1@test.com', password: 'otra123' } })).status, 409);
+  assert.equal((await api('/api/users', { method: 'POST', pin: PIN, body: { email: 'x@test.com', password: '123' } })).status, 400);
+});
+
+// ---------- Finalizar evento (histórico) ----------
+test('finalizar un evento lo marca como finalizado', async () => {
+  const ev = await json(await api('/api/events', { method: 'POST', pin: PIN, body: { name: 'Evento a finalizar' } }));
+  const r = await json(await api('/api/events/' + ev.id + '/finalizar', { method: 'POST', pin: PIN }));
+  assert.equal(r.finalizado, true);
 });
 
 // ---------- Rutas inexistentes ----------
