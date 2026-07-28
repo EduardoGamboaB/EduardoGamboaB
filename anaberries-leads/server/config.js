@@ -34,4 +34,8 @@ export const config = {
   // usuarios reales. Al finalizar la configuración, el NIP queda inservible.
   // Vacío = deshabilitado. Se reabre con SETUP_REOPEN=true (una vez).
   setupPin: (process.env.SETUP_PIN || '').trim(),
+  // Dominio canónico público (p. ej. "sorteo-mallatex.com"). Si se define, en
+  // producción las visitas por otro host o por http se redirigen (301) a
+  // https://<canonicalHost>. Vacío = sin redirección (útil en pruebas/preview).
+  canonicalHost: (process.env.CANONICAL_HOST || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
 };

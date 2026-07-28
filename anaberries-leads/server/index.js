@@ -33,6 +33,21 @@ bootstrapSetup();
 const app = express();
 app.disable('x-powered-by');
 if (config.trustProxy) app.set('trust proxy', config.trustProxy);
+
+// Redirección al dominio canónico (solo en producción y si CANONICAL_HOST está
+// definido). Lleva la URL vieja / http a https://<dominio>. No afecta a la API
+// (incluido /api/health, que usa el healthcheck) ni a métodos que no sean GET/HEAD.
+app.use((req, res, next) => {
+  const canonical = config.canonicalHost;
+  if (!canonical || !config.isProd) return next();
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  if (req.path.startsWith('/api/')) return next();
+  const host = (req.headers.host || '').toLowerCase();
+  const proto = (req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http')).split(',')[0].trim();
+  if (host === canonical && proto === 'https') return next();
+  return res.redirect(301, 'https://' + canonical + req.originalUrl);
+});
+
 app.use(express.json({ limit: config.jsonLimit }));
 
 // Cabeceras de seguridad básicas.
