@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Regístrate · Anaberries — Mallatex</title>
+  <meta name="theme-color" content="#ed3237" />
+  <meta name="description" content="Regístrate en el stand de Mallatex en el evento Anaberries y participa por un premio." />
+  <link rel="stylesheet" href="/css/landing.css" />
+</head>
+<body>
+  <header class="hero">
+    <img src="/assets/mallatex-logo.png" alt="Mallatex" class="hero-logo" />
+    <h1>¡Regístrate y participa!</h1>
+    <p>Déjanos tus datos y entra al sorteo del stand.</p>
+    <span class="badge-evento" id="evento">Evento Anaberries</span>
+  </header>
+
+  <main class="wrap">
+    <!-- Formulario -->
+    <section id="form-view">
+      <div class="disclaimer">
+        <span class="ico">📣</span>
+        <div>Tu <strong>correo</strong> y <strong>celular</strong> deben ser <strong>válidos</strong>:
+          si resultas ganador del sorteo, <strong>por ese medio te contactaremos</strong>.</div>
+      </div>
+
+      <!-- Tarjeta del premio (se muestra si el evento tiene premio configurado) -->
+      <div class="prize-card" id="prize-card" hidden>
+        <img id="prize-img" alt="Premio" hidden />
+        <div class="prize-body">
+          <span class="prize-tag">🎁 Premio del sorteo</span>
+          <p id="prize-text"></p>
+          <p class="prize-when" id="prize-when"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <form id="registro-form" autocomplete="on" novalidate>
+          <label>Nombre completo <span class="req">*</span>
+            <input name="nombre" required maxlength="120" autocomplete="name" placeholder="Ej. Juan Pérez" />
+          </label>
+          <label>Empresa / rancho
+            <input name="empresa" maxlength="160" autocomplete="organization" placeholder="Ej. Agrícola del Valle" />
+          </label>
+          <div class="grid2">
+            <label>Celular <span class="req">*</span>
+              <input name="telefono" type="tel" inputmode="tel" required maxlength="20" autocomplete="tel" placeholder="10 dígitos" />
+              <span class="field-hint">A 10 dígitos. Te contactaremos si ganas.</span>
+            </label>
+            <label>Correo <span class="req">*</span>
+              <input name="email" type="email" inputmode="email" required maxlength="160" autocomplete="email" placeholder="correo@ejemplo.com" />
+              <span class="field-hint">Debe ser un correo real y activo.</span>
+            </label>
+          </div>
+          <label>Producto de interés
+            <select name="interes" id="sel-interes"><option value="">Selecciona…</option></select>
+          </label>
+
+          <!-- Honeypot anti-bots (oculto) -->
+          <div class="hp" aria-hidden="true"><label>No llenar<input name="website" tabindex="-1" autocomplete="off" /></label></div>
+
+          <label class="consent">
+            <input type="checkbox" name="aceptaTerminos" />
+            <span>He leído y acepto los <a href="/terminos" target="_blank" rel="noopener">Términos y Condiciones</a>.</span>
+          </label>
+          <label class="consent">
+            <input type="checkbox" name="aceptaPrivacidad" />
+            <span>He leído y acepto el <a href="/aviso-privacidad" target="_blank" rel="noopener">Aviso de Privacidad</a>.</span>
+          </label>
+
+          <button type="submit" class="btn-primary" id="btn-enviar">Registrarme y participar</button>
+          <p class="form-msg" id="msg"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Éxito -->
+    <section id="ok-view" hidden>
+      <div class="card success">
+        <div class="check">✓</div>
+        <h2 id="ok-title">¡Registro exitoso!</h2>
+        <p>Ya participas en el sorteo del stand.</p>
+        <p>Si resultas ganador, te contactaremos por correo o celular.</p>
+        <p style="margin-top:14px"><strong>¡Gracias por visitarnos!</strong></p>
+      </div>
+    </section>
+  </main>
+
+  <p class="foot">Mallatex · Protegemos lo que siembras — Evento Anaberries</p>
+
+  <script src="/js/registro.js" type="module"></script>
+</body>
+</html>
