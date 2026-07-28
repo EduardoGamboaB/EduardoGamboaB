@@ -122,12 +122,56 @@ function initFile() {
   }
 }
 
+// Extrae host/puerto/base de la URL SIN exponer la contraseña (para los logs).
+function safeUrlInfo(url) {
+  try { const u = new URL(url); return { host: u.hostname, port: u.port || '5432', database: (u.pathname || '').replace(/^\//, '') || '(default)' }; }
+  catch { return { host: '(no se pudo leer)', port: '?', database: '?' }; }
+}
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const isSslError = (e) => /ssl|sslmode|encryption/i.test(`${e && e.message} ${e && e.code}`);
+
+async function connectPg(pg, url, ssl) {
+  const p = new pg.Pool({ connectionString: url, ssl, max: 5, connectionTimeoutMillis: 6000, idleTimeoutMillis: 30000 });
+  try { await p.query('SELECT 1'); return p; }
+  catch (e) { try { await p.end(); } catch { /* ignore */ } throw e; }
+}
+
 async function initPg() {
   const pg = (await import('pg')).default;
   const url = process.env.DATABASE_URL;
-  const ssl = /sslmode=require/.test(url) || process.env.DATABASE_SSL === 'true'
-    ? { rejectUnauthorized: false } : undefined;
-  pool = new pg.Pool({ connectionString: url, ssl, max: 5 });
+  const info = safeUrlInfo(url);
+  const wantSsl = /sslmode=require/.test(url) || process.env.DATABASE_SSL === 'true';
+  // Autodetección de SSL: intenta primero lo indicado y, si el error es de SSL, el opuesto.
+  const sslCandidates = wantSsl ? [{ rejectUnauthorized: false }, undefined] : [undefined, { rejectUnauthorized: false }];
+  const attempts = Number(process.env.DB_CONNECT_RETRIES) || 6;
+
+  let lastErr = null;
+  for (let attempt = 1; attempt <= attempts && !pool; attempt++) {
+    for (const ssl of sslCandidates) {
+      try {
+        pool = await connectPg(pg, url, ssl);
+        console.log(`Almacenamiento: PostgreSQL conectado (${info.host}:${info.port}/${info.database}, ssl=${ssl ? 'on' : 'off'})`);
+        break;
+      } catch (e) {
+        lastErr = e;
+        // Si el error NO es de SSL, probar el otro modo SSL no ayuda: pasa al reintento.
+        if (!isSslError(e)) break;
+      }
+    }
+    if (pool) break;
+    const code = (lastErr && (lastErr.code || lastErr.message)) || 'error desconocido';
+    console.error(`Postgres: intento ${attempt}/${attempts} falló → ${code} (host ${info.host}:${info.port})`);
+    if (attempt < attempts) await wait(Math.min(1500 * attempt, 6000));
+  }
+
+  if (!pool) {
+    const code = (lastErr && (lastErr.code || lastErr.message)) || 'error desconocido';
+    const err = new Error(`No se pudo conectar a PostgreSQL (${info.host}:${info.port}/${info.database}) — ${code}. ` +
+      `Revisa DATABASE_URL; si usas la URL pública del proxy, agrega DATABASE_SSL=true.`);
+    err.cause = lastErr;
+    throw err;
+  }
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS app_state (
       id SMALLINT PRIMARY KEY DEFAULT 1,
@@ -148,7 +192,6 @@ async function initPg() {
     data = withEventDefaults(structuredClone(DEFAULT_DATA));
     await pool.query('INSERT INTO app_state (id, data) VALUES (1, $1)', [JSON.stringify(data)]);
   }
-  console.log('Almacenamiento: PostgreSQL conectado');
 }
 
 // ---------- Persistencia del estado ----------
