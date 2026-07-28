@@ -16,10 +16,12 @@ function contarPor(items, key) {
     .sort((a, b) => b.value - a.value);
 }
 
-// GET /api/stats — resumen del dashboard.
-router.get('/', (_req, res) => {
+// GET /api/stats — resumen del dashboard (opcionalmente por evento ?event=<id>).
+router.get('/', (req, res) => {
   const data = db();
-  const leads = data.leads;
+  const event = req.query.event;
+  const leads = event ? data.leads.filter((l) => l.eventId === event) : data.leads;
+  const draws = event ? data.draws.filter((d) => d.eventId === event) : data.draws;
   const hoy = new Date().toISOString().slice(0, 10);
   const leadsHoy = leads.filter((l) => (l.createdAt || '').slice(0, 10) === hoy).length;
   const conConsentimiento = leads.filter((l) => l.consentimiento).length;
@@ -40,7 +42,7 @@ router.get('/', (_req, res) => {
     hoy: leadsHoy,
     conConsentimiento,
     tasaConsentimiento: leads.length ? Math.round((conConsentimiento / leads.length) * 100) : 0,
-    ganadores: data.draws.length,
+    ganadores: draws.length,
     porInteres: contarPor(leads, 'interes'),
     porFuente: contarPor(leads, 'fuente'),
     porCaptador: contarPor(leads.filter((l) => l.capturadoPor), 'capturadoPor'),

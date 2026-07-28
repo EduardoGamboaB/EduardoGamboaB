@@ -51,9 +51,9 @@ async function goto(view) {
   }
   $$('.tab').forEach((t) => t.classList.toggle('is-active', t.dataset.view === view));
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === 'view-' + view));
-  if (view === 'sorteo') { loadPool(); loadWinners(); }
+  if (view === 'sorteo') loadSorteo();
   if (view === 'dashboard') loadDashboard();
-  if (view === 'evento') loadEvento();
+  if (view === 'evento') loadEventoAdmin();
 }
 
 $('#tabs').addEventListener('click', (e) => {
@@ -351,15 +351,59 @@ $('#btn-ocr').addEventListener('click', async () => {
   } finally { btn.disabled = false; }
 });
 
+// ---------- Eventos (estado compartido) ----------
+const eventos = { list: [], activeId: '', selectedId: '', premioImagen: undefined };
+
+async function loadEventos() {
+  try {
+    const data = await api('/events', { staff: true });
+    eventos.list = data.items || [];
+    eventos.activeId = data.activeEventId || (eventos.list[0] && eventos.list[0].id) || '';
+    const activo = eventos.list.find((e) => e.id === eventos.activeId);
+    if (activo) $('#event-name').textContent = activo.name;
+    poblarSelectoresEvento();
+    return true;
+  } catch (err) { if (err.status !== 401) toast(err.message, 'err'); return false; }
+}
+
+function poblarSelectoresEvento() {
+  // Selector del dashboard (con "Todos").
+  const dash = $('#dash-evento');
+  if (dash) {
+    const prev = dash.value;
+    dash.innerHTML = '<option value="">Todos los eventos</option>' +
+      eventos.list.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}${e.id === eventos.activeId ? ' ★' : ''}</option>`).join('');
+    dash.value = eventos.list.some((e) => e.id === prev) ? prev : '';
+  }
+  // Selector de administración.
+  const sel = $('#evento-select');
+  if (sel) {
+    sel.innerHTML = eventos.list.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}${e.id === eventos.activeId ? ' ★ (activo)' : ''}</option>`).join('');
+    if (!eventos.list.some((e) => e.id === eventos.selectedId)) eventos.selectedId = eventos.activeId;
+    sel.value = eventos.selectedId;
+  }
+}
+
 // ---------- Sorteo ----------
 function raffleOpts() {
   return { consentimiento: $('#opt-consent').checked ? '1' : '0', repetidos: $('#opt-repes').checked ? '1' : '0' };
 }
+async function loadSorteo() {
+  await loadEventos();
+  const activo = eventos.list.find((e) => e.id === eventos.activeId);
+  $('#sorteo-evento').textContent = activo ? activo.name : '—';
+  if (activo && activo.premio && !$('#premio').value) $('#premio').value = activo.premio;
+  await loadPool();
+  await loadWinners();
+}
 async function loadPool() {
   try {
     const o = raffleOpts();
-    const data = await api(`/raffle/eligible?consentimiento=${o.consentimiento}&repetidos=${o.repetidos}`, { staff: true });
+    const data = await api(`/raffle/eligible?event=${encodeURIComponent(eventos.activeId)}&consentimiento=${o.consentimiento}&repetidos=${o.repetidos}`, { staff: true });
     $('#pool-count').textContent = data.total;
+    $('#sorteo-correo').textContent = data.correoActivo
+      ? '✉ El ganador recibirá su folio por correo automáticamente.'
+      : '✉ Envío de correo no configurado: entrega el folio manualmente (o configura SMTP).';
   } catch { /* sin acceso */ }
 }
 $('#opt-consent').addEventListener('change', loadPool);
@@ -374,9 +418,9 @@ $('#btn-sortear').addEventListener('click', async () => {
   let i = 0;
   const spin = setInterval(() => { reel.textContent = nombres[i++ % nombres.length]; }, 120);
   try {
-    // Pequeña espera para la animación.
     await new Promise((r) => setTimeout(r, 1400));
     const body = {
+      event: eventos.activeId,
       premio: $('#premio').value.trim(),
       soloConsentimiento: $('#opt-consent').checked,
       evitarRepetidos: $('#opt-repes').checked,
@@ -386,8 +430,11 @@ $('#btn-sortear').addEventListener('click', async () => {
     reel.className = 'reel winner';
     reel.innerHTML = `<span class="win-name">🏆 ${escapeHtml(ganador.nombre)}</span>` +
       (ganador.empresa ? `<span class="win-empresa">${escapeHtml(ganador.empresa)}</span>` : '') +
-      `<span class="win-premio">${escapeHtml(ganador.premio)}</span>`;
-    toast('¡Tenemos ganador!', 'ok');
+      `<span class="win-premio">${escapeHtml(ganador.premio)}</span>` +
+      `<span class="win-folio">Folio: <b>${escapeHtml(ganador.folio)}</b></span>`;
+    const est = ganador.emailEstado === 'enviado' ? 'Folio enviado por correo ✓'
+      : ganador.emailEstado === 'omitido' ? 'Entrega el folio manualmente' : 'No se pudo enviar el correo';
+    toast('¡Ganador! ' + est, ganador.emailEstado === 'error' ? 'err' : 'ok');
     loadWinners();
     loadPool();
   } catch (err) {
@@ -398,20 +445,37 @@ $('#btn-sortear').addEventListener('click', async () => {
   } finally { btn.disabled = false; }
 });
 
+function emailBadge(w) {
+  if (w.emailEstado === 'enviado') return '<span class="mail ok" title="Folio enviado por correo">✉ enviado</span>';
+  if (w.emailEstado === 'error') return '<span class="mail err" title="Error al enviar">✉ error</span>';
+  return '<span class="mail" title="Correo no enviado">✉ pendiente</span>';
+}
 async function loadWinners() {
   try {
-    const { items } = await api('/raffle/winners', { staff: true });
+    const { items } = await api(`/raffle/winners?event=${encodeURIComponent(eventos.activeId)}`, { staff: true });
     $('#winners-list').innerHTML = items.length
-      ? items.map((w) => `<li><button class="del" data-id="${w.id}" title="Anular">✕</button><strong>${escapeHtml(w.nombre)}</strong><span class="prize">${escapeHtml(w.premio)}</span><small>${escapeHtml(w.empresa || '')} · ${fmtDate(w.createdAt)}</small></li>`).join('')
+      ? items.map((w) => `<li>
+          <button class="del" data-id="${w.id}" title="Anular">✕</button>
+          <strong>${escapeHtml(w.nombre)}</strong>
+          <span class="prize">${escapeHtml(w.premio)}</span>
+          <span class="folio">Folio: <b>${escapeHtml(w.folio || '—')}</b></span>
+          <small>${escapeHtml(w.empresa || '')} · ${fmtDate(w.createdAt)}</small>
+          <div class="win-actions">${emailBadge(w)}<button class="resend" data-id="${w.id}" title="Reenviar correo">Reenviar</button></div>
+        </li>`).join('')
       : '<li class="muted">Aún no hay ganadores.</li>';
   } catch { /* sin acceso */ }
 }
 $('#winners-list').addEventListener('click', async (e) => {
-  const btn = e.target.closest('.del');
-  if (!btn) return;
-  if (!confirm('¿Anular este sorteo?')) return;
-  try { await api('/raffle/winners/' + btn.dataset.id, { method: 'DELETE', staff: true }); loadWinners(); loadPool(); }
-  catch (err) { toast(err.message, 'err'); }
+  const del = e.target.closest('.del');
+  const resend = e.target.closest('.resend');
+  if (del) {
+    if (!confirm('¿Anular este sorteo?')) return;
+    try { await api('/raffle/winners/' + del.dataset.id, { method: 'DELETE', staff: true }); loadWinners(); loadPool(); }
+    catch (err) { toast(err.message, 'err'); }
+  } else if (resend) {
+    try { const r = await api('/raffle/winners/' + resend.dataset.id + '/resend', { method: 'POST', staff: true }); toast(r.estado === 'enviado' ? 'Correo reenviado ✓' : 'No se envió (revisa SMTP)', r.estado === 'enviado' ? 'ok' : 'err'); loadWinners(); }
+    catch (err) { toast(err.message, 'err'); }
+  }
 });
 
 // ---------- Dashboard ----------
@@ -426,9 +490,12 @@ function barList(el, items) {
     </div>`).join('');
 }
 
+function dashEvent() { return $('#dash-evento') ? $('#dash-evento').value : ''; }
 async function loadDashboard() {
+  await loadEventos();
   try {
-    const s = await api('/stats', { staff: true });
+    const ev = dashEvent();
+    const s = await api('/stats' + (ev ? '?event=' + encodeURIComponent(ev) : ''), { staff: true });
     $('#kpis').innerHTML = [
       { v: s.total, l: 'Leads totales', accent: true },
       { v: s.hoy, l: 'Capturados hoy' },
@@ -449,6 +516,7 @@ async function loadLeadsTable() {
   const q = $('#search').value.trim();
   const interes = $('#filter-interes').value;
   const params = new URLSearchParams();
+  if (dashEvent()) params.set('event', dashEvent());
   if (q) params.set('q', q);
   if (interes) params.set('interes', interes);
   try {
@@ -479,26 +547,75 @@ $('#leads-tbody').addEventListener('click', async (e) => {
   catch (err) { toast(err.message, 'err'); }
 });
 
+$('#dash-evento')?.addEventListener('change', loadDashboard);
 $('#btn-export').addEventListener('click', (e) => {
   e.preventDefault();
-  const url = '/api/leads/export.csv' + (state.pin ? '?pin=' + encodeURIComponent(state.pin) : '');
-  window.open(url, '_blank');
+  const p = new URLSearchParams();
+  if (state.pin) p.set('pin', state.pin);
+  if (dashEvent()) p.set('event', dashEvent());
+  window.open('/api/leads/export.csv' + (p.toString() ? '?' + p.toString() : ''), '_blank');
 });
 
-// ---------- Evento (administración) ----------
-const evento = { premioImagen: undefined }; // undefined=sin cambio, string=nueva, false=quitar
-
-async function loadEvento() {
-  try {
-    const e = await api('/event', { staff: true });
-    const f = $('#evento-form');
-    ['name', 'edition', 'tipo', 'lugar', 'fecha', 'hora', 'premio', 'plazoContactoDias', 'dinamica'].forEach((k) => {
-      if (f[k]) f[k].value = e[k] || '';
-    });
-    evento.premioImagen = undefined;
-    renderPremioPreview(e.premioImagen ? ('/api/event/premio-imagen?ts=' + Date.now()) : null);
-  } catch (err) { if (err.status !== 401) toast(err.message, 'err'); }
+// ---------- Evento (administración multi-evento) ----------
+async function loadEventoAdmin() {
+  const ok = await loadEventos();
+  if (!ok) return;
+  selectEvento(eventos.selectedId || eventos.activeId);
 }
+
+function selectEvento(id) {
+  const e = eventos.list.find((x) => x.id === id) || eventos.list[0];
+  if (!e) return;
+  eventos.selectedId = e.id;
+  $('#evento-select').value = e.id;
+  const f = $('#evento-form');
+  ['name', 'edition', 'tipo', 'lugar', 'fecha', 'hora', 'premio', 'plazoContactoDias', 'dinamica'].forEach((k) => {
+    if (f[k]) f[k].value = e[k] || '';
+  });
+  f.permiteGanadoresPrevios.checked = e.permiteGanadoresPrevios !== false;
+  eventos.premioImagen = undefined;
+  renderPremioPreview(e.premioImagen ? ('/api/events/' + e.id + '/premio-imagen?ts=' + Date.now()) : null);
+  // Enlaces por evento.
+  $('#btn-evento-qr').href = '/qr?e=' + encodeURIComponent(e.id);
+  $('#btn-evento-terminos').href = '/terminos?e=' + encodeURIComponent(e.id);
+  $('#btn-evento-landing').href = '/registro?e=' + encodeURIComponent(e.id);
+  const esActivo = e.id === eventos.activeId;
+  $('#evento-activo-nota').innerHTML = esActivo
+    ? '<span class="tag">★ Evento activo</span> — es el que usan por defecto la captura, el sorteo y el QR.'
+    : 'Este evento no es el activo. Usa «Marcar activo» para que sea el predeterminado.';
+  $('#evento-msg').textContent = '';
+}
+
+$('#evento-select').addEventListener('change', (e) => selectEvento(e.target.value));
+
+$('#btn-evento-nuevo').addEventListener('click', async () => {
+  try {
+    const nuevo = await api('/events', { method: 'POST', body: { name: 'Evento nuevo' }, staff: true });
+    await loadEventos();
+    selectEvento(nuevo.id);
+    toast('Evento creado. Configúralo y guarda.', 'ok');
+  } catch (err) { toast(err.message, 'err'); }
+});
+
+$('#btn-evento-activar').addEventListener('click', async () => {
+  try {
+    await api('/events/' + eventos.selectedId + '/activate', { method: 'POST', staff: true });
+    await loadEventos();
+    selectEvento(eventos.selectedId);
+    toast('Evento marcado como activo', 'ok');
+  } catch (err) { toast(err.message, 'err'); }
+});
+
+$('#btn-evento-eliminar').addEventListener('click', async () => {
+  if (!confirm('¿Eliminar este evento? (no debe tener leads registrados)')) return;
+  try {
+    await api('/events/' + eventos.selectedId, { method: 'DELETE', staff: true });
+    eventos.selectedId = '';
+    await loadEventos();
+    selectEvento(eventos.activeId);
+    toast('Evento eliminado', 'ok');
+  } catch (err) { toast(err.message, 'err'); }
+});
 
 function renderPremioPreview(src) {
   const box = $('#premio-preview');
@@ -523,20 +640,21 @@ $('#premio-file').addEventListener('change', (e) => {
     c.width = Math.round(img.naturalWidth * scale);
     c.height = Math.round(img.naturalHeight * scale);
     c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-    evento.premioImagen = c.toDataURL('image/jpeg', 0.85);
-    renderPremioPreview(evento.premioImagen);
+    eventos.premioImagen = c.toDataURL('image/jpeg', 0.85);
+    renderPremioPreview(eventos.premioImagen);
   };
   img.src = URL.createObjectURL(file);
 });
 
 $('#premio-clear').addEventListener('click', () => {
-  evento.premioImagen = false;
+  eventos.premioImagen = false;
   renderPremioPreview(null);
 });
 
 $('#evento-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = e.target;
+  if (!eventos.selectedId) return;
   const body = {
     name: f.name.value.trim(),
     edition: f.edition.value.trim(),
@@ -547,18 +665,18 @@ $('#evento-form').addEventListener('submit', async (e) => {
     premio: f.premio.value.trim(),
     plazoContactoDias: f.plazoContactoDias.value,
     dinamica: f.dinamica.value.trim(),
+    permiteGanadoresPrevios: f.permiteGanadoresPrevios.checked,
   };
-  if (evento.premioImagen !== undefined) body.premioImagen = evento.premioImagen; // string o false
+  if (eventos.premioImagen !== undefined) body.premioImagen = eventos.premioImagen; // string o false
   const btn = $('#btn-evento-guardar');
   const msg = $('#evento-msg');
   btn.disabled = true;
   try {
-    await api('/event', { method: 'PUT', body, staff: true });
-    msg.textContent = '✓ Evento guardado. Los Términos y Condiciones ya reflejan estos datos.';
+    await api('/events/' + eventos.selectedId, { method: 'PUT', body, staff: true });
+    msg.textContent = '✓ Evento guardado. La landing y los Términos y Condiciones reflejan estos datos.';
     msg.className = 'form-msg ok';
-    // Refleja el nombre del evento en la barra superior.
-    if (body.name) $('#event-name').textContent = body.name;
-    evento.premioImagen = undefined;
+    eventos.premioImagen = undefined;
+    await loadEventos(); // refresca nombres/activo en los selectores y la barra
   } catch (err) {
     msg.textContent = err.message || 'No se pudo guardar';
     msg.className = 'form-msg err';

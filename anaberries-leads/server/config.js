@@ -13,4 +13,13 @@ export const config = {
   // Límite de autoregistros por IP (backstop anti-spam de la landing pública). Generoso para redes con NAT del venue.
   registroRateMax: Number(process.env.REGISTRO_RATE_MAX) || 60,
   registroRateWindowMs: Number(process.env.REGISTRO_RATE_WINDOW_MS) || 60000,
+  // Correo (SMTP) para notificar al ganador con su folio. Si SMTP_HOST está vacío, el envío se omite.
+  smtp: {
+    host: (process.env.SMTP_HOST || '').trim(),
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === 'true', // true para 465
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+  },
+  mailFrom: process.env.MAIL_FROM || 'Mallatex <no-reply@mallatex.com.mx>',
 };

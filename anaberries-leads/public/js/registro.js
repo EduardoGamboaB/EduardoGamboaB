@@ -1,13 +1,24 @@
-// Landing de autoregistro — lógica del formulario público.
+// Landing de autoregistro — lógica del formulario público (por evento).
 const $ = (s) => document.querySelector(s);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const digits = (s) => (String(s).match(/\d/g) || []).length;
 
-// Cargar catálogos (producto de interés y nombre del evento).
+// Evento objetivo: viene del QR como ?e=<id>; si no, se usa el evento activo.
+const params = new URLSearchParams(location.search);
+const eventId = params.get('e') || '';
+let eventoResuelto = null;
+
+// Ajusta los enlaces legales para que muestren el evento correcto.
+function ajustarEnlacesLegales(id) {
+  if (!id) return;
+  document.querySelectorAll('a[href="/terminos"]').forEach((a) => { a.href = '/terminos?e=' + encodeURIComponent(id); });
+  document.querySelectorAll('a[href="/aviso-privacidad"]').forEach((a) => { a.href = '/aviso-privacidad'; });
+}
+
+// Cargar catálogos (producto de interés).
 (async function initMeta() {
   try {
     const meta = await (await fetch('/api/leads/meta')).json();
-    if (meta.event?.name) $('#evento').textContent = meta.event.name;
     const sel = $('#sel-interes');
     (meta.intereses || []).forEach((i) => {
       const o = document.createElement('option');
@@ -16,23 +27,29 @@ const digits = (s) => (String(s).match(/\d/g) || []).length;
   } catch { /* la landing funciona sin catálogos */ }
 })();
 
-// Mostrar el premio del evento (si está configurado).
-(async function initPremio() {
+// Cargar el evento (nombre, premio, fecha) y mostrarlo.
+(async function initEvento() {
   try {
-    const e = await (await fetch('/api/event/public')).json();
+    const url = eventId ? '/api/events/public/' + encodeURIComponent(eventId) : '/api/events/public/active';
+    const e = await (await fetch(url)).json();
+    if (!e || e.error) return;
+    eventoResuelto = e.id;
+    ajustarEnlacesLegales(e.id);
     if (e.name) $('#evento').textContent = [e.name, e.edition].filter(Boolean).join(' · ');
+
     const hayTexto = !!e.premio, hayImg = !!e.premioImagen;
-    if (!hayTexto && !hayImg) return;
-    if (hayImg) { const img = $('#prize-img'); img.src = '/api/event/premio-imagen'; img.hidden = false; }
-    $('#prize-text').textContent = e.premio || 'Participa por el premio del stand.';
-    if (e.fecha) {
-      const [y, m, d] = e.fecha.split('-').map(Number);
-      const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-      let cuando = 'Sorteo el ' + d + ' de ' + meses[m - 1];
-      if (e.hora) cuando += ' a las ' + e.hora + ' h';
-      $('#prize-when').textContent = cuando;
+    if (hayTexto || hayImg) {
+      if (hayImg) { const img = $('#prize-img'); img.src = '/api/events/' + e.id + '/premio-imagen'; img.hidden = false; }
+      $('#prize-text').textContent = e.premio || 'Participa por el premio del stand.';
+      if (e.fecha) {
+        const [y, m, d] = e.fecha.split('-').map(Number);
+        const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        let cuando = 'Sorteo el ' + d + ' de ' + meses[m - 1];
+        if (e.hora) cuando += ' a las ' + e.hora + ' h';
+        $('#prize-when').textContent = cuando;
+      }
+      $('#prize-card').hidden = false;
     }
-    $('#prize-card').hidden = false;
   } catch { /* opcional */ }
 })();
 
@@ -49,6 +66,7 @@ $('#registro-form').addEventListener('submit', async (e) => {
   msg.textContent = '';
 
   const body = {
+    event: eventoResuelto || eventId || undefined,
     nombre: form.nombre.value.trim(),
     empresa: form.empresa.value.trim(),
     telefono: form.telefono.value.trim(),
@@ -59,7 +77,6 @@ $('#registro-form').addEventListener('submit', async (e) => {
     aceptaPrivacidad: form.aceptaPrivacidad.checked,
   };
 
-  // Validación en cliente (el servidor vuelve a validar).
   markInvalid('nombre', !body.nombre);
   markInvalid('email', !EMAIL_RE.test(body.email));
   markInvalid('telefono', digits(body.telefono) < 10);
