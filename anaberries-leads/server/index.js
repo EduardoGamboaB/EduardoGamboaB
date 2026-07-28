@@ -64,8 +64,16 @@ app.use('/api/events', eventRoutes);
 app.use('/api/raffle', requireAuth, raffleRoutes);
 app.use('/api/stats', requireAuth, statsRoutes);
 
-// Frontend estático.
-app.use(express.static(PUBLIC_DIR, { maxAge: config.isProd ? '1h' : 0 }));
+// Frontend estático. CSS/JS/HTML con revalidación (no-cache) para evitar versiones
+// cacheadas; assets grandes vendorizados e imágenes conservan caché larga.
+app.use(express.static(PUBLIC_DIR, {
+  maxAge: config.isProd ? '1h' : 0,
+  setHeaders(res, filePath) {
+    if (/\.(css|js|html)$/.test(filePath) && !filePath.includes('/vendor/')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 
 // Páginas públicas con URL limpia (landing de autoregistro, legales y QR).
 const PAGES = {

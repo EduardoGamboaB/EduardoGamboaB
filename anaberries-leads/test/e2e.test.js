@@ -141,6 +141,21 @@ test('E2E · jornada completa del stand', async (t) => {
     const body = await csv.text();
     assert.match(body, /Visitante E2E/, 'el CSV incluye el autoregistro');
     assert.match(body, /Lead Manual E2E/, 'el CSV incluye la captura del staff');
+
+    // ---------- 9) Responsive: login y navegación en móvil (390px) sin desbordes ----------
+    const mob = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+    await mob.goto(BASE + '/', { waitUntil: 'networkidle' });
+    await mob.fill('#login-form [name=email]', 'admin@test.com');
+    await mob.fill('#login-form [name=password]', 'admin1234');
+    await mob.click('#btn-login');
+    await mob.waitForSelector('#app-shell:not(.hidden)', { timeout: 8000 });
+    for (const v of ['sorteo', 'dashboard', 'evento', 'captura']) {
+      await mob.click(`.tab[data-view="${v}"]`);
+      await mob.waitForSelector(`#view-${v}.is-active`, { timeout: 5000 });
+    }
+    const overflow = await mob.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert.ok(overflow <= 2, `sin desbordamiento horizontal en móvil (overflow=${overflow}px)`);
+    await mob.close();
   } finally {
     await browser.close();
   }
