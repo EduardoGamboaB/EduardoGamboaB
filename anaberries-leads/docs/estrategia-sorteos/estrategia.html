@@ -1,0 +1,134 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>
+  :root{ --red:#ED3237; --red2:#9B3234; --black:#232121; --ink:#3f3d3d; --gray:#606062; --line:#d2d3d5; --line2:#eeeef0; }
+  *{ box-sizing:border-box; } html,body{ margin:0; }
+  body{ font-family:'Segoe UI',system-ui,Arial,sans-serif; color:var(--ink); font-size:12.5px; line-height:1.55; }
+  h1{ color:var(--red); font-size:22px; margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--red); }
+  h1 .num{ display:inline-grid; place-items:center; width:30px; height:30px; background:var(--red); color:#fff; border-radius:8px; font-size:15px; margin-right:8px; vertical-align:middle; }
+  h2{ color:var(--black); font-size:15px; margin:18px 0 7px; }
+  p{ margin:0 0 9px; } b{ color:var(--black); }
+  ul,ol{ margin:0 0 10px; padding-left:20px; } li{ margin:0 0 5px; }
+  .note{ background:#fbf3f3; border-left:3px solid var(--red); padding:9px 12px; border-radius:0 6px 6px 0; margin:8px 0 12px; }
+  .note.warn{ background:#fff7e6; border-left-color:#d97706; }
+  .note.ok{ background:#f0fdf4; border-left-color:#15803d; }
+  table{ width:100%; border-collapse:collapse; margin:6px 0 14px; font-size:11.5px; }
+  th{ background:var(--red); color:#fff; text-align:left; padding:7px 10px; font-weight:600; }
+  td{ padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:nth-child(even){ background:var(--line2); }
+  figure{ margin:10px 0 16px; text-align:center; }
+  figure img{ max-width:100%; border:1px solid var(--line); border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  figure.narrow img{ max-width:60%; } figure.phone img{ max-width:230px; }
+  figcaption{ color:var(--gray); font-style:italic; font-size:10.5px; margin-top:5px; }
+  .row2{ display:flex; gap:12px; align-items:flex-start; }
+  .row2 figure{ flex:1; margin:10px 0; }
+  .page-break{ page-break-after:always; }
+  .cover{ height:975px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .cover-imago{ width:420px; max-width:72%; margin-bottom:30px; }
+  .cover-sub{ font-size:18px; color:var(--black); margin-bottom:30px; }
+  .cover-title{ font-size:34px; font-weight:800; color:var(--black); border-top:3px solid var(--red); border-bottom:3px solid var(--red); padding:10px 26px; letter-spacing:1px; }
+  .cover-desc{ color:var(--gray); font-size:15px; margin-top:26px; max-width:490px; }
+  .cover-meta{ margin-top:120px; color:var(--ink); font-size:14px; }
+  .cover-foot{ margin-top:6px; color:var(--gray); font-size:14px; } .cover-foot b{ color:var(--red2); }
+  .toc-item{ display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px dotted var(--line); font-size:13px; }
+  .toc-item span{ color:var(--black); }
+  .end{ margin-top:40px; padding-top:14px; border-top:2px solid var(--red); text-align:center; color:var(--gray); font-size:12px; } .end b{ color:var(--red2); }
+</style></head><body><section class="cover">
+  <img class="cover-imago" src="../manual-assets/mallatex-logo.png"/>
+  <div class="cover-sub">Captura de Leads · Evento Anaberries</div>
+  <div class="cover-title">ESTRATEGIA DE SORTEOS</div>
+  <div class="cover-desc">Guía estratégica para el personal de Mallatex: cómo planear, ejecutar y dar seguimiento a los sorteos del stand para maximizar leads de calidad con transparencia y cumplimiento legal.</div>
+  <div class="cover-meta">Versión 1.0 · Julio 2026 · Uso interno</div>
+  <div class="cover-foot">Mallatex · <b>Protegemos lo que siembras</b></div>
+</section>
+<div class="page-break"></div>
+<h1 class="toc-title">Contenido</h1><nav class="toc"><div class="toc-item"><span>1. Propósito y objetivos</span></div><div class="toc-item"><span>2. Principios rectores</span></div><div class="toc-item"><span>3. Ciclo de vida de un sorteo</span></div><div class="toc-item"><span>4. Definición del premio y la mecánica</span></div><div class="toc-item"><span>5. Reglas de elegibilidad y participación</span></div><div class="toc-item"><span>6. Estrategia multi-evento</span></div><div class="toc-item"><span>7. Ejecución del sorteo</span></div><div class="toc-item"><span>8. Contacto al ganador y folio</span></div><div class="toc-item"><span>9. Cierre del evento e histórico</span></div><div class="toc-item"><span>10. Indicadores de éxito (KPIs)</span></div><div class="toc-item"><span>11. Cumplimiento legal y datos personales</span></div><div class="toc-item"><span>12. Roles del staff</span></div><div class="toc-item"><span>13. Contingencias</span></div><div class="toc-item"><span>14. Checklist por evento</span></div></nav>
+<div class="page-break"></div>
+<h1 id="s1"><span class="num">1</span> Propósito y objetivos</h1>
+<p>El sorteo es la <b>herramienta de atracción</b> del stand: convierte el interés del visitante en un <b>lead de calidad</b> a cambio de la oportunidad de ganar un premio. Esta estrategia define cómo operarlo para que sea <b>atractivo, justo, legal y medible</b>.</p>
+<h2>Objetivos</h2>
+<ul><li><b>Captar el mayor número de leads de calidad</b> (con correo y celular válidos) durante el evento.</li><li>Generar <b>valor comercial</b>: cada registro alimenta el seguimiento de ventas de Mallatex.</li><li>Ofrecer una experiencia <b>transparente y confiable</b> que refuerce la marca «Protegemos lo que siembras».</li><li>Garantizar el <b>cumplimiento</b> del Aviso de Privacidad y la protección de datos personales.</li></ul>
+<div class="note "><b>Idea clave:</b> el premio no es el fin, es el <b>incentivo</b>. El fin es un padrón de contactos reales a quienes dar seguimiento comercial.</div>
+<div class="page-break"></div>
+<h1 id="s2"><span class="num">2</span> Principios rectores</h1>
+<table><thead><tr><th>Principio</th><th>Qué significa en la práctica</th></tr></thead><tbody><tr><td><b>Transparencia</b></td><td>La mecánica, el premio y la fecha del sorteo se publican por adelantado en la landing y en los Términos y Condiciones.</td></tr><tr><td><b>Equidad</b></td><td>El ganador se elige al azar entre los participantes elegibles; el sistema registra el resultado y lo conserva en el historial.</td></tr><tr><td><b>Datos de calidad</b></td><td>Solo participan registros con contacto válido; el correo debe ser empresarial y el celular de 10 dígitos.</td></tr><tr><td><b>Cumplimiento</b></td><td>Todo registro requiere aceptar Términos y Aviso de Privacidad. Los datos se usan conforme a lo informado.</td></tr><tr><td><b>Trazabilidad</b></td><td>Cada ganador queda con un folio único y el evento se archiva con su resultado para auditoría.</td></tr></tbody></table>
+<div class="page-break"></div>
+<h1 id="s3"><span class="num">3</span> Ciclo de vida de un sorteo</h1>
+<p>Cada evento sigue el mismo flujo de principio a fin:</p>
+<ol><li><b>Planear</b> — crear el evento, definir premio, mecánica, fecha/hora y plazo de contacto.</li><li><b>Publicar</b> — imprimir y colocar el QR del evento en el stand.</li><li><b>Captar</b> — los visitantes se autoregistran por QR; el staff registra a quien no pueda.</li><li><b>Sortear</b> — en el horario anunciado, elegir el ganador al azar entre los elegibles.</li><li><b>Contactar</b> — el ganador recibe su folio por correo; se le contacta dentro del plazo definido.</li><li><b>Cerrar</b> — finalizar el evento; pasa al histórico con su ganador.</li></ol>
+<div class="note ok"><b>Regla de oro:</b> un evento = un premio = un QR = un ganador. No mezcles registros de eventos distintos.</div>
+<div class="page-break"></div>
+<h1 id="s4"><span class="num">4</span> Definición del premio y la mecánica</h1>
+<p>En la pestaña <b>⚙️ Evento</b> se configura todo lo que verá el visitante. Al guardar, la <b>landing</b> y los <b>Términos y Condiciones</b> se actualizan solos.</p>
+<h2>Qué definir para cada sorteo</h2>
+<ul><li><b>Premio</b> e <b>imagen</b> — atractivos y relacionados con el giro (p. ej. rollo de malla antigranizo).</li><li><b>Mecánica/dinámica</b> — frase clara: «Regístrate y participa; el ganador se elige al azar el <i>día/hora</i>».</li><li><b>Fecha y hora del sorteo</b> — momento en que se ejecuta ante el público.</li><li><b>Plazo para contactar al ganador</b> — días hábiles para reclamar el premio (p. ej. 5 días).</li><li><b>Sede/lugar</b> y <b>edición/año</b> del evento.</li></ul>
+<figure class=""><img src="../screenshots/17-evento-admin.png"/><figcaption>Configuración del evento: premio, imagen, fecha y mecánica.</figcaption></figure>
+<div class="note "><b>Buena práctica:</b> define un premio <b>deseable pero coherente</b> con el cliente objetivo (agricultores/empresas), para atraer leads relevantes y no “cazadores de premios”.</div>
+<div class="page-break"></div>
+<h1 id="s5"><span class="num">5</span> Reglas de elegibilidad y participación</h1>
+<h2>Requisitos para participar</h2>
+<ul><li><b>Un registro por persona</b> — el sistema detecta duplicados por correo o celular y no los cuenta doble.</li><li><b>Contacto válido</b> — celular de exactamente <b>10 dígitos</b> y <b>correo empresarial válido</b>; por ahí se contacta al ganador.</li><li><b>Aceptación obligatoria</b> de Términos y Condiciones y Aviso de Privacidad.</li><li>Opcional en el sorteo: <b>Solo con consentimiento</b> (participan quienes aceptaron recibir información comercial).</li></ul>
+<div class="note warn"><b>Por qué el correo empresarial y el celular reales importan:</b> si el ganador no puede ser contactado, el premio no se entrega y se pierde la confianza. Verifica ambos datos en voz alta al registrar.</div>
+<h2>Quién queda fuera</h2>
+<ul><li>Registros sin ningún medio de contacto válido.</li><li>Duplicados del mismo participante.</li><li>Según la configuración del evento, <b>ganadores de otros eventos</b> (ver estrategia multi-evento).</li></ul>
+<figure class="phone"><img src="../screenshots/19-landing-premio-movil.png"/><figcaption>La landing muestra el premio y el aviso de contacto al ganador.</figcaption></figure>
+<div class="page-break"></div>
+<h1 id="s6"><span class="num">6</span> Estrategia multi-evento</h1>
+<p>La plataforma admite <b>varios eventos</b>, cada uno con su propio <b>premio, QR y padrón de participantes</b>. Esto permite operar expos distintas o etapas sin mezclar datos.</p>
+<h2>QR por evento</h2>
+<p>Cada evento genera su propio código en <b>/qr?e=&amp;lt;id&amp;gt;</b>. Imprime y coloca el QR <b>del evento activo</b>; los registros entran al evento correcto automáticamente.</p>
+<div class="row2">
+<figure class=""><img src="../screenshots/20-evento-multi.png"/><figcaption>Lista de eventos, cada uno con su configuración.</figcaption></figure>
+<figure class=""><img src="../screenshots/22-qr-evento.png"/><figcaption>QR específico del evento para imprimir.</figcaption></figure>
+</div>
+<h2>¿Puede un ganador de un evento participar en otro?</h2>
+<p>Al configurar el evento se decide con la opción <b>«¿Los ganadores de otros eventos pueden participar?»</b>:</p>
+<table><thead><tr><th>Opción</th><th>Efecto</th><th>Cuándo usarla</th></tr></thead><tbody><tr><td><b>Sí (permitir)</b></td><td>Todos participan, incluso quien ya ganó en otro evento.</td><td>Eventos independientes o públicos distintos.</td></tr><tr><td><b>No (excluir)</b></td><td>Quien ya ganó en otro evento no entra al sorteo.</td><td>Campañas ligadas donde se busca repartir premios entre más personas.</td></tr></tbody></table>
+<div class="note ok">Define esta política <b>antes de abrir el registro</b> y comunícala en la mecánica para evitar confusiones.</div>
+<div class="page-break"></div>
+<h1 id="s7"><span class="num">7</span> Ejecución del sorteo</h1>
+<p>En la pestaña <b>🎁 Sorteo</b> se ejecuta ante el público en el horario anunciado.</p>
+<ol><li>Selecciona el <b>evento activo</b> del que se sortea.</li><li>Confirma el <b>premio</b> y las opciones (<b>Solo con consentimiento</b>, <b>Evitar ganadores repetidos</b>).</li><li>Verifica el número de <b>participantes elegibles</b> a la vista de todos.</li><li>Presiona <b>Iniciar sorteo</b>; tras la animación se anuncia el ganador.</li><li>Anuncia el nombre en voz alta y toma nota; el resultado queda guardado.</li></ol>
+<div class="row2">
+<figure class=""><img src="../screenshots/05-sorteo.png"/><figcaption>Selección de evento y configuración del sorteo.</figcaption></figure>
+<figure class=""><img src="../screenshots/06-sorteo-ganador.png"/><figcaption>Ganador anunciado y registrado.</figcaption></figure>
+</div>
+<div class="note ">El sorteo es <b>aleatorio</b> entre los elegibles. Hazlo <b>en público</b> y en el horario prometido: es el momento de mayor visibilidad de la marca.</div>
+<div class="page-break"></div>
+<h1 id="s8"><span class="num">8</span> Contacto al ganador y folio</h1>
+<p>Al elegir al ganador, el sistema genera un <b>folio único</b> (formato <b>ANB-XXXXXX</b>) y, si el correo está configurado, envía un <b>correo de notificación</b> con ese folio. El ganador <b>presenta el folio</b> para reclamar el premio.</p>
+<h2>Flujo de contacto</h2>
+<ol><li>El ganador recibe el correo con su <b>folio</b>, el premio y el nombre del evento.</li><li>El staff contacta al ganador por <b>correo o celular</b> dentro del <b>plazo definido</b> en el evento.</li><li>Al entregar el premio, se <b>verifica el folio</b> contra el historial de ganadores.</li></ol>
+<figure class="narrow"><img src="../screenshots/21-sorteo-folio.png"/><figcaption>Ganador con su folio; el correo de aviso se envía automáticamente.</figcaption></figure>
+<div class="note warn">Si el correo automático no está configurado o falla, <b>entrega el folio manualmente</b> y déjalo registrado. El folio también aparece en la app junto al ganador.</div>
+<div class="note ok">Si un sorteo debe repetirse (ganador ausente o no localizable en el plazo), puedes <b>anular</b> el resultado desde la lista de ganadores y volver a sortear.</div>
+<div class="page-break"></div>
+<h1 id="s9"><span class="num">9</span> Cierre del evento e histórico</h1>
+<p>Cuando el evento termina, márcalo como <b>finalizado</b>. Pasa al <b>histórico</b>, donde se conserva el <b>detalle del evento y su ganador</b> para consulta y auditoría.</p>
+<ul><li>El evento finalizado <b>deja de recibir registros</b> y ya no aparece como activo para sortear.</li><li>El <b>histórico</b> muestra, por evento: premio, fecha y <b>ganador con su folio</b>.</li><li>Antes de cerrar: <b>exporta el CSV</b> de leads desde el Dashboard para el seguimiento comercial.</li></ul>
+<figure class=""><img src="../screenshots/24-sorteo-historico.png"/><figcaption>Histórico de eventos finalizados con su ganador.</figcaption></figure>
+<div class="page-break"></div>
+<h1 id="s10"><span class="num">10</span> Indicadores de éxito (KPIs)</h1>
+<p>Mide cada evento desde el <b>📊 Dashboard</b> para saber si la estrategia funcionó y mejorar el siguiente.</p>
+<table><thead><tr><th>Indicador</th><th>Qué evalúa</th><th>Meta sugerida</th></tr></thead><tbody><tr><td><b>Leads totales</b></td><td>Volumen de registros del evento.</td><td>Según aforo esperado del stand.</td></tr><tr><td><b>% con contacto válido</b></td><td>Calidad: correo y celular utilizables.</td><td>≥ 90%</td></tr><tr><td><b>Tasa de consentimiento</b></td><td>Registros que aceptan seguimiento comercial.</td><td>≥ 70%</td></tr><tr><td><b>Leads por captador</b></td><td>Desempeño del staff en el respaldo manual.</td><td>Comparativo interno.</td></tr><tr><td><b>Autoregistro vs. staff</b></td><td>Qué tanto se usó el QR frente al registro asistido.</td><td>Mayoría por QR.</td></tr></tbody></table>
+<figure class=""><img src="../screenshots/04-dashboard.png"/><figcaption>Dashboard: indicadores, gráficas y tabla de leads.</figcaption></figure>
+<div class="page-break"></div>
+<h1 id="s11"><span class="num">11</span> Cumplimiento legal y datos personales</h1>
+<ul><li>Todo participante <b>acepta</b> los Términos y el <b>Aviso de Privacidad</b> de Mallatex antes de registrarse.</li><li>Los datos se tratan conforme a lo informado (incluye fines de <b>marketing, promociones y ofertas</b> según el Aviso).</li><li>Los titulares pueden ejercer sus derechos <b>ARCO</b> en <b>info@mallatex.com.mx</b>.</li><li>Resguarda la información: no compartas el padrón de leads fuera de los canales autorizados de Mallatex.</li><li>Publica la <b>mecánica y el plazo</b> de contacto; cúmplelos para evitar reclamaciones.</li></ul>
+<div class="note ">El acceso a Sorteo, Dashboard y administración requiere <b>inicio de sesión</b>; solo la captura/registro público queda abierta. Cuida las credenciales del staff.</div>
+<div class="page-break"></div>
+<h1 id="s12"><span class="num">12</span> Roles del staff</h1>
+<table><thead><tr><th>Rol</th><th>Responsabilidad en el sorteo</th></tr></thead><tbody><tr><td><b>Responsable del stand</b></td><td>Configura el evento, decide la política de ganadores, ejecuta el sorteo y valida la entrega del premio.</td></tr><tr><td><b>Personal de captura</b></td><td>Invita a escanear el QR, registra a quien no pueda y verifica correo y celular de cada lead.</td></tr><tr><td><b>Administrador del sistema</b></td><td>Gestiona usuarios y accesos; resguarda la información y exporta los datos al cierre.</td></tr></tbody></table>
+<div class="note ok">Ten siempre un <b>dispositivo del staff</b> listo con la app abierta para registrar a quien no pueda escanear el QR.</div>
+<div class="page-break"></div>
+<h1 id="s13"><span class="num">13</span> Contingencias</h1>
+<table><thead><tr><th>Situación</th><th>Qué hacer</th></tr></thead><tbody><tr><td>El ganador no está presente</td><td>Anúncialo, contáctalo por correo/celular dentro del plazo; si no responde, anula y vuelve a sortear.</td></tr><tr><td>El correo del ganador rebota</td><td>Contáctalo por celular y entrega el folio manualmente; corrige el dato en el registro.</td></tr><tr><td>Falla internet en el stand</td><td>El registro por gafete (OCR) funciona sin conexión; el sorteo y el guardado requieren conexión al servidor.</td></tr><tr><td>Pocos participantes elegibles</td><td>Impulsa el QR, registra manualmente y confirma que los contactos sean válidos antes de sortear.</td></tr><tr><td>Duda sobre un duplicado</td><td>El sistema avisa; conserva un solo registro por persona para no sesgar el sorteo.</td></tr></tbody></table>
+<div class="page-break"></div>
+<h1 id="s14"><span class="num">14</span> Checklist por evento</h1>
+<h2>Antes de abrir</h2>
+<ul><li>Evento creado: premio, imagen, fecha/hora, plazo de contacto.</li><li>Política de ganadores previos definida.</li><li>QR del evento impreso y colocado.</li><li>Correo de notificación configurado y probado.</li><li>Mecánica y Aviso de Privacidad publicados.</li></ul>
+<h2>Durante el evento</h2>
+<ul><li>Invitar a escanear el QR.</li><li>Registrar a quien no pueda y verificar contacto.</li><li>Vigilar participantes elegibles y KPIs en el Dashboard.</li></ul>
+<h2>En el sorteo</h2>
+<ul><li>Seleccionar el evento activo.</li><li>Ejecutar en público, en el horario anunciado.</li><li>Anunciar al ganador y confirmar el envío del folio.</li></ul>
+<h2>Al cierre</h2>
+<ul><li>Contactar al ganador dentro del plazo.</li><li>Exportar el CSV de leads.</li><li>Finalizar el evento (pasa al histórico).</li></ul>
+<div class="end">Mallatex · Evento Anaberries — Estrategia de Sorteos · <b>Protegemos lo que siembras</b></div></body></html>
