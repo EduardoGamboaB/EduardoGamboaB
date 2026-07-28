@@ -46,6 +46,7 @@ const DEFAULT_DATA = {
   draws: [],         // [{ ..., eventId, folio, email, emailEnviado }]
   users: [],         // [{ id, email, name, role, passwordHash, activo, createdAt }]
   authSecret: '',    // secreto para firmar tokens (se genera al primer arranque)
+  setupCompleted: false, // true = configuración inicial finalizada (deshabilita el NIP)
 };
 
 let data = null;
@@ -54,11 +55,18 @@ let pool = null; // pg Pool en modo postgres
 
 // ---------- Utilidades ----------
 function withEventDefaults(d) {
-  d = { ...structuredClone(DEFAULT_DATA), ...(d || {}) };
+  const raw = d || {};
+  // ¿El dato ORIGINAL traía ya el flag? (antes de fusionar los valores por defecto)
+  const teniaSetupFlag = typeof raw.setupCompleted === 'boolean';
+  d = { ...structuredClone(DEFAULT_DATA), ...raw };
   if (!Array.isArray(d.leads)) d.leads = [];
   if (!Array.isArray(d.draws)) d.draws = [];
   if (!Array.isArray(d.users)) d.users = [];
   if (typeof d.authSecret !== 'string') d.authSecret = '';
+  // Estado de la configuración inicial (NIP). Si el dato no traía el flag, las bases
+  // que YA tienen usuarios se consideran configuradas (no abren el NIP por sorpresa);
+  // una base nueva y vacía queda abierta para la configuración inicial.
+  if (!teniaSetupFlag) d.setupCompleted = d.users.length > 0;
 
   // Migración desde el esquema de evento único (d.event) a múltiples eventos.
   if (!Array.isArray(d.events) || d.events.length === 0) {

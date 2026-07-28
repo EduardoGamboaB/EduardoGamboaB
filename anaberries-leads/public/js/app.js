@@ -64,15 +64,61 @@ function showLogin() {
 function showApp() {
   $('#login-screen').classList.add('hidden');
   $('#app-shell').classList.remove('hidden');
+  const isSetup = !!(state.user && state.user.setup);
   $('#user-name').textContent = state.user ? state.user.name : '';
   $('#tab-usuarios').hidden = !(state.user && state.user.role === 'admin');
+  $('#setup-banner').hidden = !isSetup;
 }
 function logout() {
   state.token = ''; state.user = null;
   localStorage.removeItem('authToken');
+  $('#setup-banner').hidden = true;
   showLogin();
 }
 $('#btn-logout')?.addEventListener('click', logout);
+
+// ---------- Configuración inicial por NIP ----------
+// Muestra la entrada por NIP solo si el servidor la tiene habilitada.
+async function checkSetupAvailability() {
+  try {
+    const r = await fetch('/api/auth/setup-status');
+    const s = await r.json().catch(() => ({}));
+    $('#login-setup').hidden = !s.available;
+  } catch { $('#login-setup').hidden = true; }
+}
+
+$('#setup-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const err = $('#setup-error');
+  const btn = $('#btn-setup');
+  err.textContent = '';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/auth/setup-login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: f.pin.value.trim() }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || 'No se pudo entrar');
+    state.token = data.token; state.user = data.user;
+    localStorage.setItem('authToken', state.token);
+    showApp();
+    await startApp();
+    goto('usuarios');
+  } catch (e2) {
+    err.textContent = e2.message || 'NIP incorrecto';
+  } finally { btn.disabled = false; }
+});
+
+$('#btn-finish-setup')?.addEventListener('click', async () => {
+  if (!confirm('¿Finalizar la configuración inicial? El acceso por NIP quedará desactivado.')) return;
+  try {
+    await api('/auth/setup-complete', { method: 'POST' });
+    toast('Configuración finalizada. Inicia sesión con tu usuario.', 'ok');
+    logout();
+  } catch (err) { toast(err.message || 'No se pudo finalizar', 'err'); }
+});
 
 $('#login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -803,9 +849,10 @@ async function startApp() {
       state.user = user;
       showApp();
       await startApp();
-      goto('captura');
+      goto(user && user.setup ? 'usuarios' : 'captura');
       return;
     } catch { logout(); }
   }
   showLogin();
+  checkSetupAvailability();
 })();

@@ -29,4 +29,9 @@ export const config = {
   adminEmail: (process.env.ADMIN_EMAIL || 'admin@mallatex.com').trim().toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD || process.env.STAFF_PIN || 'mallatex',
   adminName: process.env.ADMIN_NAME || 'Administrador',
+  // NIP estático de configuración inicial. Permite entrar SIN contraseña, solo
+  // mientras la configuración esté abierta (setupCompleted=false), para crear los
+  // usuarios reales. Al finalizar la configuración, el NIP queda inservible.
+  // Vacío = deshabilitado. Se reabre con SETUP_REOPEN=true (una vez).
+  setupPin: (process.env.SETUP_PIN || '').trim(),
 };

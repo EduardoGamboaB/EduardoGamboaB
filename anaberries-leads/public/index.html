@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Anaberries · Captura de Leads — Mallatex</title>
   <meta name="theme-color" content="#ed3237" />
-  <link rel="stylesheet" href="/css/styles.css?v=3" />
+  <link rel="stylesheet" href="/css/styles.css?v=4" />
 </head>
 <body>
   <!-- ============ LOGIN ============ -->
@@ -25,6 +25,19 @@
         <button type="submit" class="btn btn-primary" id="btn-login">Entrar</button>
         <p class="login-error" id="login-error"></p>
       </form>
+
+      <!-- Acceso por NIP de configuración inicial (solo si está habilitado) -->
+      <div class="login-setup" id="login-setup" hidden>
+        <div class="login-or"><span>o primera configuración</span></div>
+        <form id="setup-form">
+          <label>NIP de configuración
+            <input name="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="NIP estático" required />
+          </label>
+          <button type="submit" class="btn btn-ghost" id="btn-setup">Entrar para configurar usuarios</button>
+          <p class="login-error" id="setup-error"></p>
+        </form>
+        <p class="login-hint">Primer acceso sin contraseña. Crea tus usuarios y el NIP se desactivará al finalizar.</p>
+      </div>
     </div>
     <p class="login-foot">Mallatex · Protegemos lo que siembras</p>
   </div>
@@ -52,6 +65,12 @@
       <button class="btn btn-logout" id="btn-logout" title="Cerrar sesión">Salir</button>
     </div>
   </header>
+
+  <!-- Banner de configuración inicial (acceso por NIP) -->
+  <div class="setup-banner" id="setup-banner" hidden>
+    <span>🔧 <strong>Modo configuración inicial.</strong> Crea tus usuarios en la pestaña <b>Usuarios</b> y finaliza para desactivar el NIP.</span>
+    <button class="btn btn-finish" id="btn-finish-setup">Finalizar configuración</button>
+  </div>
 
   <main id="app">
     <!-- ============ CAPTURA ============ -->
@@ -325,6 +344,6 @@
   </div><!-- /#app-shell -->
 
   <script src="/vendor/tesseract/tesseract.min.js"></script>
-  <script src="/js/app.js?v=3" type="module"></script>
+  <script src="/js/app.js?v=4" type="module"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@
   --ink-900: #232121;
   --ink-700: #3f3d3d;
   --ink-600: #606062;
+  --ink-500: #7b7c7f;
   --ink-400: #a7a8ac;
   --line: #d2d3d5;
   --line-2: #eeeef0;
@@ -43,6 +44,20 @@ h3 { font-size: 14px; margin: 0 0 12px; color: var(--ink-700); }
 .login-card .btn-primary { justify-content: center; padding: 12px; margin-top: 4px; }
 .login-error { color: var(--err); min-height: 18px; margin: 2px 0 0; font-size: 13px; text-align: center; }
 .login-foot { color: var(--ink-400); font-size: 12px; }
+/* Acceso por NIP de configuración inicial */
+.login-setup { margin-top: 18px; }
+.login-or { display: flex; align-items: center; gap: 10px; color: var(--ink-400); font-size: 12px; margin: 4px 0 14px; }
+.login-or::before, .login-or::after { content: ""; flex: 1; height: 1px; background: var(--line-2); }
+.login-setup form { display: flex; flex-direction: column; gap: 14px; }
+.login-setup label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-700); }
+.btn-ghost { justify-content: center; padding: 11px; border: 1px solid var(--accent); background: #fff; color: var(--accent); border-radius: 10px; font-weight: 700; cursor: pointer; }
+.btn-ghost:hover { background: var(--accent-050); }
+.login-hint { color: var(--ink-500); font-size: 12px; text-align: center; margin: 10px 0 0; }
+/* Banner de configuración inicial */
+.setup-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; background: var(--accent-050); border: 1px solid var(--accent); border-radius: 12px; padding: 12px 16px; margin: 14px auto; max-width: 1100px; font-size: 13.5px; color: var(--ink-700); }
+.btn-finish { border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 9px 18px; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.btn-finish:hover { background: var(--accent-600); }
+@media (max-width: 640px) { .setup-banner { margin: 12px; } }
 
 /* ---------- Cabecera: usuario ---------- */
 .user-box { display: flex; align-items: center; gap: 10px; }
