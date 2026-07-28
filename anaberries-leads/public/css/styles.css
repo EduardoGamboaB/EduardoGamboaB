@@ -76,10 +76,11 @@ h3 { font-size: 14px; margin: 0 0 12px; color: var(--ink-700); }
 .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
 .brand-text strong { font-size: 15px; }
 .brand-text span { font-size: 12px; color: var(--ink-600); }
-.tabs { display: flex; gap: 6px; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .tab {
   border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 8px 16px;
   font-size: 13.5px; font-weight: 600; color: var(--ink-600); cursor: pointer; transition: .15s;
+  white-space: nowrap; flex: 0 0 auto;
 }
 .tab:hover { border-color: var(--accent); color: var(--accent); }
 .tab.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -246,11 +247,45 @@ label.check input { width: auto; }
 
 .foot { text-align: center; color: var(--ink-400); font-size: 12px; margin-top: 30px; }
 
-/* ---------- Responsive ---------- */
+/* ---------- Responsive (mobile-first: los breakpoints amplían, no reducen) ---------- */
 @media (max-width: 880px) {
   #view-captura, #view-sorteo, .dash-grid { grid-template-columns: 1fr; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .grid2 { grid-template-columns: 1fr; }
-  .topbar { padding: 10px 14px; }
-  main { padding: 0 14px; }
+  .topbar { padding: 10px 14px; gap: 10px; }
+  main { padding: 0 14px; margin: 16px auto; }
+  .card { padding: 18px; }
+}
+
+/* Teléfonos: la barra superior se apila y las pestañas se deslizan horizontalmente */
+@media (max-width: 640px) {
+  .topbar { flex-wrap: nowrap; flex-wrap: wrap; justify-content: space-between; }
+  .brand { order: 1; }
+  .user-box { order: 2; margin-left: auto; }
+  .tabs {
+    order: 3; width: 100%; flex-wrap: nowrap; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 7px 13px; font-size: 13px; }
+  .brand-logo { height: 30px; }
+  .brand-text strong { font-size: 14px; }
+  h1 { font-size: 18px; }
+  .kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .kpi .v { font-size: 26px; }
+  .dash-head { gap: 8px; }
+  .dash-actions { width: 100%; }
+  .dash-actions select, .dash-actions .btn { flex: 1; }
+  .stat-big span { font-size: 34px; }
+  .evento-bar-actions { width: 100%; }
+  .evento-bar-actions .btn { flex: 1; text-align: center; justify-content: center; }
+  .raffle-config { gap: 12px; }
+  .table-toolbar { flex-direction: column; }
+  .table-toolbar select { max-width: none; }
+  .login-card { padding: 26px 22px; }
+}
+
+/* Pantallas muy angostas: una sola columna de KPIs */
+@media (max-width: 420px) {
+  .kpis { grid-template-columns: 1fr; }
 }

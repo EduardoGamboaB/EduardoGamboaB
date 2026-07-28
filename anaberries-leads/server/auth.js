@@ -109,10 +109,21 @@ export function authenticate(email, password) {
 }
 
 // Crea el administrador inicial si no existe ningún usuario.
+// Con ADMIN_RESET=true fuerza que el usuario ADMIN_EMAIL exista con la contraseña
+// de ADMIN_PASSWORD y rol admin (útil para (re)establecer el acceso en producción).
 export function ensureAdmin() {
-  if (getUsers().length > 0) return { seeded: false };
-  createUser({ email: config.adminEmail, name: config.adminName, password: config.adminPassword, role: 'admin' });
-  const usingDefault = config.adminPassword === 'mallatex' && !process.env.ADMIN_PASSWORD && !process.env.STAFF_PIN;
-  console.log(`Usuario administrador creado: ${config.adminEmail}` + (usingDefault ? ' (contraseña por defecto "mallatex" — cámbiala)' : ''));
-  return { seeded: true, email: config.adminEmail };
+  if (getUsers().length === 0) {
+    createUser({ email: config.adminEmail, name: config.adminName, password: config.adminPassword, role: 'admin' });
+    const usingDefault = config.adminPassword === 'mallatex' && !process.env.ADMIN_PASSWORD && !process.env.STAFF_PIN;
+    console.log(`Usuario administrador creado: ${config.adminEmail}` + (usingDefault ? ' (contraseña por defecto "mallatex" — cámbiala)' : ''));
+    return { seeded: true, email: config.adminEmail };
+  }
+  if (process.env.ADMIN_RESET === 'true') {
+    const u = getUserByEmail(config.adminEmail);
+    if (u) { u.passwordHash = hashPassword(config.adminPassword); u.role = 'admin'; u.activo = true; save(); console.log(`Administrador restablecido por ADMIN_RESET: ${config.adminEmail}`); return { reset: true }; }
+    createUser({ email: config.adminEmail, name: config.adminName, password: config.adminPassword, role: 'admin' });
+    console.log(`Administrador creado por ADMIN_RESET: ${config.adminEmail}`);
+    return { created: true };
+  }
+  return { seeded: false };
 }
