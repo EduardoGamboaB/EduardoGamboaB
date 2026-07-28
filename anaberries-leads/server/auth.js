@@ -31,11 +31,17 @@ function authSecret() {
 
 // ---------- Tokens firmados ----------
 const b64u = (buf) => Buffer.from(buf).toString('base64url');
-export function signToken(user) {
-  const payload = { uid: user.id, role: user.role, exp: Date.now() + config.authTtlHours * 3600 * 1000 };
+export function signToken(user, extra = {}) {
+  const payload = { uid: user.id, role: user.role, exp: Date.now() + config.authTtlHours * 3600 * 1000, ...extra };
   const body = b64u(JSON.stringify(payload));
   const sig = crypto.createHmac('sha256', authSecret()).update(body).digest('base64url');
   return `${body}.${sig}`;
+}
+
+// Token de la sesión de configuración inicial (acceso por NIP). No corresponde a
+// ningún usuario real; otorga rol admin solo mientras la configuración esté abierta.
+export function signSetupToken() {
+  return signToken({ id: 'setup', role: 'admin' }, { setup: true });
 }
 function verifyToken(token) {
   if (!token || typeof token !== 'string' || !token.includes('.')) return null;
@@ -59,6 +65,12 @@ function tokenFromReq(req) {
 export function userFromReq(req) {
   const p = verifyToken(tokenFromReq(req));
   if (!p) return null;
+  // Sesión de configuración inicial (NIP): válida solo mientras no se haya
+  // finalizado la configuración. Al completarla, el token queda inservible.
+  if (p.setup) {
+    if (db().setupCompleted) return null;
+    return { id: 'setup', email: 'setup', name: 'Configuración inicial', role: 'admin', activo: true, setup: true };
+  }
   const u = getUserById(p.uid);
   if (!u || u.activo === false) return null;
   return u;
@@ -82,7 +94,7 @@ export function requireAdmin(req, res, next) {
 // Vista pública de un usuario (sin hash).
 export function publicUser(u) {
   if (!u) return null;
-  return { id: u.id, email: u.email, name: u.name, role: u.role, activo: u.activo !== false, createdAt: u.createdAt };
+  return { id: u.id, email: u.email, name: u.name, role: u.role, activo: u.activo !== false, createdAt: u.createdAt, setup: u.setup === true };
 }
 
 // ---------- Alta / autenticación ----------
@@ -151,4 +163,18 @@ export function ensureAdmin() {
   }
 
   return Object.keys(result).length ? result : { seeded: false };
+}
+
+// Estado del acceso por NIP de configuración inicial.
+// SETUP_REOPEN=true reabre la configuración (una vez) en una base ya existente,
+// para poder recuperar el acceso creando usuarios sin conocer la contraseña.
+export function bootstrapSetup() {
+  const d = db();
+  if (process.env.SETUP_REOPEN === 'true' && d.setupCompleted) {
+    d.setupCompleted = false; save();
+    console.log('Configuración por NIP REABIERTA (SETUP_REOPEN). Crea tus usuarios, finaliza la configuración y quita la variable.');
+  }
+  const habilitado = !!config.setupPin && !d.setupCompleted;
+  console.log(`Acceso por NIP de configuración: ${habilitado ? 'HABILITADO' : 'deshabilitado'}`);
+  return { habilitado };
 }

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { config } from './config.js';
 import { init as initStore, flush, MODE } from './store.js';
-import { requireAuth, ensureAdmin } from './auth.js';
+import { requireAuth, ensureAdmin, bootstrapSetup } from './auth.js';
 import { rateLimiter } from './security.js';
 import { initMailer } from './mailer.js';
 import authRoutes from './routes/auth.js';
@@ -28,6 +28,7 @@ try {
 }
 await initMailer();
 ensureAdmin();
+bootstrapSetup();
 
 const app = express();
 app.disable('x-powered-by');
