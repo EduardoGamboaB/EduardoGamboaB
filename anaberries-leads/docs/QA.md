@@ -30,6 +30,14 @@ del evento** → **Términos y Condiciones dinámicos** (reflejan el premio) →
 **dashboard** (KPIs) → **exportación CSV** (contiene ambos leads). Todas las
 aserciones pasan.
 
+### Almacenamiento: archivo y PostgreSQL — ✅ ambos aprobados
+
+La app funciona con **archivo JSON** (por defecto) o con **PostgreSQL** (si se define
+`DATABASE_URL`; recomendado en Railway). Las 37 pruebas de API y el E2E pasan en
+**ambos modos**. Prueba de **durabilidad** en Postgres: tras reiniciar el servidor,
+los leads, la foto del gafete y la imagen del premio **persisten** (almacenados en
+las tablas `app_state` y `app_blob`).
+
 ### Smoke test en modo producción — ✅ aprobado
 
 Con `NODE_ENV=production`: `/api/health` responde; cabeceras de seguridad

@@ -69,7 +69,8 @@ Copia `.env.example` y ajústalo, o expórtalas antes de arrancar:
 |-------------|--------------------------------------------------------------------|---------|
 | `PORT`      | Puerto del servidor                                                | `4000`  |
 | `STAFF_PIN` | PIN para acceder a **Sorteo** y **Dashboard**. Vacío = acceso abierto | vacío |
-| `DATA_DIR`  | Carpeta de datos (JSON)                                             | `./data`|
+| `DATABASE_URL` | Cadena de conexión a PostgreSQL. **Si se define, la app usa Postgres** (datos durables, sin volumen). Si se omite, usa archivo JSON. | vacío |
+| `DATA_DIR`  | Carpeta de datos en modo archivo (JSON + imágenes)                 | `./data`|
 | `NODE_ENV`  | `production` activa cacheo de estáticos                             | dev     |
 
 La **captura de leads es pública** (pensada para el stand/kiosco). El sorteo y

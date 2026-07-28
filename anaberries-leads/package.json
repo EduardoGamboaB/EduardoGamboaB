@@ -14,7 +14,8 @@
     "node": ">=20"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "pg": "^8.13.0"
   },
   "author": "Mallatex",
   "license": "UNLICENSED",

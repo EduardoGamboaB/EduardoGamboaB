@@ -1,24 +1,28 @@
 // Rutas de captura de leads.
 
 import { Router } from 'express';
-import fs from 'node:fs';
-import path from 'node:path';
-import { db, save, newId, DATA_DIR } from '../store.js';
+import { db, save, newId, putBlob, getBlob, delBlob } from '../store.js';
 import { requireStaff } from '../auth.js';
 
 const router = Router();
 
-const BADGES_DIR = path.join(DATA_DIR, 'badges');
+const badgeKey = (id) => 'badge:' + id;
 
-// Guarda la foto del gafete (dataURL JPEG/PNG) en disco y devuelve true si se guardó.
-function guardarFoto(id, dataUrl) {
-  if (!dataUrl || typeof dataUrl !== 'string') return false;
+// Decodifica un dataURL de imagen a Buffer (o null si no es válido / muy grande).
+function decodeImage(dataUrl) {
+  if (!dataUrl || typeof dataUrl !== 'string') return null;
   const m = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
-  if (!m) return false;
+  if (!m) return null;
   const buf = Buffer.from(m[2], 'base64');
-  if (buf.length > 6 * 1024 * 1024) return false; // tope de 6 MB
-  if (!fs.existsSync(BADGES_DIR)) fs.mkdirSync(BADGES_DIR, { recursive: true });
-  fs.writeFileSync(path.join(BADGES_DIR, id + '.jpg'), buf);
+  if (buf.length > 6 * 1024 * 1024) return null; // tope de 6 MB
+  return buf;
+}
+
+// Guarda la foto del gafete y devuelve true si se guardó.
+async function guardarFoto(id, dataUrl) {
+  const buf = decodeImage(dataUrl);
+  if (!buf) return false;
+  await putBlob(badgeKey(id), buf, 'image/jpeg');
   return true;
 }
 
@@ -49,7 +53,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const numDigitos = (s) => (String(s).match(/\d/g) || []).length;
 
 // POST /api/leads — registra un lead (público).
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const b = req.body || {};
   const nombre = clean(b.nombre, 120);
   const empresa = clean(b.empresa, 160);
@@ -86,8 +90,8 @@ router.post('/', (req, res) => {
     metodoCaptura: b.metodoCaptura === 'gafete' ? 'gafete' : 'manual',
     createdAt: new Date().toISOString(),
   };
-  // Foto del gafete opcional (se guarda en disco, no en el JSON).
-  lead.tieneFoto = guardarFoto(lead.id, b.foto);
+  // Foto del gafete opcional (blob, fuera del JSON).
+  lead.tieneFoto = await guardarFoto(lead.id, b.foto);
   data.leads.push(lead);
   save();
   res.status(201).json(lead);
@@ -174,19 +178,19 @@ router.get('/export.csv', (_req, res) => {
 });
 
 // GET /api/leads/:id/badge — foto del gafete (solo personal).
-router.get('/:id/badge', (req, res) => {
-  const file = path.join(BADGES_DIR, path.basename(req.params.id) + '.jpg');
-  if (!fs.existsSync(file)) return res.status(404).json({ error: 'Sin foto' });
-  res.type('jpeg').sendFile(file);
+router.get('/:id/badge', async (req, res) => {
+  const buf = await getBlob(badgeKey(req.params.id));
+  if (!buf) return res.status(404).json({ error: 'Sin foto' });
+  res.type('jpeg').send(buf);
 });
 
 // DELETE /api/leads/:id — eliminar un lead (corrección de captura).
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const data = db();
   const idx = data.leads.findIndex((l) => l.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Lead no encontrado' });
   data.leads.splice(idx, 1);
-  try { fs.rmSync(path.join(BADGES_DIR, req.params.id + '.jpg')); } catch { /* sin foto */ }
+  await delBlob(badgeKey(req.params.id));
   save();
   res.json({ ok: true });
 });
