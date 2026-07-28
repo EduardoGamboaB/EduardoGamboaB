@@ -45,12 +45,12 @@
           </label>
           <div class="grid2">
             <label>Celular <span class="req">*</span>
-              <input name="telefono" type="tel" inputmode="tel" required maxlength="20" autocomplete="tel" placeholder="10 dígitos" />
-              <span class="field-hint">A 10 dígitos. Te contactaremos si ganas.</span>
+              <input name="telefono" type="tel" inputmode="numeric" required maxlength="10" autocomplete="tel" placeholder="10 dígitos" />
+              <span class="field-hint">Exactamente 10 dígitos. Te contactaremos si ganas.</span>
             </label>
             <label>Correo <span class="req">*</span>
-              <input name="email" type="email" inputmode="email" required maxlength="160" autocomplete="email" placeholder="correo@ejemplo.com" />
-              <span class="field-hint">Debe ser un correo real y activo.</span>
+              <input name="email" type="email" inputmode="email" required maxlength="160" autocomplete="email" placeholder="nombre@empresa.com" />
+              <span class="field-hint">Debe ser un correo <b>empresarial</b> y válido (por ahí se contacta al ganador).</span>
             </label>
           </div>
           <label>Producto de interés

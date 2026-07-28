@@ -3,7 +3,7 @@
 
 import { Router } from 'express';
 import { db, save, getEvents, getEvent, activeEvent, nuevoEvento, putBlob, getBlob, delBlob } from '../store.js';
-import { requireStaff } from '../auth.js';
+import { requireAuth } from '../auth.js';
 
 const router = Router();
 const prizeKey = (id) => 'event:premio:' + id;
@@ -34,6 +34,7 @@ function aplicarCampos(e, b) {
   if (b.lugar !== undefined) e.lugar = clean(b.lugar, 160);
   if (b.plazoContactoDias !== undefined) e.plazoContactoDias = clean(b.plazoContactoDias, 4).replace(/\D/g, '');
   if (b.permiteGanadoresPrevios !== undefined) e.permiteGanadoresPrevios = Boolean(b.permiteGanadoresPrevios);
+  if (b.finalizado !== undefined) e.finalizado = Boolean(b.finalizado);
 }
 
 // Guarda/elimina la imagen del premio (dataURL) según el body.
@@ -68,8 +69,8 @@ router.get('/:id/premio-imagen', async (req, res) => {
   res.type('jpeg').send(buf);
 });
 
-// ---------- Solo personal ----------
-router.use(requireStaff);
+// ---------- Solo con sesión ----------
+router.use(requireAuth);
 
 // GET /api/events — lista de eventos + activo.
 router.get('/', (_req, res) => res.json({ items: getEvents(), activeEventId: db().activeEventId }));
@@ -94,6 +95,26 @@ router.put('/:id', async (req, res) => {
   if (!e) return res.status(404).json({ error: 'Evento no encontrado' });
   aplicarCampos(e, req.body || {});
   await manejarImagen(e, req.body || {});
+  e.actualizadoAt = new Date().toISOString();
+  save();
+  res.json(e);
+});
+
+// POST /api/events/:id/finalizar — marca el evento como finalizado (histórico).
+router.post('/:id/finalizar', (req, res) => {
+  const e = getEvent(req.params.id);
+  if (!e) return res.status(404).json({ error: 'Evento no encontrado' });
+  e.finalizado = true;
+  e.actualizadoAt = new Date().toISOString();
+  save();
+  res.json(e);
+});
+
+// POST /api/events/:id/reabrir — reabre un evento finalizado.
+router.post('/:id/reabrir', (req, res) => {
+  const e = getEvent(req.params.id);
+  if (!e) return res.status(404).json({ error: 'Evento no encontrado' });
+  e.finalizado = false;
   e.actualizadoAt = new Date().toISOString();
   save();
   res.json(e);

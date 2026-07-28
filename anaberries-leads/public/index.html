@@ -8,6 +8,29 @@
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
+  <!-- ============ LOGIN ============ -->
+  <div class="login-screen" id="login-screen">
+    <div class="login-card">
+      <div class="login-brand"><img src="/assets/mallatex-logo.png" alt="Mallatex" class="login-logo" /></div>
+      <div class="login-tag">Captura de Leads · Acceso del personal</div>
+      <h1>Iniciar sesión</h1>
+      <p class="login-sub">Ingresa con tu cuenta para administrar la plataforma.</p>
+      <form id="login-form">
+        <label>Correo
+          <input name="email" type="email" autocomplete="username" required placeholder="tu-correo@empresa.com" />
+        </label>
+        <label>Contraseña
+          <input name="password" type="password" autocomplete="current-password" required placeholder="••••••••" />
+        </label>
+        <button type="submit" class="btn btn-primary" id="btn-login">Entrar</button>
+        <p class="login-error" id="login-error"></p>
+      </form>
+    </div>
+    <p class="login-foot">Mallatex · Protegemos lo que siembras</p>
+  </div>
+
+  <!-- ============ APLICACIÓN (tras login) ============ -->
+  <div id="app-shell" class="hidden">
   <header class="topbar">
     <div class="brand">
       <img src="/assets/mallatex-logo.png" alt="Mallatex" class="brand-logo" />
@@ -21,8 +44,13 @@
       <button class="tab" data-view="sorteo">🎁 Sorteo</button>
       <button class="tab" data-view="dashboard">📊 Dashboard</button>
       <button class="tab" data-view="evento">⚙️ Evento</button>
+      <button class="tab" data-view="usuarios" id="tab-usuarios" hidden>👥 Usuarios</button>
       <a class="tab tab-link" href="/qr" target="_blank" rel="noopener" title="Código QR para autoregistro de visitantes">🔳 QR</a>
     </nav>
+    <div class="user-box">
+      <span id="user-name" class="user-name"></span>
+      <button class="btn btn-logout" id="btn-logout" title="Cerrar sesión">Salir</button>
+    </div>
   </header>
 
   <main id="app">
@@ -69,11 +97,12 @@
             <label>Empresa / rancho
               <input name="empresa" maxlength="160" placeholder="Ej. Agrícola del Valle" />
             </label>
-            <label>Teléfono
-              <input name="telefono" type="tel" maxlength="40" inputmode="tel" placeholder="Ej. 55 1234 5678" />
+            <label>Celular (10 dígitos)
+              <input name="telefono" type="tel" maxlength="10" inputmode="numeric" placeholder="10 dígitos" />
             </label>
             <label>Correo
-              <input name="email" type="email" maxlength="160" placeholder="correo@ejemplo.com" />
+              <input name="email" type="email" maxlength="160" placeholder="correo@empresa.com" />
+              <span class="field-hint">Debe ser un correo <b>empresarial</b> y válido.</span>
             </label>
             <label>Cargo / puesto
               <input name="cargo" maxlength="120" placeholder="Ej. Gerente de producción" />
@@ -118,8 +147,11 @@
     <section class="view" id="view-sorteo">
       <div class="card raffle-card">
         <h1>🎁 Sorteo del evento</h1>
-        <p class="muted">Evento: <strong id="sorteo-evento">—</strong>. Selecciona un ganador al azar entre sus leads.</p>
-        <p class="muted" id="sorteo-correo" style="margin-top:-4px"></p>
+        <p class="muted">Selecciona el <b>evento activo</b> para generar el sorteo entre sus leads.</p>
+        <label class="sorteo-sel">Evento del sorteo
+          <select id="sorteo-evento-sel"></select>
+        </label>
+        <p class="muted" id="sorteo-correo"></p>
         <div class="raffle-config">
           <label>Premio
             <input id="premio" maxlength="120" placeholder="Ej. Rollo de malla antigranizo" />
@@ -131,12 +163,19 @@
         <div class="raffle-stage" id="raffle-stage">
           <div class="reel" id="reel">🎉</div>
         </div>
-        <button class="btn btn-primary btn-lg" id="btn-sortear">Iniciar sorteo</button>
+        <div class="form-actions">
+          <button class="btn btn-primary btn-lg" id="btn-sortear">Iniciar sorteo</button>
+          <button class="btn" id="btn-finalizar-evento" title="Marca el evento como finalizado y lo envía al histórico">🏁 Finalizar evento</button>
+        </div>
       </div>
       <aside class="card side-card">
         <h3>Ganadores</h3>
         <ul class="winners" id="winners-list"><li class="muted">Aún no hay ganadores.</li></ul>
       </aside>
+      <div class="card historico-card">
+        <h3>🏁 Histórico de eventos finalizados</h3>
+        <div id="historico-list"><p class="muted">No hay eventos finalizados.</p></div>
+      </div>
     </section>
 
     <!-- ============ DASHBOARD ============ -->
@@ -245,24 +284,45 @@
         </form>
       </div>
     </section>
-  </main>
 
-  <!-- ============ Modal PIN ============ -->
-  <div class="modal-backdrop hidden" id="pin-modal">
-    <div class="modal">
-      <h2>Acceso del personal</h2>
-      <p class="muted">Ingresa el PIN para ver Sorteo y Dashboard.</p>
-      <input id="pin-input" type="password" inputmode="numeric" placeholder="PIN" />
-      <p class="form-msg" id="pin-msg"></p>
-      <div class="form-actions">
-        <button class="btn btn-primary" id="pin-ok">Entrar</button>
-        <button class="btn" id="pin-cancel">Cancelar</button>
+    <!-- ============ USUARIOS (solo admin) ============ -->
+    <section class="view" id="view-usuarios">
+      <div class="card evento-card">
+        <h1>👥 Usuarios</h1>
+        <p class="muted">Administra las cuentas con acceso a la plataforma. Solo administradores.</p>
+        <form id="user-form" class="user-form" autocomplete="off">
+          <div class="grid2">
+            <label>Nombre
+              <input name="name" maxlength="80" placeholder="Nombre y apellido" />
+            </label>
+            <label>Correo
+              <input name="email" type="email" maxlength="160" required placeholder="usuario@empresa.com" />
+            </label>
+            <label>Contraseña
+              <input name="password" type="text" maxlength="80" required placeholder="Mínimo 6 caracteres" />
+            </label>
+            <label>Rol
+              <select name="role"><option value="staff">Staff</option><option value="admin">Administrador</option></select>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="btn-user-crear">Crear usuario</button>
+          </div>
+          <p class="form-msg" id="user-msg"></p>
+        </form>
+        <div class="table-wrap">
+          <table class="leads-table">
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <div id="toast" class="toast hidden"></div>
   <footer class="foot">Mallatex · Evento Anaberries — Captura de leads</footer>
+  </div><!-- /#app-shell -->
 
   <script src="/vendor/tesseract/tesseract.min.js"></script>
   <script src="/js/app.js" type="module"></script>

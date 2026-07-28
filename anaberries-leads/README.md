@@ -4,6 +4,20 @@ Aplicación web para el **evento de Anaberries**. Permite capturar leads en el
 stand, realizar un **sorteo** de premios entre los asistentes y dar
 **seguimiento** desde un dashboard.
 
+## Acceso y usuarios
+
+La plataforma del personal está **protegida con login** (correo + contraseña).
+**Solo la captura pública de leads** (`/registro`, `/terminos`, `/aviso-privacidad`
+y el QR) es accesible sin sesión. El resto —captura del staff, sorteo, dashboard,
+administración de eventos y usuarios— requiere iniciar sesión.
+
+- El **administrador inicial** se crea al primer arranque con `ADMIN_EMAIL` /
+  `ADMIN_PASSWORD`.
+- Desde **👥 Usuarios** (solo admin) se crean, editan, activan/desactivan y
+  eliminan cuentas (roles: administrador o staff).
+- Las sesiones usan tokens firmados; define `AUTH_SECRET` en producción para que
+  sobrevivan a los redeploys.
+
 ## Funcionalidades
 
 - **📱 Autoregistro por QR (landing pública)** — el visitante escanea el código

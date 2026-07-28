@@ -79,10 +79,10 @@ $('#registro-form').addEventListener('submit', async (e) => {
 
   markInvalid('nombre', !body.nombre);
   markInvalid('email', !EMAIL_RE.test(body.email));
-  markInvalid('telefono', digits(body.telefono) < 10);
+  markInvalid('telefono', digits(body.telefono) !== 10);
   if (!body.nombre) return fail('Escribe tu nombre completo');
-  if (!EMAIL_RE.test(body.email)) return fail('Ingresa un correo válido');
-  if (digits(body.telefono) < 10) return fail('Ingresa un celular válido a 10 dígitos');
+  if (!EMAIL_RE.test(body.email)) return fail('Ingresa un correo empresarial válido');
+  if (digits(body.telefono) !== 10) return fail('El celular debe tener exactamente 10 dígitos');
   if (!body.aceptaTerminos || !body.aceptaPrivacidad) return fail('Acepta los términos y el aviso de privacidad');
 
   btn.disabled = true;

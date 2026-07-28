@@ -7,9 +7,11 @@ import { fileURLToPath } from 'node:url';
 
 import { config } from './config.js';
 import { init as initStore, flush, MODE } from './store.js';
-import { requireStaff, staffInfo } from './auth.js';
+import { requireAuth, ensureAdmin } from './auth.js';
 import { rateLimiter } from './security.js';
 import { initMailer } from './mailer.js';
+import authRoutes from './routes/auth.js';
+import usersRoutes from './routes/users.js';
 import leadsRoutes from './routes/leads.js';
 import raffleRoutes from './routes/raffle.js';
 import statsRoutes from './routes/stats.js';
@@ -25,6 +27,7 @@ try {
   process.exit(1);
 }
 await initMailer();
+ensureAdmin();
 
 const app = express();
 app.disable('x-powered-by');
@@ -41,8 +44,9 @@ app.use((_req, res, next) => {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 
-// Estado de acceso: indica si se requiere PIN y valida el que envía el personal.
-app.get('/api/access', (req, res) => res.json(staffInfo(req)));
+// Autenticación (login público; el resto de la app requiere sesión).
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes); // requireAdmin dentro del router
 
 // Autoregistro de la landing: limitador de tasa por IP (backstop anti-spam).
 app.use('/api/leads/registro', rateLimiter({
@@ -50,15 +54,15 @@ app.use('/api/leads/registro', rateLimiter({
   windowMs: config.registroRateWindowMs,
 }));
 
-// Captura de leads: pública (stand/kiosco del evento).
+// Leads: /registro y /meta son públicos; el resto requiere sesión (dentro del router).
 app.use('/api/leads', leadsRoutes);
 
 // Eventos: GET público (landing/términos/QR) + edición por staff (dentro del router).
 app.use('/api/events', eventRoutes);
 
-// Sorteo y Dashboard: protegidos por PIN del personal (si está configurado).
-app.use('/api/raffle', requireStaff, raffleRoutes);
-app.use('/api/stats', requireStaff, statsRoutes);
+// Sorteo y Dashboard: requieren sesión.
+app.use('/api/raffle', requireAuth, raffleRoutes);
+app.use('/api/stats', requireAuth, statsRoutes);
 
 // Frontend estático.
 app.use(express.static(PUBLIC_DIR, { maxAge: config.isProd ? '1h' : 0 }));

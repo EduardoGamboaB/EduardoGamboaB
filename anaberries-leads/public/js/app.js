@@ -5,20 +5,19 @@ const $ = (sel, el = document) => el.querySelector(sel);
 const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
 
 const state = {
-  pin: localStorage.getItem('staffPin') || '',
-  pinRequired: false,
-  authorized: false,
-  pendingView: null,
+  token: localStorage.getItem('authToken') || '',
+  user: null,
 };
 
 // ---------- API ----------
-async function api(path, { method = 'GET', body, staff = false } = {}) {
+async function api(path, { method = 'GET', body } = {}) {
   const headers = {};
   if (body) headers['Content-Type'] = 'application/json';
-  if (staff && state.pin) headers['x-staff-pin'] = state.pin;
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
   const res = await fetch('/api' + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
   let data = null;
   try { data = await res.json(); } catch { /* respuestas sin cuerpo */ }
+  if (res.status === 401 && state.user) { logout(); }
   if (!res.ok) throw Object.assign(new Error(data?.error || 'Error'), { status: res.status, data });
   return data;
 }
@@ -44,16 +43,12 @@ function fmtDate(iso) {
 
 // ---------- Navegación ----------
 async function goto(view) {
-  if ((view === 'sorteo' || view === 'dashboard' || view === 'evento') && state.pinRequired && !state.authorized) {
-    state.pendingView = view;
-    openPinModal();
-    return;
-  }
   $$('.tab').forEach((t) => t.classList.toggle('is-active', t.dataset.view === view));
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === 'view-' + view));
   if (view === 'sorteo') loadSorteo();
   if (view === 'dashboard') loadDashboard();
   if (view === 'evento') loadEventoAdmin();
+  if (view === 'usuarios') loadUsuarios();
 }
 
 $('#tabs').addEventListener('click', (e) => {
@@ -61,28 +56,47 @@ $('#tabs').addEventListener('click', (e) => {
   if (btn) goto(btn.dataset.view);
 });
 
-// ---------- Modal PIN ----------
-function openPinModal() { $('#pin-modal').classList.remove('hidden'); $('#pin-input').value = ''; $('#pin-msg').textContent = ''; $('#pin-input').focus(); }
-function closePinModal() { $('#pin-modal').classList.add('hidden'); }
-$('#pin-cancel').addEventListener('click', () => { closePinModal(); goto('captura'); });
-$('#pin-ok').addEventListener('click', tryPin);
-$('#pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryPin(); });
-
-async function tryPin() {
-  state.pin = $('#pin-input').value.trim();
-  try {
-    const info = await api('/access', { staff: true });
-    if (info.authorized) {
-      state.authorized = true;
-      localStorage.setItem('staffPin', state.pin);
-      closePinModal();
-      goto(state.pendingView || 'dashboard');
-    } else {
-      $('#pin-msg').textContent = 'PIN incorrecto';
-      $('#pin-msg').className = 'form-msg err';
-    }
-  } catch { $('#pin-msg').textContent = 'No se pudo validar'; $('#pin-msg').className = 'form-msg err'; }
+// ---------- Sesión / Login ----------
+function showLogin() {
+  $('#login-screen').classList.remove('hidden');
+  $('#app-shell').classList.add('hidden');
 }
+function showApp() {
+  $('#login-screen').classList.add('hidden');
+  $('#app-shell').classList.remove('hidden');
+  $('#user-name').textContent = state.user ? state.user.name : '';
+  $('#tab-usuarios').hidden = !(state.user && state.user.role === 'admin');
+}
+function logout() {
+  state.token = ''; state.user = null;
+  localStorage.removeItem('authToken');
+  showLogin();
+}
+$('#btn-logout')?.addEventListener('click', logout);
+
+$('#login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const err = $('#login-error');
+  const btn = $('#btn-login');
+  err.textContent = '';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: f.email.value.trim(), password: f.password.value }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || 'No se pudo iniciar sesión');
+    state.token = data.token; state.user = data.user;
+    localStorage.setItem('authToken', state.token);
+    showApp();
+    await startApp();
+    goto('captura');
+  } catch (e2) {
+    err.textContent = e2.message || 'Error al iniciar sesión';
+  } finally { btn.disabled = false; }
+});
 
 // ---------- Captura ----------
 async function loadMeta() {
@@ -137,24 +151,14 @@ $('#lead-form').addEventListener('submit', async (e) => {
 });
 
 async function refreshRecent() {
-  // El listado requiere personal; si hay PIN y aún no se autoriza, no lo pedimos.
-  if (state.pinRequired && !state.authorized) {
-    $('#recent-list').innerHTML = '<li class="muted">Ingresa el PIN del personal para ver registros.</li>';
-    return;
-  }
   try {
-    const data = await api('/leads', { staff: true });
+    const data = await api('/leads');
     $('#cap-count').textContent = data.total;
     const recent = data.items.slice(0, 6);
     $('#recent-list').innerHTML = recent.length
       ? recent.map((l) => `<li><strong>${escapeHtml(l.nombre)}</strong><small>${escapeHtml(l.empresa || l.interes || '')} · ${fmtDate(l.createdAt)}</small></li>`).join('')
       : '<li class="muted">Aún no hay registros.</li>';
-  } catch (err) {
-    if (err.status === 401) {
-      // Con PIN activo aún sin autorizar: mostramos solo el contador vía otro medio.
-      $('#recent-list').innerHTML = '<li class="muted">Ingresa el PIN del personal para ver registros.</li>';
-    }
-  }
+  } catch { /* sin sesión */ }
 }
 
 // ---------- Captura por foto del gafete (OCR con Tesseract) ----------
@@ -378,11 +382,22 @@ function poblarSelectoresEvento() {
   // Selector de administración.
   const sel = $('#evento-select');
   if (sel) {
-    sel.innerHTML = eventos.list.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}${e.id === eventos.activeId ? ' ★ (activo)' : ''}</option>`).join('');
+    sel.innerHTML = eventos.list.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}${e.id === eventos.activeId ? ' ★ (activo)' : ''}${e.finalizado ? ' · finalizado' : ''}</option>`).join('');
     if (!eventos.list.some((e) => e.id === eventos.selectedId)) eventos.selectedId = eventos.activeId;
     sel.value = eventos.selectedId;
   }
+  // Selector del sorteo (solo eventos NO finalizados).
+  const sor = $('#sorteo-evento-sel');
+  if (sor) {
+    const vigentes = eventos.list.filter((e) => !e.finalizado);
+    const prev = sor.value;
+    sor.innerHTML = vigentes.map((e) => `<option value="${e.id}">${escapeHtml(e.name)}${e.id === eventos.activeId ? ' ★ (activo)' : ''}</option>`).join('')
+      || '<option value="">— sin eventos vigentes —</option>';
+    sor.value = vigentes.some((e) => e.id === prev) ? prev : (vigentes.some((e) => e.id === eventos.activeId) ? eventos.activeId : (vigentes[0] && vigentes[0].id) || '');
+  }
 }
+
+function sorteoEventId() { const s = $('#sorteo-evento-sel'); return (s && s.value) || eventos.activeId; }
 
 // ---------- Sorteo ----------
 function raffleOpts() {
@@ -390,16 +405,16 @@ function raffleOpts() {
 }
 async function loadSorteo() {
   await loadEventos();
-  const activo = eventos.list.find((e) => e.id === eventos.activeId);
-  $('#sorteo-evento').textContent = activo ? activo.name : '—';
-  if (activo && activo.premio && !$('#premio').value) $('#premio').value = activo.premio;
+  const ev = eventos.list.find((e) => e.id === sorteoEventId());
+  if (ev && ev.premio) $('#premio').value = ev.premio;
   await loadPool();
   await loadWinners();
+  renderHistorico();
 }
 async function loadPool() {
   try {
     const o = raffleOpts();
-    const data = await api(`/raffle/eligible?event=${encodeURIComponent(eventos.activeId)}&consentimiento=${o.consentimiento}&repetidos=${o.repetidos}`, { staff: true });
+    const data = await api(`/raffle/eligible?event=${encodeURIComponent(sorteoEventId())}&consentimiento=${o.consentimiento}&repetidos=${o.repetidos}`);
     $('#pool-count').textContent = data.total;
     $('#sorteo-correo').textContent = data.correoActivo
       ? '✉ El ganador recibirá su folio por correo automáticamente.'
@@ -408,6 +423,47 @@ async function loadPool() {
 }
 $('#opt-consent').addEventListener('change', loadPool);
 $('#opt-repes').addEventListener('change', loadPool);
+$('#sorteo-evento-sel')?.addEventListener('change', async () => {
+  const ev = eventos.list.find((e) => e.id === sorteoEventId());
+  $('#premio').value = ev && ev.premio ? ev.premio : '';
+  $('#reel').className = 'reel'; $('#reel').textContent = '🎉';
+  await loadPool(); await loadWinners();
+});
+
+// Marca el evento del sorteo como finalizado.
+$('#btn-finalizar-evento')?.addEventListener('click', async () => {
+  const id = sorteoEventId();
+  if (!id) return;
+  const ev = eventos.list.find((e) => e.id === id);
+  if (!confirm(`¿Finalizar el evento "${ev ? ev.name : ''}"? Pasará al histórico y ya no aparecerá para sortear.`)) return;
+  try {
+    await api('/events/' + id + '/finalizar', { method: 'POST' });
+    toast('Evento finalizado', 'ok');
+    await loadSorteo();
+  } catch (err) { toast(err.message, 'err'); }
+});
+
+// Histórico de eventos finalizados con su ganador.
+async function renderHistorico() {
+  const cont = $('#historico-list');
+  const finalizados = eventos.list.filter((e) => e.finalizado);
+  if (!finalizados.length) { cont.innerHTML = '<p class="muted">No hay eventos finalizados.</p>'; return; }
+  const partes = await Promise.all(finalizados.map(async (e) => {
+    let ganadores = [];
+    try { ganadores = (await api('/raffle/winners?event=' + encodeURIComponent(e.id))).items || []; } catch { /* */ }
+    const detalle = [e.tipo, e.edition, e.lugar].filter(Boolean).join(' · ');
+    const fecha = e.fecha ? `${e.fecha}${e.hora ? ' ' + e.hora : ''}` : '';
+    const gan = ganadores.length
+      ? ganadores.map((w) => `<div class="gan">🏆 <b>${escapeHtml(w.nombre)}</b> — ${escapeHtml(w.premio)} · Folio <b>${escapeHtml(w.folio || '—')}</b></div>`).join('')
+      : '<div class="gan muted">Sin ganador registrado.</div>';
+    return `<div class="historico-item">
+      <h4>${escapeHtml(e.name)}<span class="badge-fin">finalizado</span></h4>
+      <div class="meta">${escapeHtml(detalle || '—')}${fecha ? ' · Sorteo: ' + escapeHtml(fecha) : ''} · ${escapeHtml(e.premio || '')}</div>
+      ${gan}
+    </div>`;
+  }));
+  cont.innerHTML = partes.join('');
+}
 
 $('#btn-sortear').addEventListener('click', async () => {
   const btn = $('#btn-sortear');
@@ -420,12 +476,12 @@ $('#btn-sortear').addEventListener('click', async () => {
   try {
     await new Promise((r) => setTimeout(r, 1400));
     const body = {
-      event: eventos.activeId,
+      event: sorteoEventId(),
       premio: $('#premio').value.trim(),
       soloConsentimiento: $('#opt-consent').checked,
       evitarRepetidos: $('#opt-repes').checked,
     };
-    const { ganador } = await api('/raffle/draw', { method: 'POST', body, staff: true });
+    const { ganador } = await api('/raffle/draw', { method: 'POST', body });
     clearInterval(spin);
     reel.className = 'reel winner';
     reel.innerHTML = `<span class="win-name">🏆 ${escapeHtml(ganador.nombre)}</span>` +
@@ -452,7 +508,7 @@ function emailBadge(w) {
 }
 async function loadWinners() {
   try {
-    const { items } = await api(`/raffle/winners?event=${encodeURIComponent(eventos.activeId)}`, { staff: true });
+    const { items } = await api(`/raffle/winners?event=${encodeURIComponent(sorteoEventId())}`);
     $('#winners-list').innerHTML = items.length
       ? items.map((w) => `<li>
           <button class="del" data-id="${w.id}" title="Anular">✕</button>
@@ -524,7 +580,7 @@ async function loadLeadsTable() {
     $('#leads-tbody').innerHTML = data.items.length
       ? data.items.map((l) => `
         <tr>
-          <td><strong>${escapeHtml(l.nombre)}</strong>${l.tieneFoto ? `<a class="badge-cam" href="/api/leads/${l.id}/badge${state.pin ? '?pin=' + encodeURIComponent(state.pin) : ''}" target="_blank" title="Foto del gafete">📷</a>` : ''}${l.cargo ? `<div class="contact">${escapeHtml(l.cargo)}</div>` : ''}</td>
+          <td><strong>${escapeHtml(l.nombre)}</strong>${l.tieneFoto ? `<a class="badge-cam" href="/api/leads/${l.id}/badge${state.token ? '?token=' + encodeURIComponent(state.token) : ''}" target="_blank" title="Foto del gafete">📷</a>` : ''}${l.cargo ? `<div class="contact">${escapeHtml(l.cargo)}</div>` : ''}</td>
           <td>${escapeHtml(l.empresa || '—')}</td>
           <td class="contact">${escapeHtml(l.telefono || '')}${l.telefono && l.email ? '<br>' : ''}${escapeHtml(l.email || '')}</td>
           <td><span class="tag">${escapeHtml(l.interes || '—')}</span></td>
@@ -551,7 +607,7 @@ $('#dash-evento')?.addEventListener('change', loadDashboard);
 $('#btn-export').addEventListener('click', (e) => {
   e.preventDefault();
   const p = new URLSearchParams();
-  if (state.pin) p.set('pin', state.pin);
+  if (state.token) p.set('token', state.token);
   if (dashEvent()) p.set('event', dashEvent());
   window.open('/api/leads/export.csv' + (p.toString() ? '?' + p.toString() : ''), '_blank');
 });
@@ -683,13 +739,73 @@ $('#evento-form').addEventListener('submit', async (e) => {
   } finally { btn.disabled = false; }
 });
 
-// ---------- Init ----------
-(async function init() {
+// ---------- Usuarios (solo admin) ----------
+async function loadUsuarios() {
   try {
-    const info = await api('/access', { staff: true });
-    state.pinRequired = info.pinRequired;
-    state.authorized = info.authorized;
-  } catch { /* endpoint siempre responde */ }
+    const { items } = await api('/users');
+    $('#users-tbody').innerHTML = items.map((u) => `
+      <tr>
+        <td><strong>${escapeHtml(u.name)}</strong></td>
+        <td class="contact">${escapeHtml(u.email)}</td>
+        <td>${u.role === 'admin' ? '<span class="tag">Administrador</span>' : 'Staff'}</td>
+        <td>${u.activo ? '<span class="mail ok">activo</span>' : '<span class="mail err">inactivo</span>'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn-mini" data-act="pass" data-id="${u.id}" title="Cambiar contraseña">🔑</button>
+          <button class="btn-mini" data-act="toggle" data-id="${u.id}" title="${u.activo ? 'Desactivar' : 'Activar'}">${u.activo ? '⏸' : '▶'}</button>
+          <button class="del-lead" data-act="del" data-id="${u.id}" title="Eliminar">🗑</button>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="5" class="empty">Sin usuarios.</td></tr>';
+  } catch (err) { if (err.status !== 401) toast(err.message, 'err'); }
+}
+
+$('#user-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const msg = $('#user-msg');
+  try {
+    await api('/users', { method: 'POST', body: { name: f.name.value.trim(), email: f.email.value.trim(), password: f.password.value, role: f.role.value } });
+    msg.textContent = '✓ Usuario creado'; msg.className = 'form-msg ok';
+    f.reset();
+    loadUsuarios();
+  } catch (err) { msg.textContent = err.message; msg.className = 'form-msg err'; }
+});
+
+$('#users-tbody').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  try {
+    if (btn.dataset.act === 'del') {
+      if (!confirm('¿Eliminar este usuario?')) return;
+      await api('/users/' + id, { method: 'DELETE' });
+    } else if (btn.dataset.act === 'toggle') {
+      const activar = btn.textContent === '▶';
+      await api('/users/' + id, { method: 'PUT', body: { activo: activar } });
+    } else if (btn.dataset.act === 'pass') {
+      const pass = prompt('Nueva contraseña (mínimo 6 caracteres):');
+      if (!pass) return;
+      await api('/users/' + id, { method: 'PUT', body: { password: pass } });
+      toast('Contraseña actualizada', 'ok');
+    }
+    loadUsuarios();
+  } catch (err) { toast(err.message, 'err'); }
+});
+
+// ---------- Arranque ----------
+async function startApp() {
   await loadMeta();
   refreshRecent();
+}
+(async function boot() {
+  if (state.token) {
+    try {
+      const { user } = await api('/auth/me');
+      state.user = user;
+      showApp();
+      await startApp();
+      goto('captura');
+      return;
+    } catch { logout(); }
+  }
+  showLogin();
 })();

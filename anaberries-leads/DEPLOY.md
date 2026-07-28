@@ -49,8 +49,11 @@ Pasos:
    - **Volumen:** si no usas Postgres, monta un **Volume** en **`/data`** (el
      builder de Railway no admite `VOLUME` en el Dockerfile; el montaje se hace
      desde el panel).
-4. En **Variables** define además `STAFF_PIN=<tu-pin>` (Railway inyecta `PORT`;
-   `NODE_ENV`, `DATA_DIR` y `TRUST_PROXY` ya vienen en la imagen).
+4. En **Variables** define el **administrador inicial** `ADMIN_EMAIL` y
+   `ADMIN_PASSWORD` (con estos inicias sesión la primera vez; luego puedes crear
+   más usuarios desde **👥 Usuarios**). Define también `AUTH_SECRET` (cadena
+   larga y secreta) para que las sesiones sobrevivan a los redeploys.
+   (Railway inyecta `PORT`; `NODE_ENV`, `DATA_DIR` y `TRUST_PROXY` ya vienen en la imagen.)
    - **Correo del ganador (opcional):** para enviar el folio por correo, define
      `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` y
      `MAIL_FROM`. Sin SMTP, el folio se entrega manualmente.

@@ -36,7 +36,7 @@ before(async () => {
   DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'ana-e2e-'));
   server = spawn('node', ['server/index.js'], {
     cwd: PROJECT,
-    env: { ...process.env, PORT: String(PORT), STAFF_PIN: PIN, DATA_DIR, NODE_ENV: 'test' },
+    env: { ...process.env, PORT: String(PORT), STAFF_PIN: PIN, ADMIN_EMAIL: 'admin@test.com', ADMIN_PASSWORD: 'admin1234', DATA_DIR, NODE_ENV: 'test' },
     stdio: 'ignore',
   });
   for (let i = 0; i < 60; i++) {
@@ -62,7 +62,7 @@ test('E2E · jornada completa del stand', async (t) => {
     await visitor.goto(BASE + '/registro', { waitUntil: 'networkidle' });
     await visitor.fill('[name=nombre]', 'Visitante E2E');
     await visitor.fill('[name=empresa]', 'Agrícola E2E');
-    await visitor.fill('[name=telefono]', '55 1234 9876');
+    await visitor.fill('[name=telefono]', '5512349876');
     await visitor.fill('[name=email]', 'visitante.e2e@correo.mx');
     await visitor.check('[name=aceptaTerminos]');
     await visitor.check('[name=aceptaPrivacidad]');
@@ -71,11 +71,13 @@ test('E2E · jornada completa del stand', async (t) => {
     assert.ok(await visitor.isVisible('#ok-view'), 'la landing muestra confirmación');
     await visitor.close();
 
-    // ---------- 2) Staff: acceso por PIN + administrar evento ----------
+    // ---------- 2) Staff: inicia sesión + administrar evento ----------
     const staff = await browser.newPage({ viewport: { width: 1240, height: 1000 } });
     await staff.goto(BASE + '/', { waitUntil: 'networkidle' });
-    await staff.evaluate((pin) => localStorage.setItem('staffPin', pin), PIN);
-    await staff.reload({ waitUntil: 'networkidle' });
+    await staff.fill('#login-form [name=email]', 'admin@test.com');
+    await staff.fill('#login-form [name=password]', 'admin1234');
+    await staff.click('#btn-login');
+    await staff.waitForSelector('#app-shell:not(.hidden)', { timeout: 8000 });
 
     await staff.click('.tab[data-view="evento"]');
     await staff.waitForSelector('#view-evento.is-active', { timeout: 5000 });
@@ -106,7 +108,7 @@ test('E2E · jornada completa del stand', async (t) => {
     await staff.click('.tab[data-view="captura"]');
     await staff.waitForSelector('#view-captura.is-active');
     await staff.fill('[name=nombre]', 'Lead Manual E2E');
-    await staff.fill('[name=telefono]', '55 7777 8888');
+    await staff.fill('[name=telefono]', '5577778888');
     await staff.fill('#captador', 'Staff E2E');
     await staff.click('#btn-guardar');
     await staff.waitForFunction(() => document.querySelector('#lead-msg')?.textContent?.includes('guardado'), { timeout: 8000 });
@@ -131,8 +133,10 @@ test('E2E · jornada completa del stand', async (t) => {
     assert.ok(Number(totalLeads) >= 2, 'el dashboard cuenta los leads capturados');
     await staff.close();
 
-    // ---------- 8) Exportación CSV con PIN ----------
-    const csv = await fetch(`${BASE}/api/leads/export.csv?pin=${PIN}`);
+    // ---------- 8) Exportación CSV con token de sesión ----------
+    const lr = await fetch(`${BASE}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'admin@test.com', password: 'admin1234' }) });
+    const token = (await lr.json()).token;
+    const csv = await fetch(`${BASE}/api/leads/export.csv?token=${token}`);
     assert.equal(csv.status, 200);
     const body = await csv.text();
     assert.match(body, /Visitante E2E/, 'el CSV incluye el autoregistro');
