@@ -23,7 +23,8 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 try {
   await initStore();
 } catch (err) {
-  console.error(`\n  ✖ No se pudo inicializar el almacenamiento (${MODE}): ${err.message}\n`);
+  const detalle = err.cause ? ` (causa: ${err.cause.code || err.cause.message})` : '';
+  console.error(`\n  ✖ No se pudo inicializar el almacenamiento (${MODE}): ${err.message}${detalle}\n`);
   process.exit(1);
 }
 await initMailer();
