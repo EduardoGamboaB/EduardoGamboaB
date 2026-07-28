@@ -12,10 +12,10 @@ RUN npm ci --omit=dev || npm install --omit=dev
 COPY server ./server
 COPY public ./public
 
-# Directorio de datos persistente (leads + fotos de gafetes). Montar como volumen.
+# Directorio de datos (leads + fotos de gafetes). La persistencia se logra montando
+# un volumen en /data (en Railway, un Railway Volume; su builder no admite VOLUME).
 ENV DATA_DIR=/data
 RUN mkdir -p /data && chown -R node:node /data /app
-VOLUME ["/data"]
 
 USER node
 EXPOSE 4000

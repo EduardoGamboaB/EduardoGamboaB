@@ -15,10 +15,10 @@ RUN npm ci --omit=dev || npm install --omit=dev
 COPY anaberries-leads/server ./server
 COPY anaberries-leads/public ./public
 
-# Directorio de datos persistente (montar un volumen de Railway en /data).
+# Directorio de datos. La persistencia se logra montando un Railway Volume en /data
+# (Railway no admite la instrucción VOLUME de Docker; se omite a propósito).
 ENV DATA_DIR=/data
 RUN mkdir -p /data && chown -R node:node /data /app
-VOLUME ["/data"]
 
 USER node
 EXPOSE 4000
