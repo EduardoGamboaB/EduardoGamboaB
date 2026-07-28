@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { config } from './config.js';
-import { load, flush } from './store.js';
+import { init as initStore, flush, MODE } from './store.js';
 import { requireStaff, staffInfo } from './auth.js';
 import { rateLimiter } from './security.js';
 import leadsRoutes from './routes/leads.js';
@@ -17,7 +17,12 @@ import eventRoutes from './routes/event.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
-load();
+try {
+  await initStore();
+} catch (err) {
+  console.error(`\n  ✖ No se pudo inicializar el almacenamiento (${MODE}): ${err.message}\n`);
+  process.exit(1);
+}
 
 const app = express();
 app.disable('x-powered-by');
@@ -85,15 +90,15 @@ app.use((err, _req, res, _next) => {
 
 const server = app.listen(config.port, config.host, () => {
   console.log(`\n  Anaberries · Captura de Leads — Mallatex`);
-  console.log(`  Entorno: ${config.nodeEnv}`);
+  console.log(`  Entorno: ${config.nodeEnv} · Almacenamiento: ${MODE}`);
   console.log(`  Servidor: http://${config.host}:${config.port}`);
   console.log(`  Acceso a Sorteo/Dashboard: ${config.staffPin ? 'PIN requerido' : 'abierto (sin PIN)'}\n`);
 });
 
 function shutdown(signal) {
   console.log(`\n${signal} recibido: cerrando…`);
-  server.close(() => { flush(); process.exit(0); });
-  setTimeout(() => { flush(); process.exit(0); }, 5000).unref?.();
+  server.close(async () => { await flush(); process.exit(0); });
+  setTimeout(() => { process.exit(0); }, 8000).unref?.();
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));

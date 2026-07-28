@@ -39,11 +39,18 @@ El repo incluye `anaberries-leads/railway.json` (build por Dockerfile + healthch
 Pasos:
 
 1. Crea un servicio desde el repo `EduardoGamboaB/EduardoGamboaB`.
-2. En **Settings → Root Directory** pon `anaberries-leads`.
-3. En **Variables** define: `NODE_ENV=production`, `TRUST_PROXY=1`,
-   `DATA_DIR=/data`, `STAFF_PIN=<tu-pin>` (Railway inyecta `PORT` solo).
-4. En **Volumes** agrega un volumen montado en **`/data`** (persistencia de leads
-   y fotos de gafetes). Sin volumen, los datos se pierden en cada redeploy.
+2. Si el servicio construye la **raíz** del repo, funciona con el `Dockerfile`
+   raíz incluido. (Alternativa: **Settings → Root Directory** = `anaberries-leads`.)
+3. **Persistencia (elige una):**
+   - **PostgreSQL (recomendado):** agrega un plugin de Postgres y en el servicio de
+     la app define la variable `DATABASE_URL = ${{Postgres.DATABASE_URL}}`. La app
+     usa Postgres automáticamente (leads, sorteos, config e imágenes durables). **No
+     necesitas volumen.**
+   - **Volumen:** si no usas Postgres, monta un **Volume** en **`/data`** (el
+     builder de Railway no admite `VOLUME` en el Dockerfile; el montaje se hace
+     desde el panel).
+4. En **Variables** define además `STAFF_PIN=<tu-pin>` (Railway inyecta `PORT`;
+   `NODE_ENV`, `DATA_DIR` y `TRUST_PROXY` ya vienen en la imagen).
 5. Genera un dominio público (**Settings → Networking → Generate Domain**).
    Railway da HTTPS automático (necesario para cámara y QR).
 6. Verifica `/api/health` y abre `/qr` en el dominio para imprimir el póster.
