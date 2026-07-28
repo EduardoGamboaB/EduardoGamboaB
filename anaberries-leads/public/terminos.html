@@ -74,7 +74,10 @@
     (async function () {
       const $ = (id) => document.getElementById(id);
       try {
-        const e = await (await fetch('/api/event/public')).json();
+        const eid = new URLSearchParams(location.search).get('e') || '';
+        const url = eid ? '/api/events/public/' + encodeURIComponent(eid) : '/api/events/public/active';
+        const e = await (await fetch(url)).json();
+        if (!e || e.error) return;
         const nombre = e.name || 'Anaberries';
         $('tyc-evento').textContent = [nombre, e.edition].filter(Boolean).join(' · ');
         $('tyc-foot-evento').textContent = nombre;
@@ -99,7 +102,7 @@
         // Premio
         if (e.premio) $('tyc-premio').innerHTML = 'El premio consiste en <strong>' + escapeHtml(e.premio) + '</strong>.';
         if (e.premioImagen) {
-          $('tyc-premio-img').src = '/api/event/premio-imagen';
+          $('tyc-premio-img').src = '/api/events/' + e.id + '/premio-imagen';
           $('tyc-premio-figura').hidden = false;
         }
 

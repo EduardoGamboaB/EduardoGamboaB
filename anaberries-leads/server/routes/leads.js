@@ -1,12 +1,18 @@
 // Rutas de captura de leads.
 
 import { Router } from 'express';
-import { db, save, newId, putBlob, getBlob, delBlob } from '../store.js';
+import { db, save, newId, putBlob, getBlob, delBlob, getEvent, activeEvent } from '../store.js';
 import { requireStaff } from '../auth.js';
 
 const router = Router();
 
 const badgeKey = (id) => 'badge:' + id;
+
+// Resuelve el evento objetivo (body/query ?event=<id> o el activo).
+function eventoDe(req) {
+  const id = (req.body?.event || req.query.event || '').toString();
+  return (id && getEvent(id)) || activeEvent();
+}
 
 // Decodifica un dataURL de imagen a Buffer (o null si no es válido / muy grande).
 function decodeImage(dataUrl) {
@@ -65,17 +71,19 @@ router.post('/', async (req, res) => {
   if (email && !EMAIL_RE.test(email)) return res.status(400).json({ error: 'Correo no válido' });
 
   const data = db();
+  const ev = eventoDe(req);
 
-  // Detección de duplicados por email o teléfono.
-  const dup = data.leads.find((l) =>
-    (email && l.email && l.email === email) ||
-    (telefono && l.telefono && l.telefono === telefono));
+  // Detección de duplicados por email o teléfono, dentro del mismo evento.
+  const dup = data.leads.find((l) => l.eventId === ev.id &&
+    ((email && l.email && l.email === email) ||
+     (telefono && l.telefono && l.telefono === telefono)));
   if (dup && !b.forzar) {
-    return res.status(409).json({ error: 'Ya existe un lead con ese correo o teléfono', duplicado: { id: dup.id, nombre: dup.nombre } });
+    return res.status(409).json({ error: 'Ya existe un lead con ese correo o teléfono en este evento', duplicado: { id: dup.id, nombre: dup.nombre } });
   }
 
   const lead = {
     id: newId('lead'),
+    eventId: ev.id,
     nombre,
     empresa,
     email,
@@ -115,12 +123,14 @@ router.post('/registro', (req, res) => {
   if (!b.aceptaTerminos || !b.aceptaPrivacidad) return res.status(400).json({ error: 'Debes aceptar los términos y el aviso de privacidad' });
 
   const data = db();
-  // Si ya está registrado, respondemos de forma amistosa (no es un error para el visitante).
-  const dup = data.leads.find((l) => (email && l.email === email) || (telefono && l.telefono === telefono));
+  const ev = eventoDe(req);
+  // Si ya está registrado en este evento, respondemos de forma amistosa.
+  const dup = data.leads.find((l) => l.eventId === ev.id && ((email && l.email === email) || (telefono && l.telefono === telefono)));
   if (dup) return res.status(200).json({ ok: true, yaRegistrado: true });
 
   const lead = {
     id: newId('lead'),
+    eventId: ev.id,
     nombre,
     empresa: clean(b.empresa, 160),
     email,
@@ -146,16 +156,18 @@ router.post('/registro', (req, res) => {
 
 // GET /api/leads/meta — catálogos para el formulario (público).
 router.get('/meta', (_req, res) => {
-  res.json({ intereses: INTERESES, fuentes: FUENTES, event: db().event });
+  const ev = activeEvent();
+  res.json({ intereses: INTERESES, fuentes: FUENTES, event: { name: ev.name, id: ev.id } });
 });
 
 // A partir de aquí, solo personal (listado y exportación).
 router.use(requireStaff);
 
-// GET /api/leads — listado con búsqueda y filtros.
+// GET /api/leads — listado con búsqueda y filtros (opcionalmente por evento).
 router.get('/', (req, res) => {
-  const { q, interes, fuente } = req.query;
+  const { q, interes, fuente, event } = req.query;
   let items = [...db().leads].reverse();
+  if (event) items = items.filter((l) => l.eventId === event);
   if (q) {
     const needle = String(q).toLowerCase();
     items = items.filter((l) =>
@@ -166,12 +178,13 @@ router.get('/', (req, res) => {
   res.json({ total: items.length, items });
 });
 
-// GET /api/leads/export.csv — exportación CSV.
-router.get('/export.csv', (_req, res) => {
+// GET /api/leads/export.csv — exportación CSV (opcionalmente por evento).
+router.get('/export.csv', (req, res) => {
   const cols = ['nombre', 'empresa', 'cargo', 'email', 'telefono', 'interes', 'volumen', 'fuente', 'metodoCaptura', 'consentimiento', 'capturadoPor', 'createdAt'];
   const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const rows = [cols.join(',')];
-  for (const l of db().leads) rows.push(cols.map((c) => esc(l[c])).join(','));
+  const leads = req.query.event ? db().leads.filter((l) => l.eventId === req.query.event) : db().leads;
+  for (const l of leads) rows.push(cols.map((c) => esc(l[c])).join(','));
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="leads-anaberries.csv"');
   res.send('﻿' + rows.join('\r\n'));

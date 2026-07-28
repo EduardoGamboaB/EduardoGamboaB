@@ -9,6 +9,7 @@ import { config } from './config.js';
 import { init as initStore, flush, MODE } from './store.js';
 import { requireStaff, staffInfo } from './auth.js';
 import { rateLimiter } from './security.js';
+import { initMailer } from './mailer.js';
 import leadsRoutes from './routes/leads.js';
 import raffleRoutes from './routes/raffle.js';
 import statsRoutes from './routes/stats.js';
@@ -23,6 +24,7 @@ try {
   console.error(`\n  ✖ No se pudo inicializar el almacenamiento (${MODE}): ${err.message}\n`);
   process.exit(1);
 }
+await initMailer();
 
 const app = express();
 app.disable('x-powered-by');
@@ -51,8 +53,8 @@ app.use('/api/leads/registro', rateLimiter({
 // Captura de leads: pública (stand/kiosco del evento).
 app.use('/api/leads', leadsRoutes);
 
-// Configuración del evento: GET público (landing/términos) + edición por staff (dentro del router).
-app.use('/api/event', eventRoutes);
+// Eventos: GET público (landing/términos/QR) + edición por staff (dentro del router).
+app.use('/api/events', eventRoutes);
 
 // Sorteo y Dashboard: protegidos por PIN del personal (si está configurado).
 app.use('/api/raffle', requireStaff, raffleRoutes);

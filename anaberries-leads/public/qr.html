@@ -11,30 +11,42 @@
   <main class="qr-page">
     <img src="/assets/mallatex-logo.png" alt="Mallatex" style="height:46px" />
     <p class="qr-cta">Escanea y participa en el sorteo</p>
+    <p id="qr-evento" style="font-size:16px;font-weight:700;color:#232121;margin:0 0 6px"></p>
+    <p id="qr-premio" style="font-size:14px;color:#606062;margin:0 0 14px"></p>
     <div class="qr-box">
       <div id="qr"></div>
     </div>
     <p class="qr-url" id="qr-url">…</p>
     <div class="no-print" style="margin-top:22px">
       <button class="btn-primary" style="max-width:280px;margin:0 auto" onclick="window.print()">🖨 Imprimir póster</button>
-      <p style="font-size:13px;color:var(--ink-600);margin-top:14px">Coloca este código en el stand. Los visitantes lo escanean con la cámara de su teléfono para registrarse.</p>
+      <p style="font-size:13px;color:var(--ink-600);margin-top:14px">Coloca este código en el stand. Los visitantes lo escanean con la cámara de su teléfono para registrarse en este evento.</p>
     </div>
   </main>
-  <p class="foot no-print">Mallatex · Evento Anaberries</p>
+  <p class="foot no-print">Mallatex</p>
 
   <script src="/vendor/qrcode/qrcode.js"></script>
   <script>
     (function () {
-      var url = window.location.origin + '/registro';
+      var params = new URLSearchParams(location.search);
+      var eventId = params.get('e') || '';
+      // La URL del QR incluye el evento, para registrar en el evento correcto.
+      var url = window.location.origin + '/registro' + (eventId ? '?e=' + encodeURIComponent(eventId) : '');
       document.getElementById('qr-url').textContent = url;
       try {
-        var qr = qrcode(0, 'M');           // tipo automático, corrección media
+        var qr = qrcode(0, 'M');
         qr.addData(url);
         qr.make();
         document.getElementById('qr').innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
       } catch (e) {
         document.getElementById('qr').textContent = 'No se pudo generar el QR: ' + e.message;
       }
+      // Muestra el nombre y premio del evento.
+      var api = eventId ? '/api/events/public/' + encodeURIComponent(eventId) : '/api/events/public/active';
+      fetch(api).then(function (r) { return r.json(); }).then(function (ev) {
+        if (!ev || ev.error) return;
+        document.getElementById('qr-evento').textContent = [ev.name, ev.edition].filter(Boolean).join(' · ');
+        if (ev.premio) document.getElementById('qr-premio').textContent = '🎁 ' + ev.premio;
+      }).catch(function () {});
     })();
   </script>
 </body>

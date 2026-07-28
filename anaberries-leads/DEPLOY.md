@@ -51,6 +51,9 @@ Pasos:
      desde el panel).
 4. En **Variables** define además `STAFF_PIN=<tu-pin>` (Railway inyecta `PORT`;
    `NODE_ENV`, `DATA_DIR` y `TRUST_PROXY` ya vienen en la imagen).
+   - **Correo del ganador (opcional):** para enviar el folio por correo, define
+     `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` y
+     `MAIL_FROM`. Sin SMTP, el folio se entrega manualmente.
 5. Genera un dominio público (**Settings → Networking → Generate Domain**).
    Railway da HTTPS automático (necesario para cámara y QR).
 6. Verifica `/api/health` y abre `/qr` en el dominio para imprimir el póster.

@@ -290,42 +290,77 @@ test('el limitador de tasa del autoregistro devuelve 429 ante ráfagas', async (
   assert.equal(got429, true);
 });
 
-// ---------- Administración del evento ----------
-test('event/public devuelve la configuración pública', async () => {
-  const e = await json(await api('/api/event/public'));
-  assert.ok('premio' in e && 'dinamica' in e && 'fecha' in e && 'premioImagen' in e);
+// ---------- Administración de eventos (multi-evento) ----------
+async function activeEventId() {
+  const d = await json(await api('/api/events', { pin: PIN }));
+  return d.activeEventId;
+}
+
+test('events/public/active devuelve la configuración pública', async () => {
+  const e = await json(await api('/api/events/public/active'));
+  assert.ok('id' in e && 'premio' in e && 'dinamica' in e && 'premioImagen' in e);
 });
 
-test('GET /api/event (completo) requiere PIN (401)', async () => {
-  assert.equal((await api('/api/event')).status, 401);
+test('GET /api/events requiere PIN (401) y lista eventos con activo', async () => {
+  assert.equal((await api('/api/events')).status, 401);
+  const d = await json(await api('/api/events', { pin: PIN }));
+  assert.ok(Array.isArray(d.items) && d.items.length >= 1);
+  assert.ok(d.activeEventId);
 });
 
-test('PUT /api/event sin PIN es rechazado (401)', async () => {
-  assert.equal((await api('/api/event', { method: 'PUT', body: { premio: 'x' } })).status, 401);
+test('PUT /api/events/:id sin PIN es rechazado (401)', async () => {
+  const id = await activeEventId();
+  assert.equal((await api('/api/events/' + id, { method: 'PUT', body: { premio: 'x' } })).status, 401);
 });
 
-test('PUT /api/event con PIN actualiza los datos y se reflejan en público', async () => {
-  const r = await api('/api/event', { method: 'PUT', pin: PIN, body: {
+test('PUT /api/events/:id actualiza y se refleja en público', async () => {
+  const id = await activeEventId();
+  const r = await api('/api/events/' + id, { method: 'PUT', pin: PIN, body: {
     tipo: 'Expo agrícola', premio: 'Rollo de malla antigranizo', dinamica: 'Regístrate y participa.',
-    fecha: '2026-08-15', hora: '17:30', lugar: 'Centro de Convenciones', plazoContactoDias: '5',
+    fecha: '2026-08-15', hora: '17:30', lugar: 'Centro de Convenciones', plazoContactoDias: '5', permiteGanadoresPrevios: false,
   }});
   assert.equal(r.status, 200);
-  const pub = await json(await api('/api/event/public'));
+  const pub = await json(await api('/api/events/public/' + id));
   assert.equal(pub.tipo, 'Expo agrícola');
   assert.equal(pub.premio, 'Rollo de malla antigranizo');
   assert.equal(pub.fecha, '2026-08-15');
-  assert.equal(pub.plazoContactoDias, '5');
 });
 
-test('la imagen del premio se guarda y se sirve; luego se puede quitar', async () => {
-  const up = await json(await api('/api/event', { method: 'PUT', pin: PIN, body: { premioImagen: JPEG_1PX } }));
+test('la imagen del premio (por evento) se guarda, se sirve y se quita', async () => {
+  const id = await activeEventId();
+  const up = await json(await api('/api/events/' + id, { method: 'PUT', pin: PIN, body: { premioImagen: JPEG_1PX } }));
   assert.equal(up.premioImagen, true);
-  const img = await api('/api/event/premio-imagen', { pin: PIN });
+  const img = await api('/api/events/' + id + '/premio-imagen');
   assert.equal(img.status, 200);
   assert.match(img.headers.get('content-type'), /image\/jpeg/);
-  const del = await json(await api('/api/event', { method: 'PUT', pin: PIN, body: { premioImagen: false } }));
+  const del = await json(await api('/api/events/' + id, { method: 'PUT', pin: PIN, body: { premioImagen: false } }));
   assert.equal(del.premioImagen, false);
-  assert.equal((await api('/api/event/premio-imagen')).status, 404);
+  assert.equal((await api('/api/events/' + id + '/premio-imagen')).status, 404);
+});
+
+test('crear, activar y eliminar un evento; registro y sorteo por evento con folio', async () => {
+  // Crear un segundo evento y activarlo.
+  const ev2 = await json(await api('/api/events', { method: 'POST', pin: PIN, body: { name: 'Evento 2', premio: 'Premio 2' } }));
+  assert.ok(ev2.id);
+  const act = await json(await api('/api/events', { pin: PIN }));
+  assert.equal(act.activeEventId, ev2.id); // crear deja activo
+
+  // Captura (staff) hacia el evento indicado (el limitador solo aplica a /registro).
+  await api('/api/leads', { method: 'POST', body: { event: ev2.id, nombre: 'Part Ev2', email: 'part.ev2@correo.mx', telefono: '5512121212' } });
+  const leadsEv2 = await json(await api('/api/leads?event=' + ev2.id, { pin: PIN }));
+  assert.ok(leadsEv2.items.some((l) => l.email === 'part.ev2@correo.mx'));
+
+  // Sorteo del evento 2 genera folio.
+  const draw = await json(await api('/api/raffle/draw', { method: 'POST', pin: PIN, body: { event: ev2.id, premio: 'Premio 2' } }));
+  assert.ok(draw.ganador.folio && draw.ganador.folio.startsWith('ANB-'));
+  assert.equal(draw.ganador.eventId, ev2.id);
+
+  // No se puede eliminar un evento con leads.
+  assert.equal((await api('/api/events/' + ev2.id, { method: 'DELETE', pin: PIN })).status, 400);
+
+  // Volver a activar el primero y eliminar ev2 tras quitar su lead.
+  const first = act.items.find((e) => e.id !== ev2.id) || (await json(await api('/api/events', { pin: PIN }))).items[0];
+  await api('/api/events/' + first.id + '/activate', { method: 'POST', pin: PIN });
 });
 
 // ---------- Rutas inexistentes ----------

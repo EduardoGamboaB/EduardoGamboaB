@@ -16,10 +16,12 @@ const BLOBS_DIR = path.join(DATA_DIR, 'blobs');
 
 export const MODE = process.env.DATABASE_URL ? 'postgres' : 'file';
 
-const DEFAULT_DATA = {
-  event: {
-    name: 'Anaberries · Expo',
-    edition: '2026',
+// Plantilla de un evento.
+export function nuevoEvento(over = {}) {
+  return {
+    id: newId('ev'),
+    name: 'Evento',
+    edition: '',
     tipo: '',
     premio: '',
     premioImagen: false,
@@ -28,10 +30,19 @@ const DEFAULT_DATA = {
     hora: '',
     lugar: '',
     plazoContactoDias: '',
+    // ¿Los ganadores de OTROS eventos pueden participar en éste? (default: sí)
+    permiteGanadoresPrevios: true,
+    createdAt: new Date().toISOString(),
     actualizadoAt: '',
-  },
-  leads: [],
-  draws: [],
+    ...over,
+  };
+}
+
+const DEFAULT_DATA = {
+  events: [],        // [{ id, name, ... }]
+  activeEventId: '', // evento seleccionado por defecto en el staff
+  leads: [],         // [{ ..., eventId }]
+  draws: [],         // [{ ..., eventId, folio, email, emailEnviado }]
 };
 
 let data = null;
@@ -41,9 +52,34 @@ let pool = null; // pg Pool en modo postgres
 // ---------- Utilidades ----------
 function withEventDefaults(d) {
   d = { ...structuredClone(DEFAULT_DATA), ...(d || {}) };
-  d.event = { ...structuredClone(DEFAULT_DATA.event), ...(d.event || {}) };
   if (!Array.isArray(d.leads)) d.leads = [];
   if (!Array.isArray(d.draws)) d.draws = [];
+
+  // Migración desde el esquema de evento único (d.event) a múltiples eventos.
+  if (!Array.isArray(d.events) || d.events.length === 0) {
+    const base = d.event && typeof d.event === 'object' ? d.event : {};
+    const ev = nuevoEvento({
+      name: base.name || 'Anaberries · Expo',
+      edition: base.edition || '2026',
+      tipo: base.tipo || '', premio: base.premio || '', premioImagen: !!base.premioImagen,
+      dinamica: base.dinamica || '', fecha: base.fecha || '', hora: base.hora || '',
+      lugar: base.lugar || '', plazoContactoDias: base.plazoContactoDias || '',
+      permiteGanadoresPrevios: base.permiteGanadoresPrevios !== false,
+    });
+    d.events = [ev];
+    d.activeEventId = ev.id;
+  }
+  // Normaliza campos faltantes de cada evento.
+  d.events = d.events.map((e) => ({ ...nuevoEvento(), ...e }));
+  // Evento activo válido.
+  if (!d.activeEventId || !d.events.some((e) => e.id === d.activeEventId)) {
+    d.activeEventId = d.events[0].id;
+  }
+  // Asigna eventId a leads/draws que no lo tengan (datos previos a multi-evento).
+  for (const l of d.leads) if (!l.eventId) l.eventId = d.activeEventId;
+  for (const dr of d.draws) if (!dr.eventId) dr.eventId = d.activeEventId;
+
+  delete d.event; // ya migrado
   return d;
 }
 function ensureDir(dir) { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); }
@@ -64,12 +100,12 @@ function initFile() {
     if (fs.existsSync(DATA_FILE)) {
       data = withEventDefaults(JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')));
     } else {
-      data = structuredClone(DEFAULT_DATA);
+      data = withEventDefaults(structuredClone(DEFAULT_DATA));
       persistFile();
     }
   } catch (err) {
     console.error('No se pudo leer db.json, se inicia vacío:', err.message);
-    data = structuredClone(DEFAULT_DATA);
+    data = withEventDefaults(structuredClone(DEFAULT_DATA));
   }
 }
 
@@ -96,7 +132,7 @@ async function initPg() {
   if (r.rows.length) {
     data = withEventDefaults(r.rows[0].data);
   } else {
-    data = structuredClone(DEFAULT_DATA);
+    data = withEventDefaults(structuredClone(DEFAULT_DATA));
     await pool.query('INSERT INTO app_state (id, data) VALUES (1, $1)', [JSON.stringify(data)]);
   }
   console.log('Almacenamiento: PostgreSQL conectado');
@@ -142,6 +178,11 @@ export function db() {
   if (!data) throw new Error('El almacén no está inicializado (llama a init())');
   return data;
 }
+
+// Helpers de eventos.
+export function getEvents() { return db().events; }
+export function getEvent(id) { return db().events.find((e) => e.id === id) || null; }
+export function activeEvent() { const d = db(); return getEvent(d.activeEventId) || d.events[0]; }
 
 // ---------- Blobs (imágenes) ----------
 function blobFile(key) { return path.join(BLOBS_DIR, key.replace(/[^\w.-]/g, '_') + '.bin'); }

@@ -118,7 +118,8 @@
     <section class="view" id="view-sorteo">
       <div class="card raffle-card">
         <h1>🎁 Sorteo del evento</h1>
-        <p class="muted">Selecciona un ganador al azar entre los leads capturados.</p>
+        <p class="muted">Evento: <strong id="sorteo-evento">—</strong>. Selecciona un ganador al azar entre sus leads.</p>
+        <p class="muted" id="sorteo-correo" style="margin-top:-4px"></p>
         <div class="raffle-config">
           <label>Premio
             <input id="premio" maxlength="120" placeholder="Ej. Rollo de malla antigranizo" />
@@ -143,6 +144,7 @@
       <div class="dash-head">
         <h1>📊 Seguimiento de leads</h1>
         <div class="dash-actions">
+          <select id="dash-evento" title="Filtrar por evento"><option value="">Todos los eventos</option></select>
           <a class="btn" id="btn-export" href="#">⬇ Exportar CSV</a>
           <button class="btn" id="btn-refresh">↻ Actualizar</button>
         </div>
@@ -171,9 +173,23 @@
     <!-- ============ EVENTO (administración) ============ -->
     <section class="view" id="view-evento">
       <div class="card evento-card">
-        <h1>⚙️ Administrar evento</h1>
-        <p class="muted">Configura los datos del evento actual (o de uno futuro). Al guardar, los
-          <b>Términos y Condiciones</b> se actualizan automáticamente con esta información.</p>
+        <h1>⚙️ Administrar eventos</h1>
+        <p class="muted">Crea y configura múltiples eventos. Cada uno tiene su propio <b>código QR</b>.
+          Al guardar, los <b>Términos y Condiciones</b> y la <b>landing</b> se actualizan con esta información.</p>
+
+        <div class="evento-bar">
+          <label class="evento-sel">Evento
+            <select id="evento-select"></select>
+          </label>
+          <div class="evento-bar-actions">
+            <button type="button" class="btn" id="btn-evento-nuevo">➕ Nuevo</button>
+            <button type="button" class="btn" id="btn-evento-activar">★ Marcar activo</button>
+            <a class="btn" id="btn-evento-qr" href="#" target="_blank" rel="noopener">🔳 Ver QR</a>
+            <button type="button" class="btn" id="btn-evento-eliminar">🗑 Eliminar</button>
+          </div>
+        </div>
+        <p class="evento-activo-nota" id="evento-activo-nota"></p>
+
         <form id="evento-form" autocomplete="off">
           <div class="grid2">
             <label>Nombre del evento
@@ -205,6 +221,11 @@
             <textarea name="dinamica" rows="3" maxlength="2000" placeholder="Describe cómo participar y cómo se elige al ganador. Si lo dejas vacío, se usa un texto estándar."></textarea>
           </label>
 
+          <label class="check">
+            <input type="checkbox" name="permiteGanadoresPrevios" />
+            <span>Permitir que <b>ganadores de otros eventos</b> participen en este evento</span>
+          </label>
+
           <label>Imagen del premio
             <div class="premio-upload">
               <div class="premio-preview" id="premio-preview"><span class="ph">Sin imagen</span></div>
@@ -217,8 +238,8 @@
 
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" id="btn-evento-guardar">Guardar evento</button>
-            <a class="btn" href="/terminos" target="_blank" rel="noopener">Ver Términos y Condiciones</a>
-            <a class="btn" href="/registro" target="_blank" rel="noopener">Ver landing</a>
+            <a class="btn" id="btn-evento-terminos" href="/terminos" target="_blank" rel="noopener">Ver Términos y Condiciones</a>
+            <a class="btn" id="btn-evento-landing" href="/registro" target="_blank" rel="noopener">Ver landing</a>
           </div>
           <p class="form-msg" id="evento-msg"></p>
         </form>

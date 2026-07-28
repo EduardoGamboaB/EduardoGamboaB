@@ -28,12 +28,16 @@ stand, realizar un **sorteo** de premios entre los asistentes y dar
 - **📊 Dashboard** — KPIs (totales, del día, consentimiento, ganadores),
   gráficas por producto/fuente/hora/captador, tabla con búsqueda y filtros, y
   **exportación a CSV**.
-- **⚙️ Administrar evento** — configura el evento actual o uno futuro: nombre,
-  tipo/Expo, edición, sede, **fecha y hora del concurso**, **premio** e
-  **imagen del premio**, **dinámica** y plazo de contacto al ganador. Al
-  guardar, los **Términos y Condiciones** (`/terminos`) y la landing se
-  **actualizan dinámicamente** con esa información. Reutilizable para próximos
-  eventos.
+- **⚙️ Administrar eventos (múltiples)** — crea y configura **varios eventos**;
+  cada uno con su **código QR propio** (`/qr?e=<id>`), premio, imagen, dinámica,
+  fecha/hora y sede. Al guardar, los **Términos y Condiciones** y la landing de
+  **ese evento** se actualizan dinámicamente. Incluye un interruptor por evento:
+  **¿permitir que ganadores de otros eventos participen en este?**. La captura,
+  el sorteo y el QR usan el **evento activo** por defecto.
+- **🏆 Folio del ganador por correo** — al sortear se genera un **folio**
+  (`ANB-XXXXXX`) que el ganador debe presentar. Si se configura **SMTP**, se le
+  **envía por correo** automáticamente (con opción de reenviar); si no, el folio
+  queda registrado para entregarlo a mano.
 
 ## Requisitos
 

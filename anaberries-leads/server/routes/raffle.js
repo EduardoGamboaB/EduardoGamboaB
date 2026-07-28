@@ -1,41 +1,72 @@
-// Rutas del sorteo (rifa de premios entre los leads capturados).
+// Rutas del sorteo (rifa de premios entre los leads de un evento).
 
 import { Router } from 'express';
-import { db, save, newId } from '../store.js';
+import { db, save, newId, getEvent, activeEvent } from '../store.js';
+import { sendWinnerEmail, mailerEnabled } from '../mailer.js';
 
 const router = Router();
 
-// Devuelve los leads elegibles según opciones.
-function elegibles(data, { soloConsentimiento, evitarRepetidos }) {
-  const ganadoresPrevios = new Set(data.draws.map((d) => d.leadId));
+// Resuelve el evento objetivo (query/body ?event=<id> o el activo).
+function eventoDe(req) {
+  const id = (req.query.event || req.body?.event || '').toString();
+  return (id && getEvent(id)) || activeEvent();
+}
+
+// Clave de identidad de una persona (para cruzar ganadores entre eventos).
+function persona(l) { return (l.email || '').toLowerCase() || l.telefono || l.id; }
+
+// Leads elegibles de un evento según opciones y el toggle del evento.
+function elegibles(data, ev, { soloConsentimiento, evitarRepetidos }) {
+  const ganadoresEsteEvento = new Set(data.draws.filter((d) => d.eventId === ev.id).map((d) => d.leadId));
+  // Personas que ya ganaron en OTROS eventos (para el toggle permiteGanadoresPrevios).
+  const ganadoresOtros = new Set(
+    data.draws.filter((d) => d.eventId !== ev.id)
+      .map((d) => data.leads.find((l) => l.id === d.leadId))
+      .filter(Boolean).map(persona)
+  );
   return data.leads.filter((l) => {
+    if (l.eventId !== ev.id) return false;
     if (soloConsentimiento && !l.consentimiento) return false;
-    if (evitarRepetidos && ganadoresPrevios.has(l.id)) return false;
+    if (evitarRepetidos && ganadoresEsteEvento.has(l.id)) return false;
+    if (!ev.permiteGanadoresPrevios && ganadoresOtros.has(persona(l))) return false;
     return true;
   });
 }
 
-// GET /api/raffle/eligible — cuántos participan.
+// Genera un folio legible: ANB-XXXXXX.
+function nuevoFolio() {
+  const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 6; i++) s += alfabeto[Math.floor(Math.random() * alfabeto.length)];
+  return 'ANB-' + s;
+}
+
+// GET /api/raffle/eligible — cuántos participan (por evento).
 router.get('/eligible', (req, res) => {
   const data = db();
+  const ev = eventoDe(req);
   const soloConsentimiento = req.query.consentimiento === '1';
   const evitarRepetidos = req.query.repetidos !== '0';
   res.json({
-    total: elegibles(data, { soloConsentimiento, evitarRepetidos }).length,
-    leadsTotales: data.leads.length,
-    ganadores: data.draws.length,
+    eventId: ev.id,
+    total: elegibles(data, ev, { soloConsentimiento, evitarRepetidos }).length,
+    leadsTotales: data.leads.filter((l) => l.eventId === ev.id).length,
+    ganadores: data.draws.filter((d) => d.eventId === ev.id).length,
+    permiteGanadoresPrevios: ev.permiteGanadoresPrevios,
+    correoActivo: mailerEnabled(),
   });
 });
 
-// POST /api/raffle/draw — realiza un sorteo y registra al ganador.
-router.post('/draw', (req, res) => {
+// POST /api/raffle/draw — realiza un sorteo, genera folio y notifica por correo.
+router.post('/draw', async (req, res) => {
   const b = req.body || {};
-  const premio = (b.premio || '').toString().trim().slice(0, 120) || 'Premio del evento';
+  const ev = eventoDe(req);
+  const premio = (b.premio || ev.premio || '').toString().trim().slice(0, 120) || 'Premio del evento';
   const soloConsentimiento = Boolean(b.soloConsentimiento);
   const evitarRepetidos = b.evitarRepetidos !== false; // por defecto true
 
   const data = db();
-  const pool = elegibles(data, { soloConsentimiento, evitarRepetidos });
+  const pool = elegibles(data, ev, { soloConsentimiento, evitarRepetidos });
   if (pool.length === 0) {
     return res.status(400).json({ error: 'No hay leads elegibles para el sorteo' });
   }
@@ -43,23 +74,49 @@ router.post('/draw', (req, res) => {
   const ganador = pool[Math.floor(Math.random() * pool.length)];
   const draw = {
     id: newId('draw'),
+    eventId: ev.id,
     premio,
+    folio: nuevoFolio(),
     leadId: ganador.id,
     nombre: ganador.nombre,
     empresa: ganador.empresa,
     telefono: ganador.telefono,
     email: ganador.email,
     participantes: pool.length,
+    emailEnviado: false,
     createdAt: new Date().toISOString(),
   };
+
+  // Notificación por correo (best-effort; el folio queda registrado siempre).
+  const r = await sendWinnerEmail({
+    to: ganador.email, nombre: ganador.nombre, premio, folio: draw.folio,
+    evento: ev.name, fecha: ev.fecha, hora: ev.hora, lugar: ev.lugar,
+  });
+  draw.emailEnviado = !!r.sent;
+  draw.emailEstado = r.sent ? 'enviado' : (r.skipped ? 'omitido' : 'error');
+
   data.draws.push(draw);
   save();
   res.status(201).json({ ganador: draw });
 });
 
-// GET /api/raffle/winners — historial de ganadores.
-router.get('/winners', (_req, res) => {
-  res.json({ items: [...db().draws].reverse() });
+// GET /api/raffle/winners — historial de ganadores (del evento).
+router.get('/winners', (req, res) => {
+  const ev = eventoDe(req);
+  res.json({ items: db().draws.filter((d) => d.eventId === ev.id).reverse() });
+});
+
+// POST /api/raffle/winners/:id/resend — reenvía el correo al ganador.
+router.post('/winners/:id/resend', async (req, res) => {
+  const data = db();
+  const d = data.draws.find((x) => x.id === req.params.id);
+  if (!d) return res.status(404).json({ error: 'Sorteo no encontrado' });
+  const ev = getEvent(d.eventId) || activeEvent();
+  const r = await sendWinnerEmail({ to: d.email, nombre: d.nombre, premio: d.premio, folio: d.folio, evento: ev.name, fecha: ev.fecha, hora: ev.hora, lugar: ev.lugar });
+  d.emailEnviado = !!r.sent;
+  d.emailEstado = r.sent ? 'enviado' : (r.skipped ? 'omitido' : 'error');
+  save();
+  res.json({ ok: true, estado: d.emailEstado });
 });
 
 // DELETE /api/raffle/winners/:id — anular un sorteo (repetir).

@@ -6,7 +6,7 @@ sorteo y dashboard para el evento de Anaberries.
 - **Fecha:** 2026-07-25
 - **Versión:** 1.0.0
 - **Entorno de prueba:** Node.js v22, servidor local, almacén JSON temporal.
-- **Resultado global:** ✅ **37/37 pruebas automatizadas aprobadas** + validación visual de las pantallas (incluye captura por foto del gafete con OCR, la landing pública de autoregistro por QR y la administración del evento con Términos y Condiciones dinámicos).
+- **Resultado global:** ✅ **38/38 pruebas automatizadas aprobadas** (en modo archivo y PostgreSQL) + E2E + validación visual. Incluye captura por OCR del gafete, autoregistro por QR, **múltiples eventos con QR propio**, **folio del ganador y notificación por correo**, y Términos y Condiciones dinámicos por evento.
 
 ## 1. Cómo ejecutar las pruebas
 
