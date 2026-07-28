@@ -108,22 +108,47 @@ export function authenticate(email, password) {
   return u;
 }
 
-// Crea el administrador inicial si no existe ningún usuario.
-// Con ADMIN_RESET=true fuerza que el usuario ADMIN_EMAIL exista con la contraseña
-// de ADMIN_PASSWORD y rol admin (útil para (re)establecer el acceso en producción).
+// Garantiza el acceso de administrador en el arranque, de forma idempotente:
+//
+//  1) Base sin usuarios  → crea el admin inicial (ADMIN_EMAIL/ADMIN_PASSWORD o los
+//     valores por defecto).
+//  2) Ya hay usuarios pero se definió ADMIN_EMAIL y ese admin NO existe → lo crea.
+//     Cubre el caso típico de producción: la base ya tenía un admin por defecto y
+//     después se configura otro correo. No modifica usuarios existentes (no pisa
+//     contraseñas), solo agrega el que falta.
+//  3) ADMIN_RESET=true → (re)establece la contraseña del admin ADMIN_EMAIL aunque
+//     ya exista (útil para recuperar el acceso si se olvidó la contraseña).
 export function ensureAdmin() {
+  // 1) Primer arranque: base vacía.
   if (getUsers().length === 0) {
     createUser({ email: config.adminEmail, name: config.adminName, password: config.adminPassword, role: 'admin' });
     const usingDefault = config.adminPassword === 'mallatex' && !process.env.ADMIN_PASSWORD && !process.env.STAFF_PIN;
     console.log(`Usuario administrador creado: ${config.adminEmail}` + (usingDefault ? ' (contraseña por defecto "mallatex" — cámbiala)' : ''));
     return { seeded: true, email: config.adminEmail };
   }
+
+  const result = {};
+
+  // 2) ADMIN_EMAIL explícito cuyo usuario aún no existe → crearlo (sin tocar a los demás).
+  if (process.env.ADMIN_EMAIL && !getUserByEmail(config.adminEmail)) {
+    createUser({ email: config.adminEmail, name: config.adminName, password: config.adminPassword, role: 'admin' });
+    console.log(`Administrador agregado (ADMIN_EMAIL): ${config.adminEmail}`);
+    result.created = true;
+  }
+
+  // 3) ADMIN_RESET=true → restablece (o crea) el admin ADMIN_EMAIL con ADMIN_PASSWORD.
   if (process.env.ADMIN_RESET === 'true') {
     const u = getUserByEmail(config.adminEmail);
-    if (u) { u.passwordHash = hashPassword(config.adminPassword); u.role = 'admin'; u.activo = true; save(); console.log(`Administrador restablecido por ADMIN_RESET: ${config.adminEmail}`); return { reset: true }; }
-    createUser({ email: config.adminEmail, name: config.adminName, password: config.adminPassword, role: 'admin' });
-    console.log(`Administrador creado por ADMIN_RESET: ${config.adminEmail}`);
-    return { created: true };
+    if (u) {
+      u.passwordHash = hashPassword(config.adminPassword); u.role = 'admin'; u.activo = true; save();
+      console.log(`Administrador restablecido por ADMIN_RESET: ${config.adminEmail}`);
+      result.reset = true;
+    } else {
+      createUser({ email: config.adminEmail, name: config.adminName, password: config.adminPassword, role: 'admin' });
+      console.log(`Administrador creado por ADMIN_RESET: ${config.adminEmail}`);
+      result.created = true;
+    }
   }
-  return { seeded: false };
+
+  return Object.keys(result).length ? result : { seeded: false };
 }
