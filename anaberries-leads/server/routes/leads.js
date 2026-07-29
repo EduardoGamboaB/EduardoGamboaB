@@ -52,7 +52,6 @@ export const INTERESES = [
   'Malla antiáfidos / antiinsectos',
   'Rafia / cintilla',
   'Acolchado plástico (mulch)',
-  'Cubierta flotante (agribón)',
   'Sistema de tutoreo',
   'Otro',
 ];
