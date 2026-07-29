@@ -129,6 +129,8 @@ label.check input { width: auto; }
   font-size: 13.5px; font-weight: 600; color: var(--ink-700); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: .15s;
 }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: not-allowed; border-color: var(--line); color: var(--ink-400); background: #fff; }
+.btn-primary:disabled { background: var(--ink-400); border-color: var(--ink-400); color: #fff; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn-primary:hover { background: var(--accent-600); border-color: var(--accent-600); color: #fff; }
 .btn-lg { padding: 14px 28px; font-size: 15px; width: 100%; justify-content: center; margin-top: 18px; }

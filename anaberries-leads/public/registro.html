@@ -12,7 +12,7 @@
   <meta property="og:title" content="Regístrate y participa · Mallatex" />
   <meta property="og:description" content="Regístrate en el stand de Mallatex en el evento Anaberries y participa por un premio." />
   <meta property="og:url" content="https://sorteo-mallatex.com/registro" />
-  <link rel="stylesheet" href="/css/landing.css?v=4" />
+  <link rel="stylesheet" href="/css/landing.css?v=5" />
 </head>
 <body>
   <header class="hero">
@@ -48,6 +48,19 @@
           </label>
           <label>Empresa / rancho
             <input name="empresa" maxlength="160" autocomplete="organization" placeholder="Ej. Agrícola del Valle" />
+          </label>
+          <label>Estado
+            <select name="estado" id="sel-estado">
+              <option value="">Selecciona tu estado…</option>
+              <option>Aguascalientes</option><option>Baja California</option><option>Baja California Sur</option>
+              <option>Campeche</option><option>Chiapas</option><option>Chihuahua</option><option>Ciudad de México</option>
+              <option>Coahuila</option><option>Colima</option><option>Durango</option><option>Estado de México</option>
+              <option>Guanajuato</option><option>Guerrero</option><option>Hidalgo</option><option>Jalisco</option>
+              <option>Michoacán</option><option>Morelos</option><option>Nayarit</option><option>Nuevo León</option>
+              <option>Oaxaca</option><option>Puebla</option><option>Querétaro</option><option>Quintana Roo</option>
+              <option>San Luis Potosí</option><option>Sinaloa</option><option>Sonora</option><option>Tabasco</option>
+              <option>Tamaulipas</option><option>Tlaxcala</option><option>Veracruz</option><option>Yucatán</option><option>Zacatecas</option>
+            </select>
           </label>
           <div class="grid2">
             <label>Celular <span class="req">*</span>
@@ -87,7 +100,13 @@
         <div class="check">✓</div>
         <h2 id="ok-title">¡Registro exitoso!</h2>
         <p>Ya participas en el sorteo del stand.</p>
+        <div id="ok-folio-box" class="folio-box" hidden>
+          <span class="folio-label">Tu folio de registro</span>
+          <span class="folio-code" id="ok-folio">—</span>
+          <span class="folio-hint">📝 Anótalo o toma una captura. Con él se te identifica en el sorteo.</span>
+        </div>
         <p>Si resultas ganador, te contactaremos por correo o celular.</p>
+        <p class="gafete-note">⚠ Tus datos deben <strong>coincidir con tu gafete de registro</strong> del evento.</p>
         <p style="margin-top:14px"><strong>¡Gracias por visitarnos!</strong></p>
         <p id="redir-note" class="redir-note">Te llevaremos al sitio oficial de Mallatex…
           <a href="https://mallatex.com.mx/" rel="noopener">Ir ahora</a></p>
@@ -97,6 +116,6 @@
 
   <p class="foot">Mallatex · Protegemos lo que siembras — Evento Anaberries</p>
 
-  <script src="/js/registro.js?v=4" type="module"></script>
+  <script src="/js/registro.js?v=5" type="module"></script>
 </body>
 </html>

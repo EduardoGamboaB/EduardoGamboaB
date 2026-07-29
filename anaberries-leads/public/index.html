@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Anaberries · Captura de Leads — Mallatex</title>
   <meta name="theme-color" content="#ed3237" />
-  <link rel="stylesheet" href="/css/styles.css?v=4" />
+  <link rel="stylesheet" href="/css/styles.css?v=5" />
 </head>
 <body>
   <!-- ============ LOGIN ============ -->
@@ -116,6 +116,19 @@
             <label>Empresa / rancho
               <input name="empresa" maxlength="160" placeholder="Ej. Agrícola del Valle" />
             </label>
+            <label>Estado
+              <select name="estado" id="sel-estado">
+                <option value="">Selecciona…</option>
+                <option>Aguascalientes</option><option>Baja California</option><option>Baja California Sur</option>
+                <option>Campeche</option><option>Chiapas</option><option>Chihuahua</option><option>Ciudad de México</option>
+                <option>Coahuila</option><option>Colima</option><option>Durango</option><option>Estado de México</option>
+                <option>Guanajuato</option><option>Guerrero</option><option>Hidalgo</option><option>Jalisco</option>
+                <option>Michoacán</option><option>Morelos</option><option>Nayarit</option><option>Nuevo León</option>
+                <option>Oaxaca</option><option>Puebla</option><option>Querétaro</option><option>Quintana Roo</option>
+                <option>San Luis Potosí</option><option>Sinaloa</option><option>Sonora</option><option>Tabasco</option>
+                <option>Tamaulipas</option><option>Tlaxcala</option><option>Veracruz</option><option>Yucatán</option><option>Zacatecas</option>
+              </select>
+            </label>
             <label>Celular (10 dígitos)
               <input name="telefono" type="tel" maxlength="10" inputmode="numeric" placeholder="10 dígitos" />
             </label>
@@ -221,7 +234,7 @@
         </div>
         <div class="table-wrap">
           <table class="leads-table">
-            <thead><tr><th>Nombre</th><th>Empresa</th><th>Contacto</th><th>Interés</th><th>Fuente</th><th>Fecha</th><th></th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Empresa</th><th>Contacto</th><th>Interés</th><th>Fuente</th><th>Evento</th><th>Fecha</th><th></th></tr></thead>
             <tbody id="leads-tbody"></tbody>
           </table>
         </div>
@@ -344,6 +357,6 @@
   </div><!-- /#app-shell -->
 
   <script src="/vendor/tesseract/tesseract.min.js"></script>
-  <script src="/js/app.js?v=4" type="module"></script>
+  <script src="/js/app.js?v=5" type="module"></script>
 </body>
 </html>
