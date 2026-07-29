@@ -341,3 +341,6 @@ label.check input { width: auto; }
 .modal-card #idle-count { color: var(--accent); font-size: 18px; }
 .modal-actions { display: flex; gap: 10px; justify-content: center; }
 .modal-actions .btn { min-width: 130px; justify-content: center; }
+.mail-test-msg { margin: 6px 0 0; font-size: 12.5px; min-height: 16px; }
+.mail-test-msg.ok { color: var(--ok); }
+.mail-test-msg.err { color: var(--err); word-break: break-word; }

@@ -604,12 +604,18 @@ async function loadPool() {
 // Enviar un correo de prueba (verifica la integración de correo).
 $('#btn-test-mail')?.addEventListener('click', async () => {
   const btn = $('#btn-test-mail');
+  const msg = $('#mail-test-msg');
   btn.disabled = true;
+  if (msg) { msg.textContent = 'Enviando correo de prueba…'; msg.className = 'mail-test-msg'; }
   try {
     const r = await api('/raffle/test-mail', { method: 'POST', body: {} });
-    toast('Correo de prueba enviado a ' + r.to, 'ok');
-  } catch (err) { toast(err.message || 'No se pudo enviar el correo de prueba', 'err'); }
-  finally { btn.disabled = false; }
+    if (msg) { msg.textContent = '✓ Correo de prueba enviado a ' + r.to + ' (' + (r.proveedor || 'correo') + ').'; msg.className = 'mail-test-msg ok'; }
+    toast('Correo de prueba enviado', 'ok');
+  } catch (err) {
+    const detalle = err.message || 'No se pudo enviar el correo de prueba';
+    if (msg) { msg.textContent = '✖ ' + detalle; msg.className = 'mail-test-msg err'; }
+    toast('No se pudo enviar', 'err');
+  } finally { btn.disabled = false; }
 });
 $('#opt-consent').addEventListener('change', loadPool);
 $('#opt-repes').addEventListener('change', loadPool);
