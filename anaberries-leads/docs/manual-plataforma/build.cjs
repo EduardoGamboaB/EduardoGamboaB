@@ -27,8 +27,9 @@ w(`<section class="cover">
   <div class="cover-sub">Plataforma de Captura de Leads y Sorteos</div>
   <div class="cover-title">MANUAL DE USO</div>
   <div class="cover-desc">Guía completa de la plataforma «Mallatex · Sorteos»: acceso y sesión, administración de eventos, registro del visitante por QR, captura del staff, sorteo, dashboard y usuarios.</div>
-  <div class="cover-meta">Versión 2.0 · Julio 2026 · Uso interno</div>
+  <div class="cover-meta">Versión 2.1 · Julio 2026 · Uso interno</div>
   <div class="cover-foot">Mallatex · <b>Protegemos lo que siembras</b></div>
+  <div class="cover-powered">Powered by <b>Evorgyn</b></div>
 </section>`);
 sec();
 
@@ -96,6 +97,10 @@ ul([
   `Si presionas ${B('Continuar sesión')}, la sesión se mantiene.`,
   `Si ${B('no confirmas')}, la sesión ${B('se cierra automáticamente')} y regresas al login.`,
 ]);
+w('<div class="row2">');
+img('p-perfil.png', 'Mi perfil: datos, edición y cambio de contraseña.');
+img('p-inactividad.png', 'Aviso de cierre por inactividad con cuenta regresiva.');
+w('</div>');
 note(`Útil en dispositivos compartidos del stand: evita que una sesión quede abierta sin vigilancia.`);
 sec();
 
@@ -107,8 +112,8 @@ ul([
   `En ${B('teléfonos')}, las pestañas se agrupan en un ${B('menú ☰ (hamburguesa)')}: tócalo para abrir y elegir la sección. El diseño es ${B('responsivo y adaptativo')}.`,
 ]);
 w('<div class="row2">');
+img('p-movil-menu.png', 'Menú hamburguesa desplegado en teléfono.', 'phone');
 img('27-movil-captura.png', 'Vista en teléfono (captura).', 'phone');
-img('28-movil-sorteo.png', 'Vista en teléfono (sorteo).', 'phone');
 w('</div>');
 sec();
 
@@ -266,7 +271,7 @@ h2('Durante el evento');
 ul(['Invitar a escanear el QR.', 'Registrar a quien no pueda (manual o gafete).', 'Verificar correo y celular de cada lead.', 'Vigilar el Dashboard.']);
 h2('En el sorteo y cierre');
 ul(['Sortear con el evento vigente, en el horario anunciado.', 'Contactar al ganador con su folio.', 'Exportar el CSV de leads.', 'Finalizar el evento (pasa al histórico).']);
-w(`<div class="end">Mallatex · Sorteos — Manual de Uso · <b>Protegemos lo que siembras</b></div>`);
+w(`<div class="end">Mallatex · Sorteos — Manual de Uso · <b>Protegemos lo que siembras</b><br><span class="powered">Powered by <b>Evorgyn</b></span></div>`);
 
 // ---------- Documento ----------
 const STYLE = `
@@ -299,6 +304,8 @@ const STYLE = `
   .cover-desc{ color:var(--gray); font-size:15px; margin-top:26px; max-width:500px; }
   .cover-meta{ margin-top:120px; color:var(--ink); font-size:14px; }
   .cover-foot{ margin-top:6px; color:var(--gray); font-size:14px; } .cover-foot b{ color:var(--red2); }
+  .cover-powered{ margin-top:22px; color:var(--gray); font-size:12.5px; letter-spacing:.03em; } .cover-powered b{ color:var(--black); }
+  .powered{ color:var(--gray); font-size:11px; } .powered b{ color:var(--black); }
   .toc-item{ display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px dotted var(--line); font-size:13px; }
   .toc-item span{ color:var(--black); }
   .end{ margin-top:40px; padding-top:14px; border-top:2px solid var(--red); text-align:center; color:var(--gray); font-size:12px; } .end b{ color:var(--red2); }

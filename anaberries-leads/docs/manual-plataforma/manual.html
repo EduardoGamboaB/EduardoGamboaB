@@ -28,6 +28,8 @@
   .cover-desc{ color:var(--gray); font-size:15px; margin-top:26px; max-width:500px; }
   .cover-meta{ margin-top:120px; color:var(--ink); font-size:14px; }
   .cover-foot{ margin-top:6px; color:var(--gray); font-size:14px; } .cover-foot b{ color:var(--red2); }
+  .cover-powered{ margin-top:22px; color:var(--gray); font-size:12.5px; letter-spacing:.03em; } .cover-powered b{ color:var(--black); }
+  .powered{ color:var(--gray); font-size:11px; } .powered b{ color:var(--black); }
   .toc-item{ display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px dotted var(--line); font-size:13px; }
   .toc-item span{ color:var(--black); }
   .end{ margin-top:40px; padding-top:14px; border-top:2px solid var(--red); text-align:center; color:var(--gray); font-size:12px; } .end b{ color:var(--red2); }
@@ -36,8 +38,9 @@
   <div class="cover-sub">Plataforma de Captura de Leads y Sorteos</div>
   <div class="cover-title">MANUAL DE USO</div>
   <div class="cover-desc">Guía completa de la plataforma «Mallatex · Sorteos»: acceso y sesión, administración de eventos, registro del visitante por QR, captura del staff, sorteo, dashboard y usuarios.</div>
-  <div class="cover-meta">Versión 2.0 · Julio 2026 · Uso interno</div>
+  <div class="cover-meta">Versión 2.1 · Julio 2026 · Uso interno</div>
   <div class="cover-foot">Mallatex · <b>Protegemos lo que siembras</b></div>
+  <div class="cover-powered">Powered by <b>Evorgyn</b></div>
 </section>
 <div class="page-break"></div>
 <h1 class="toc-title">Contenido</h1><nav class="toc"><div class="toc-item"><span>1. Introducción y visión general</span></div><div class="toc-item"><span>2. Acceso y sesión</span></div><div class="toc-item"><span>3. Perfil y cierre por inactividad</span></div><div class="toc-item"><span>4. Navegación del panel (menú, logo, móvil)</span></div><div class="toc-item"><span>5. Administrar eventos (CRUD)</span></div><div class="toc-item"><span>6. Registro del visitante por QR</span></div><div class="toc-item"><span>7. Captura por el staff</span></div><div class="toc-item"><span>8. El sorteo</span></div><div class="toc-item"><span>9. Dashboard de seguimiento</span></div><div class="toc-item"><span>10. Administración de usuarios</span></div><div class="toc-item"><span>11. Buenas prácticas y solución de problemas</span></div><div class="toc-item"><span>12. Checklist rápido</span></div></nav>
@@ -67,13 +70,17 @@
 <h2>3.2 Cierre por inactividad</h2>
 <p>Por seguridad, si dejas la sesión <b>inactiva</b> un tiempo, aparece un aviso «¿Sigues ahí?» con una <b>cuenta regresiva de 30 segundos</b>:</p>
 <ul><li>Si presionas <b>Continuar sesión</b>, la sesión se mantiene.</li><li>Si <b>no confirmas</b>, la sesión <b>se cierra automáticamente</b> y regresas al login.</li></ul>
+<div class="row2">
+<figure class=""><img src="../screenshots/p-perfil.png"/><figcaption>Mi perfil: datos, edición y cambio de contraseña.</figcaption></figure>
+<figure class=""><img src="../screenshots/p-inactividad.png"/><figcaption>Aviso de cierre por inactividad con cuenta regresiva.</figcaption></figure>
+</div>
 <div class="note ">Útil en dispositivos compartidos del stand: evita que una sesión quede abierta sin vigilancia.</div>
 <div class="page-break"></div>
 <h1 id="s4"><span class="num">4</span> Navegación del panel</h1>
 <ul><li>Usa las <b>pestañas</b> superiores para moverte entre Captura, Sorteo, Dashboard, Evento y Usuarios.</li><li>El <b>logo de Mallatex</b> siempre te lleva al <b>primer menú (Captura)</b>.</li><li>En <b>teléfonos</b>, las pestañas se agrupan en un <b>menú ☰ (hamburguesa)</b>: tócalo para abrir y elegir la sección. El diseño es <b>responsivo y adaptativo</b>.</li></ul>
 <div class="row2">
+<figure class="phone"><img src="../screenshots/p-movil-menu.png"/><figcaption>Menú hamburguesa desplegado en teléfono.</figcaption></figure>
 <figure class="phone"><img src="../screenshots/27-movil-captura.png"/><figcaption>Vista en teléfono (captura).</figcaption></figure>
-<figure class="phone"><img src="../screenshots/28-movil-sorteo.png"/><figcaption>Vista en teléfono (sorteo).</figcaption></figure>
 </div>
 <div class="page-break"></div>
 <h1 id="s5"><span class="num">5</span> Administrar eventos (CRUD)</h1>
@@ -149,4 +156,4 @@
 <ul><li>Invitar a escanear el QR.</li><li>Registrar a quien no pueda (manual o gafete).</li><li>Verificar correo y celular de cada lead.</li><li>Vigilar el Dashboard.</li></ul>
 <h2>En el sorteo y cierre</h2>
 <ul><li>Sortear con el evento vigente, en el horario anunciado.</li><li>Contactar al ganador con su folio.</li><li>Exportar el CSV de leads.</li><li>Finalizar el evento (pasa al histórico).</li></ul>
-<div class="end">Mallatex · Sorteos — Manual de Uso · <b>Protegemos lo que siembras</b></div></body></html>
+<div class="end">Mallatex · Sorteos — Manual de Uso · <b>Protegemos lo que siembras</b><br><span class="powered">Powered by <b>Evorgyn</b></span></div></body></html>
