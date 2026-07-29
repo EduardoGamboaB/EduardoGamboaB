@@ -59,6 +59,9 @@ test('E2E · jornada completa del stand', async (t) => {
   try {
     // ---------- 1) Visitante: autoregistro desde la landing (móvil) ----------
     const visitor = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+    // Intercepta la redirección al sitio oficial para no depender de red externa.
+    await visitor.route('**://mallatex.com.mx/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>sitio oficial (stub)</body></html>' }));
     await visitor.goto(BASE + '/registro', { waitUntil: 'networkidle' });
     await visitor.fill('[name=nombre]', 'Visitante E2E');
     await visitor.fill('[name=empresa]', 'Agrícola E2E');
@@ -69,6 +72,11 @@ test('E2E · jornada completa del stand', async (t) => {
     await visitor.click('#btn-enviar');
     await visitor.waitForSelector('#ok-view:not([hidden])', { timeout: 8000 });
     assert.ok(await visitor.isVisible('#ok-view'), 'la landing muestra confirmación');
+    // Enlace de respaldo al sitio oficial visible en la confirmación.
+    assert.equal(await visitor.getAttribute('#redir-note a', 'href'), 'https://mallatex.com.mx/', 'ofrece enlace al sitio oficial');
+    // Tras el registro exitoso, redirige al sitio oficial de Mallatex.
+    await visitor.waitForURL('**://mallatex.com.mx/**', { timeout: 8000 });
+    assert.match(visitor.url(), /mallatex\.com\.mx/, 'redirige al sitio oficial tras el registro');
     await visitor.close();
 
     // ---------- 2) Staff: inicia sesión + administrar evento ----------

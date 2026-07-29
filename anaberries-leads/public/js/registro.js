@@ -99,6 +99,9 @@ $('#registro-form').addEventListener('submit', async (e) => {
     $('#form-view').hidden = true;
     $('#ok-view').hidden = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Tras el registro exitoso, redirige al sitio oficial de Mallatex
+    // (se muestra la confirmación unos segundos y luego se redirige).
+    setTimeout(function () { window.location.href = 'https://mallatex.com.mx/'; }, 3500);
   } catch (err) {
     fail(err.message || 'No se pudo completar el registro');
     btn.disabled = false;
