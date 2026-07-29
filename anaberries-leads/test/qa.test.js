@@ -355,11 +355,18 @@ test('la imagen del premio (por evento) se guarda, se sirve y se quita', async (
 });
 
 test('crear, activar y eliminar un evento; registro y sorteo por evento con folio', async () => {
-  // Crear un segundo evento y activarlo.
+  // Crear un segundo evento NO debe robar el activo si ya hay uno vigente.
+  const before = await json(await api('/api/events', { pin: PIN }));
+  const beforeActive = before.items.find((e) => e.id === before.activeEventId);
   const ev2 = await json(await api('/api/events', { method: 'POST', pin: PIN, body: { name: 'Evento 2', premio: 'Premio 2' } }));
   assert.ok(ev2.id);
   const act = await json(await api('/api/events', { pin: PIN }));
-  assert.equal(act.activeEventId, ev2.id); // crear deja activo
+  if (beforeActive && !beforeActive.finalizado) {
+    assert.equal(act.activeEventId, before.activeEventId, 'crear no roba el activo vigente');
+    assert.notEqual(act.activeEventId, ev2.id);
+  }
+  // Activar explícitamente el evento nuevo.
+  await api('/api/events/' + ev2.id + '/activate', { method: 'POST', pin: PIN });
 
   // Captura (staff) hacia el evento indicado (el limitador solo aplica a /registro).
   await api('/api/leads', { method: 'POST', body: { event: ev2.id, nombre: 'Part Ev2', email: 'part.ev2@correo.mx', telefono: '5512121212' } , pin: PIN });

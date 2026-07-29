@@ -686,7 +686,57 @@ async function loadEventoAdmin() {
   const ok = await loadEventos();
   if (!ok) return;
   selectEvento(eventos.selectedId || eventos.activeId);
+  renderEventosLista();
 }
+
+// Estado visible de un evento.
+function estadoEvento(e) {
+  if (e.finalizado) return { txt: 'Finalizado', cls: 'est-fin' };
+  if (e.id === eventos.activeId) return { txt: '★ Activo', cls: 'est-act' };
+  return { txt: 'Vigente', cls: 'est-vig' };
+}
+
+// Tabla CRUD de eventos con acciones por fila.
+function renderEventosLista() {
+  const tb = $('#eventos-tbody');
+  if (!tb) return;
+  tb.innerHTML = eventos.list.map((e) => {
+    const st = estadoEvento(e);
+    const fecha = e.fecha ? escapeHtml(e.fecha + (e.hora ? ' ' + e.hora : '')) : '—';
+    const activar = e.id === eventos.activeId ? '' : `<button class="btn-mini" data-act="activar" data-id="${e.id}" title="Marcar activo">★</button>`;
+    const finReab = e.finalizado
+      ? `<button class="btn-mini" data-act="reabrir" data-id="${e.id}" title="Reabrir evento">↩︎</button>`
+      : `<button class="btn-mini" data-act="finalizar" data-id="${e.id}" title="Finalizar evento">🏁</button>`;
+    return `<tr class="${e.id === eventos.selectedId ? 'sel' : ''}">
+      <td><strong>${escapeHtml(e.name || '—')}</strong>${e.tipo ? `<div class="contact">${escapeHtml(e.tipo)}</div>` : ''}</td>
+      <td>${escapeHtml(e.edition || '—')}</td>
+      <td class="contact">${fecha}</td>
+      <td><span class="est ${st.cls}">${st.txt}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-mini" data-act="editar" data-id="${e.id}" title="Editar">✏️</button>
+        ${activar}${finReab}
+        <a class="btn-mini" href="/qr?e=${encodeURIComponent(e.id)}" target="_blank" rel="noopener" title="Ver QR">🔳</a>
+        <button class="del-lead" data-act="eliminar" data-id="${e.id}" title="Eliminar">🗑</button>
+      </td></tr>`;
+  }).join('') || '<tr><td colspan="5" class="empty">Sin eventos. Crea el primero con «Nuevo».</td></tr>';
+}
+
+// Acciones de cada fila de la lista de eventos.
+$('#eventos-tbody')?.addEventListener('click', async (ev) => {
+  const btn = ev.target.closest('[data-act]');
+  if (!btn) return;
+  const id = btn.dataset.id; const act = btn.dataset.act;
+  if (act === 'editar') { selectEvento(id); renderEventosLista(); $('#evento-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  try {
+    if (act === 'activar') { await api('/events/' + id + '/activate', { method: 'POST', staff: true }); toast('Evento marcado como activo', 'ok'); }
+    else if (act === 'finalizar') { if (!confirm('¿Finalizar este evento? Pasará al histórico y ya no aparecerá para sortear.')) return; await api('/events/' + id + '/finalizar', { method: 'POST', staff: true }); toast('Evento finalizado', 'ok'); }
+    else if (act === 'reabrir') { await api('/events/' + id + '/reabrir', { method: 'POST', staff: true }); toast('Evento reabierto', 'ok'); }
+    else if (act === 'eliminar') { if (!confirm('¿Eliminar este evento? (no debe tener leads registrados)')) return; await api('/events/' + id, { method: 'DELETE', staff: true }); if (eventos.selectedId === id) eventos.selectedId = ''; toast('Evento eliminado', 'ok'); }
+    await loadEventos();
+    selectEvento(eventos.selectedId || eventos.activeId);
+    renderEventosLista();
+  } catch (err) { toast(err.message, 'err'); }
+});
 
 function selectEvento(id) {
   const e = eventos.list.find((x) => x.id === id) || eventos.list[0];
@@ -709,6 +759,7 @@ function selectEvento(id) {
     ? '<span class="tag">★ Evento activo</span> — es el que usan por defecto la captura, el sorteo y el QR.'
     : 'Este evento no es el activo. Usa «Marcar activo» para que sea el predeterminado.';
   $('#evento-msg').textContent = '';
+  renderEventosLista();
 }
 
 $('#evento-select').addEventListener('change', (e) => selectEvento(e.target.value));
@@ -802,6 +853,7 @@ $('#evento-form').addEventListener('submit', async (e) => {
     msg.className = 'form-msg ok';
     eventos.premioImagen = undefined;
     await loadEventos(); // refresca nombres/activo en los selectores y la barra
+    renderEventosLista(); // refresca la fila en la lista CRUD
   } catch (err) {
     msg.textContent = err.message || 'No se pudo guardar';
     msg.className = 'form-msg err';
