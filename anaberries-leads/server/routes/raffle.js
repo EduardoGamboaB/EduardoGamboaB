@@ -2,7 +2,7 @@
 
 import { Router } from 'express';
 import { db, save, newId, getEvent, activeEvent } from '../store.js';
-import { sendWinnerEmail, mailerEnabled } from '../mailer.js';
+import { sendWinnerEmail, sendTestEmail, mailerEnabled, mailerProvider } from '../mailer.js';
 
 const router = Router();
 
@@ -56,7 +56,7 @@ router.get('/eligible', (req, res) => {
   const ev = eventoVigente(req);
   // Sin evento vigente: no hay sorteo posible (total 0).
   if (!ev) {
-    return res.json({ eventId: null, vigente: false, total: 0, leadsTotales: 0, ganadores: 0, correoActivo: mailerEnabled() });
+    return res.json({ eventId: null, vigente: false, total: 0, leadsTotales: 0, ganadores: 0, correoActivo: mailerEnabled(), correoProveedor: mailerProvider() });
   }
   const soloConsentimiento = req.query.consentimiento === '1';
   const evitarRepetidos = req.query.repetidos !== '0';
@@ -68,7 +68,18 @@ router.get('/eligible', (req, res) => {
     ganadores: data.draws.filter((d) => d.eventId === ev.id).length,
     permiteGanadoresPrevios: ev.permiteGanadoresPrevios,
     correoActivo: mailerEnabled(),
+    correoProveedor: mailerProvider(),
   });
+});
+
+// POST /api/raffle/test-mail — envía un correo de prueba (verifica la integración).
+router.post('/test-mail', async (req, res) => {
+  if (!mailerEnabled()) return res.status(400).json({ error: 'El envío de correo no está configurado (Mailchimp/SMTP).' });
+  const to = (req.body?.to || req.user?.email || '').toString().trim();
+  if (!to) return res.status(400).json({ error: 'Indica un correo destino' });
+  const r = await sendTestEmail(to);
+  if (r.sent) return res.json({ ok: true, to, proveedor: mailerProvider() });
+  res.status(502).json({ error: r.error || 'No se pudo enviar el correo de prueba', skipped: !!r.skipped });
 });
 
 // POST /api/raffle/draw — realiza un sorteo, genera folio y notifica por correo.

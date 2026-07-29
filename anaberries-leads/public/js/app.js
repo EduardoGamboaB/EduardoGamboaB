@@ -591,13 +591,26 @@ async function loadPool() {
     $('#pool-count').textContent = data.total;
     if (!vigente) {
       $('#sorteo-correo').textContent = '⚠ No hay un evento vigente. Activa o crea un evento (pestaña Evento) para poder sortear.';
+      if ($('#btn-test-mail')) $('#btn-test-mail').hidden = true;
     } else {
       $('#sorteo-correo').textContent = data.correoActivo
-        ? '✉ El ganador recibirá su folio por correo automáticamente.'
-        : '✉ Envío de correo no configurado: entrega el folio manualmente (o configura SMTP).';
+        ? `✉ El ganador recibirá su folio por correo automáticamente${data.correoProveedor ? ' (' + data.correoProveedor + ')' : ''}.`
+        : '✉ Envío de correo no configurado: entrega el folio manualmente (o configura Mailchimp/SMTP).';
+      if ($('#btn-test-mail')) $('#btn-test-mail').hidden = !data.correoActivo;
     }
   } catch { /* sin acceso */ }
 }
+
+// Enviar un correo de prueba (verifica la integración de correo).
+$('#btn-test-mail')?.addEventListener('click', async () => {
+  const btn = $('#btn-test-mail');
+  btn.disabled = true;
+  try {
+    const r = await api('/raffle/test-mail', { method: 'POST', body: {} });
+    toast('Correo de prueba enviado a ' + r.to, 'ok');
+  } catch (err) { toast(err.message || 'No se pudo enviar el correo de prueba', 'err'); }
+  finally { btn.disabled = false; }
+});
 $('#opt-consent').addEventListener('change', loadPool);
 $('#opt-repes').addEventListener('change', loadPool);
 $('#sorteo-evento-sel')?.addEventListener('change', async () => {

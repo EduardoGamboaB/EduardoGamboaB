@@ -13,7 +13,14 @@ export const config = {
   // Límite de autoregistros por IP (backstop anti-spam de la landing pública). Generoso para redes con NAT del venue.
   registroRateMax: Number(process.env.REGISTRO_RATE_MAX) || 60,
   registroRateWindowMs: Number(process.env.REGISTRO_RATE_WINDOW_MS) || 60000,
-  // Correo (SMTP) para notificar al ganador con su folio. Si SMTP_HOST está vacío, el envío se omite.
+  // Notificación del folio al ganador. Orden de preferencia:
+  //   1) Mailchimp Transactional (Mandrill) por API — recomendado.
+  //   2) SMTP (incluye smtp.mandrillapp.com o cualquier proveedor).
+  // Si no hay ninguno configurado, el envío se omite y el folio se entrega a mano.
+  mandrill: {
+    apiKey: (process.env.MANDRILL_API_KEY || process.env.MAILCHIMP_TRANSACTIONAL_API_KEY || '').trim(),
+    apiUrl: (process.env.MANDRILL_API_URL || 'https://mandrillapp.com/api/1.0/messages/send.json').trim(),
+  },
   smtp: {
     host: (process.env.SMTP_HOST || '').trim(),
     port: Number(process.env.SMTP_PORT) || 587,
