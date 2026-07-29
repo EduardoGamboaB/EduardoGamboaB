@@ -45,16 +45,27 @@ function fmtDate(iso) {
 async function goto(view) {
   $$('.tab').forEach((t) => t.classList.toggle('is-active', t.dataset.view === view));
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === 'view-' + view));
+  $('#tabs')?.classList.remove('open'); // cierra el menú móvil al navegar
+  $('#nav-toggle')?.setAttribute('aria-expanded', 'false');
   if (view === 'sorteo') loadSorteo();
   if (view === 'dashboard') loadDashboard();
   if (view === 'evento') loadEventoAdmin();
   if (view === 'usuarios') loadUsuarios();
+  if (view === 'perfil') loadPerfil();
 }
 
 $('#tabs').addEventListener('click', (e) => {
   const btn = e.target.closest('.tab');
-  if (btn) goto(btn.dataset.view);
+  if (btn && btn.dataset.view) goto(btn.dataset.view);
 });
+
+// Logo → primer menú (Captura). Hamburguesa → abre/cierra el menú. Nombre → Perfil.
+$('#brand-home')?.addEventListener('click', () => goto('captura'));
+$('#nav-toggle')?.addEventListener('click', () => {
+  const t = $('#tabs'); const open = t.classList.toggle('open');
+  $('#nav-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+$('#user-name')?.addEventListener('click', () => goto('perfil'));
 
 // ---------- Sesión / Login ----------
 function showLogin() {
@@ -68,14 +79,113 @@ function showApp() {
   $('#user-name').textContent = state.user ? state.user.name : '';
   $('#tab-usuarios').hidden = !(state.user && state.user.role === 'admin');
   $('#setup-banner').hidden = !isSetup;
+  startIdle(); // vigilancia de inactividad de sesión
 }
 function logout() {
+  stopIdle();
   state.token = ''; state.user = null;
   localStorage.removeItem('authToken');
   $('#setup-banner').hidden = true;
   showLogin();
 }
 $('#btn-logout')?.addEventListener('click', logout);
+
+// ---------- Perfil de usuario ----------
+async function loadPerfil() {
+  const u = state.user || {};
+  $('#perfil-nombre').textContent = u.name || '—';
+  $('#perfil-correo').textContent = u.email || '—';
+  $('#perfil-rol').textContent = u.role === 'admin' ? 'Administrador' : (u.setup ? 'Configuración inicial' : 'Staff');
+  const f = $('#perfil-form');
+  f.name.value = u.name || '';
+  f.email.value = u.email || '';
+  f.passwordActual.value = ''; f.password.value = '';
+  $('#perfil-msg').textContent = '';
+  // La sesión de configuración (NIP) no tiene perfil editable.
+  const editable = !u.setup;
+  f.querySelectorAll('input').forEach((el) => { el.disabled = !editable; });
+  $('#btn-perfil-guardar').disabled = !editable;
+}
+$('#perfil-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target; const msg = $('#perfil-msg');
+  const body = { name: f.name.value.trim(), email: f.email.value.trim() };
+  if (f.password.value) { body.password = f.password.value; body.passwordActual = f.passwordActual.value; }
+  $('#btn-perfil-guardar').disabled = true;
+  try {
+    const r = await api('/auth/me', { method: 'PUT', body });
+    state.user = r.user;
+    if (r.token) { state.token = r.token; localStorage.setItem('authToken', r.token); }
+    $('#user-name').textContent = r.user.name;
+    $('#perfil-nombre').textContent = r.user.name;
+    $('#perfil-correo').textContent = r.user.email;
+    f.passwordActual.value = ''; f.password.value = '';
+    msg.textContent = '✓ Perfil actualizado'; msg.className = 'form-msg ok';
+  } catch (err) { msg.textContent = err.message || 'No se pudo guardar'; msg.className = 'form-msg err'; }
+  finally { $('#btn-perfil-guardar').disabled = false; }
+});
+$('#btn-perfil-salir')?.addEventListener('click', logout);
+
+// ---------- Mayúsculas automáticas en la captura de texto ----------
+function enableUppercase(formSelector) {
+  const form = document.querySelector(formSelector);
+  if (!form) return;
+  const exentos = new Set(['email', 'telefono', 'website', 'passwordActual', 'password']);
+  form.querySelectorAll('input, textarea').forEach((el) => {
+    const type = (el.getAttribute('type') || 'text').toLowerCase();
+    if (['email', 'tel', 'number', 'password', 'checkbox', 'file', 'hidden'].includes(type)) return;
+    if (exentos.has(el.name)) return;
+    el.style.textTransform = 'uppercase';
+    el.addEventListener('input', () => {
+      const s = el.selectionStart, e = el.selectionEnd;
+      el.value = el.value.toUpperCase();
+      try { el.setSelectionRange(s, e); } catch { /* algunos inputs no lo permiten */ }
+    });
+  });
+}
+enableUppercase('#lead-form');
+
+// ---------- Sesión: cierre por inactividad ----------
+// Límite de inactividad configurable (por defecto 5 min + 30 s de aviso).
+// Se puede acortar para pruebas con ?idle=<seg>&warn=<seg>.
+const IDLE_Q = new URLSearchParams(location.search);
+const IDLE = {
+  limitMs: (Number(IDLE_Q.get('idle')) || 300) * 1000,
+  warnSec: Number(IDLE_Q.get('warn')) || 30,
+  timer: null, tick: null, remaining: 30, active: false,
+};
+function idleShown() { return !$('#idle-modal').classList.contains('hidden'); }
+function resetIdle() {
+  if (!IDLE.active || idleShown()) return; // con el modal abierto solo "Continuar" reinicia
+  clearTimeout(IDLE.timer);
+  IDLE.timer = setTimeout(showIdleWarning, IDLE.limitMs);
+}
+function showIdleWarning() {
+  IDLE.remaining = IDLE.warnSec;
+  $('#idle-count').textContent = IDLE.remaining;
+  $('#idle-modal').classList.remove('hidden');
+  clearInterval(IDLE.tick);
+  IDLE.tick = setInterval(() => {
+    IDLE.remaining -= 1;
+    $('#idle-count').textContent = Math.max(0, IDLE.remaining);
+    if (IDLE.remaining <= 0) { hideIdle(); logout(); toast('Sesión cerrada por inactividad', 'err'); }
+  }, 1000);
+}
+function hideIdle() { $('#idle-modal').classList.add('hidden'); clearInterval(IDLE.tick); }
+function startIdle() {
+  if (IDLE.active) return;
+  IDLE.active = true;
+  ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach((ev) =>
+    document.addEventListener(ev, resetIdle, { passive: true }));
+  resetIdle();
+}
+function stopIdle() {
+  IDLE.active = false;
+  clearTimeout(IDLE.timer); clearInterval(IDLE.tick);
+  hideIdle();
+}
+$('#idle-continue')?.addEventListener('click', () => { hideIdle(); api('/auth/me').catch(() => {}); resetIdle(); });
+$('#idle-logout')?.addEventListener('click', () => { hideIdle(); logout(); });
 
 // ---------- Configuración inicial por NIP ----------
 // Muestra la entrada por NIP solo si el servidor la tiene habilitada.

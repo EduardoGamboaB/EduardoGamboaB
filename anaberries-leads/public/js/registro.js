@@ -291,3 +291,21 @@ $('#btn-ocr')?.addEventListener('click', async () => {
     setOcrProgress(0, err.message || 'No se pudo leer el gafete. Captura manual.');
   } finally { btn.disabled = false; }
 });
+
+// ---------- Mayúsculas automáticas en los campos de texto de la landing ----------
+(function enableUppercaseLanding() {
+  const form = document.querySelector('#registro-form');
+  if (!form) return;
+  const exentos = new Set(['email', 'telefono', 'website']);
+  form.querySelectorAll('input, textarea').forEach((el) => {
+    const type = (el.getAttribute('type') || 'text').toLowerCase();
+    if (['email', 'tel', 'number', 'password', 'checkbox', 'file', 'hidden'].includes(type)) return;
+    if (exentos.has(el.name)) return;
+    el.style.textTransform = 'uppercase';
+    el.addEventListener('input', () => {
+      const s = el.selectionStart, e = el.selectionEnd;
+      el.value = el.value.toUpperCase();
+      try { el.setSelectionRange(s, e); } catch { /* noop */ }
+    });
+  });
+})();

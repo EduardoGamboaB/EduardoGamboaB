@@ -154,8 +154,8 @@ test('E2E · jornada completa del stand', async (t) => {
     const csv = await fetch(`${BASE}/api/leads/export.csv?token=${token}`);
     assert.equal(csv.status, 200);
     const body = await csv.text();
-    assert.match(body, /Visitante E2E/, 'el CSV incluye el autoregistro');
-    assert.match(body, /Lead Manual E2E/, 'el CSV incluye la captura del staff');
+    assert.match(body, /VISITANTE E2E/, "el CSV incluye el autoregistro (en mayúsculas)");
+    assert.match(body, /LEAD MANUAL E2E/, "el CSV incluye la captura del staff (en mayúsculas)");
 
     // ---------- 9) Responsive: login y navegación en móvil (390px) sin desbordes ----------
     const mob = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
@@ -164,7 +164,10 @@ test('E2E · jornada completa del stand', async (t) => {
     await mob.fill('#login-form [name=password]', 'admin1234');
     await mob.click('#btn-login');
     await mob.waitForSelector('#app-shell:not(.hidden)', { timeout: 8000 });
+    // En móvil las pestañas viven en el menú hamburguesa: se abre antes de navegar.
     for (const v of ['sorteo', 'dashboard', 'evento', 'captura']) {
+      await mob.click('#nav-toggle');
+      await mob.waitForSelector('#tabs.open', { timeout: 3000 });
       await mob.click(`.tab[data-view="${v}"]`);
       await mob.waitForSelector(`#view-${v}.is-active`, { timeout: 5000 });
     }
@@ -265,6 +268,48 @@ test('E2E · landing: foto del gafete (principal) y manual (secundario)', async 
     assert.ok(lead, 'el lead con foto se guardó');
     assert.equal(lead.metodoCaptura, 'gafete', 'el método de captura es gafete');
     assert.equal(lead.tieneFoto, true, 'se guardó la foto del gafete');
+  } finally {
+    await browser.close();
+  }
+});
+
+test('E2E · perfil de usuario, logo→captura y cierre por inactividad', async (t) => {
+  if (!chromium) return t.skip('Playwright no está instalado');
+  const browser = await launchBrowser();
+  if (!browser) return t.skip('Chromium no disponible en este entorno');
+  try {
+    // Sesión con inactividad acortada para la prueba (2s + 4s de aviso).
+    const p = await browser.newPage({ viewport: { width: 1240, height: 1000 } });
+    await p.goto(BASE + '/?idle=2&warn=4', { waitUntil: 'networkidle' });
+    await p.fill('#login-form [name=email]', 'admin@test.com');
+    await p.fill('#login-form [name=password]', 'admin1234');
+    await p.click('#btn-login');
+    await p.waitForSelector('#app-shell:not(.hidden)', { timeout: 8000 });
+
+    // Perfil: abrir desde el nombre de usuario y editar el nombre.
+    await p.click('#user-name');
+    await p.waitForSelector('#view-perfil.is-active', { timeout: 5000 });
+    await p.fill('#perfil-form [name=name]', 'Admin Editado');
+    await p.click('#btn-perfil-guardar');
+    await p.waitForFunction(() => document.querySelector('#perfil-msg')?.textContent?.includes('actualizado'), { timeout: 8000 });
+    assert.equal(await p.textContent('#user-name'), 'Admin Editado', 'el nombre se actualiza en la barra');
+
+    // Logo → primer menú (Captura).
+    await p.click('#brand-home');
+    await p.waitForSelector('#view-captura.is-active', { timeout: 5000 });
+
+    // Inactividad: aparece el modal de aviso.
+    await p.waitForSelector('#idle-modal:not(.hidden)', { timeout: 8000 });
+    // «Continuar» mantiene la sesión.
+    await p.click('#idle-continue');
+    await p.waitForFunction(() => document.getElementById('idle-modal').classList.contains('hidden'), null, { timeout: 4000 });
+    assert.ok(await p.isVisible('#app-shell'), 'la sesión sigue activa tras Continuar');
+
+    // Si no se confirma, la sesión se cierra automáticamente.
+    await p.waitForSelector('#idle-modal:not(.hidden)', { timeout: 8000 });
+    await p.waitForSelector('#login-screen:not(.hidden)', { timeout: 12000 });
+    assert.ok(await p.isVisible('#login-screen'), 'la sesión se cierra por inactividad');
+    await p.close();
   } finally {
     await browser.close();
   }
