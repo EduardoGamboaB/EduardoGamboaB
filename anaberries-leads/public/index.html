@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Anaberries · Captura de Leads — Mallatex</title>
+  <title>Mallatex - Sorteos</title>
   <meta name="theme-color" content="#ed3237" />
-  <link rel="stylesheet" href="/css/styles.css?v=6" />
+  <link rel="icon" type="image/png" href="/assets/mallatex-logo.png" />
+  <link rel="apple-touch-icon" href="/assets/mallatex-logo.png" />
+  <link rel="stylesheet" href="/css/styles.css?v=7" />
 </head>
 <body>
   <!-- ============ LOGIN ============ -->
@@ -45,13 +47,14 @@
   <!-- ============ APLICACIÓN (tras login) ============ -->
   <div id="app-shell" class="hidden">
   <header class="topbar">
-    <div class="brand">
+    <div class="brand" id="brand-home" title="Ir a Captura" role="button" tabindex="0">
       <img src="/assets/mallatex-logo.png" alt="Mallatex" class="brand-logo" />
       <div class="brand-text">
         <strong>Captura de Leads</strong>
         <span id="event-name">Evento Anaberries</span>
       </div>
     </div>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Menú" aria-expanded="false">☰</button>
     <nav class="tabs" id="tabs">
       <button class="tab is-active" data-view="captura">📝 Captura</button>
       <button class="tab" data-view="sorteo">🎁 Sorteo</button>
@@ -61,7 +64,7 @@
       <a class="tab tab-link" href="/qr" target="_blank" rel="noopener" title="Código QR para autoregistro de visitantes">🔳 QR</a>
     </nav>
     <div class="user-box">
-      <span id="user-name" class="user-name"></span>
+      <span class="user-name" id="user-name" title="Mi perfil" role="button" tabindex="0"></span>
       <button class="btn btn-logout" id="btn-logout" title="Cerrar sesión">Salir</button>
     </div>
   </header>
@@ -358,13 +361,66 @@
         </div>
       </div>
     </section>
+
+    <!-- ============ PERFIL ============ -->
+    <section class="view" id="view-perfil">
+      <div class="card form-card">
+        <h1>👤 Mi perfil</h1>
+        <p class="muted">Consulta y actualiza tus datos de acceso.</p>
+
+        <div class="perfil-info">
+          <div><span class="perfil-lbl">Nombre</span><strong id="perfil-nombre">—</strong></div>
+          <div><span class="perfil-lbl">Correo</span><strong id="perfil-correo">—</strong></div>
+          <div><span class="perfil-lbl">Rol</span><strong id="perfil-rol">—</strong></div>
+        </div>
+
+        <form id="perfil-form" autocomplete="off">
+          <div class="grid2">
+            <label>Nombre
+              <input name="name" maxlength="120" placeholder="Tu nombre" />
+            </label>
+            <label>Correo
+              <input name="email" type="email" maxlength="160" placeholder="tu-correo@empresa.com" />
+            </label>
+          </div>
+          <fieldset class="perfil-pass">
+            <legend>Cambiar contraseña (opcional)</legend>
+            <div class="grid2">
+              <label>Contraseña actual
+                <input name="passwordActual" type="password" autocomplete="current-password" placeholder="Tu contraseña actual" />
+              </label>
+              <label>Nueva contraseña
+                <input name="password" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" />
+              </label>
+            </div>
+          </fieldset>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="btn-perfil-guardar">Guardar cambios</button>
+            <button type="button" class="btn btn-logout" id="btn-perfil-salir">Cerrar sesión</button>
+          </div>
+          <p class="form-msg" id="perfil-msg"></p>
+        </form>
+      </div>
+    </section>
   </main>
+
+  <!-- Modal de sesión por inactividad -->
+  <div class="modal-overlay hidden" id="idle-modal">
+    <div class="modal-card">
+      <h2>¿Sigues ahí?</h2>
+      <p>Tu sesión se cerrará por inactividad en <strong id="idle-count">30</strong> segundos.</p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="idle-continue">Continuar sesión</button>
+        <button class="btn" id="idle-logout">Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast hidden"></div>
   <footer class="foot">Mallatex · Evento Anaberries — Captura de leads</footer>
   </div><!-- /#app-shell -->
 
   <script src="/vendor/tesseract/tesseract.min.js"></script>
-  <script src="/js/app.js?v=6" type="module"></script>
+  <script src="/js/app.js?v=7" type="module"></script>
 </body>
 </html>
