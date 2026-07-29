@@ -12,6 +12,15 @@ function eventoDe(req) {
   return (id && getEvent(id)) || activeEvent();
 }
 
+// Resuelve el evento SOLO si está vigente (existe y no finalizado). Se usa para
+// sortear: si no hay un evento vigente, no se puede generar sorteo.
+function eventoVigente(req) {
+  const id = (req.query.event || req.body?.event || '').toString();
+  if (id) { const ev = getEvent(id); return ev && !ev.finalizado ? ev : null; }
+  const a = activeEvent();
+  return a && !a.finalizado ? a : null;
+}
+
 // Clave de identidad de una persona (para cruzar ganadores entre eventos).
 function persona(l) { return (l.email || '').toLowerCase() || l.telefono || l.id; }
 
@@ -44,11 +53,16 @@ function nuevoFolio() {
 // GET /api/raffle/eligible — cuántos participan (por evento).
 router.get('/eligible', (req, res) => {
   const data = db();
-  const ev = eventoDe(req);
+  const ev = eventoVigente(req);
+  // Sin evento vigente: no hay sorteo posible (total 0).
+  if (!ev) {
+    return res.json({ eventId: null, vigente: false, total: 0, leadsTotales: 0, ganadores: 0, correoActivo: mailerEnabled() });
+  }
   const soloConsentimiento = req.query.consentimiento === '1';
   const evitarRepetidos = req.query.repetidos !== '0';
   res.json({
     eventId: ev.id,
+    vigente: true,
     total: elegibles(data, ev, { soloConsentimiento, evitarRepetidos }).length,
     leadsTotales: data.leads.filter((l) => l.eventId === ev.id).length,
     ganadores: data.draws.filter((d) => d.eventId === ev.id).length,
@@ -60,7 +74,10 @@ router.get('/eligible', (req, res) => {
 // POST /api/raffle/draw — realiza un sorteo, genera folio y notifica por correo.
 router.post('/draw', async (req, res) => {
   const b = req.body || {};
-  const ev = eventoDe(req);
+  const ev = eventoVigente(req);
+  if (!ev) {
+    return res.status(400).json({ error: 'No hay un evento activo para sortear. Selecciona o activa un evento vigente (no finalizado).' });
+  }
   const premio = (b.premio || ev.premio || '').toString().trim().slice(0, 120) || 'Premio del evento';
   const soloConsentimiento = Boolean(b.soloConsentimiento);
   const evitarRepetidos = b.evitarRepetidos !== false; // por defecto true
@@ -76,7 +93,7 @@ router.post('/draw', async (req, res) => {
     id: newId('draw'),
     eventId: ev.id,
     premio,
-    folio: nuevoFolio(),
+    folio: ganador.folio || nuevoFolio(),
     leadId: ganador.id,
     nombre: ganador.nombre,
     empresa: ganador.empresa,

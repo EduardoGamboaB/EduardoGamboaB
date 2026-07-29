@@ -69,6 +69,7 @@ $('#registro-form').addEventListener('submit', async (e) => {
     event: eventoResuelto || eventId || undefined,
     nombre: form.nombre.value.trim(),
     empresa: form.empresa.value.trim(),
+    estado: form.estado.value,
     telefono: form.telefono.value.trim(),
     email: form.email.value.trim(),
     interes: form.interes.value,
@@ -96,12 +97,14 @@ $('#registro-form').addEventListener('submit', async (e) => {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'No se pudo completar el registro');
     if (data.yaRegistrado) $('#ok-title').textContent = '¡Ya estabas registrado!';
+    if (data.folio) $('#ok-folio').textContent = data.folio;
+    $('#ok-folio-box').hidden = !data.folio;
     $('#form-view').hidden = true;
     $('#ok-view').hidden = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Tras el registro exitoso, redirige al sitio oficial de Mallatex
-    // (se muestra la confirmación unos segundos y luego se redirige).
-    setTimeout(function () { window.location.href = 'https://mallatex.com.mx/'; }, 3500);
+    // Tras el registro exitoso, redirige al sitio oficial de Mallatex. Se da tiempo
+    // suficiente para que el visitante anote su folio antes de la redirección.
+    setTimeout(function () { window.location.href = 'https://mallatex.com.mx/'; }, 12000);
   } catch (err) {
     fail(err.message || 'No se pudo completar el registro');
     btn.disabled = false;

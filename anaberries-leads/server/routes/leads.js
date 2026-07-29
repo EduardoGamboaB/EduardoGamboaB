@@ -8,6 +8,19 @@ const router = Router();
 
 const badgeKey = (id) => 'badge:' + id;
 
+// Folio legible del lead (ANB-XXXXXX), único. Es el que ve/presenta el lead;
+// si resulta ganador del sorteo, se reutiliza este mismo folio.
+function nuevoFolioLead() {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const data = db();
+  for (let intento = 0; intento < 20; intento++) {
+    let s = ''; for (let i = 0; i < 6; i++) s += abc[Math.floor(Math.random() * abc.length)];
+    const folio = 'ANB-' + s;
+    if (!data.leads.some((l) => l.folio === folio)) return folio;
+  }
+  return 'ANB-' + Date.now().toString(36).toUpperCase().slice(-6);
+}
+
 // Resuelve el evento objetivo (body/query ?event=<id> o el activo).
 function eventoDe(req) {
   const id = (req.body?.event || req.query.event || '').toString();
@@ -84,8 +97,10 @@ router.post('/', requireAuth, async (req, res) => {
   const lead = {
     id: newId('lead'),
     eventId: ev.id,
+    folio: nuevoFolioLead(),
     nombre,
     empresa,
+    estado: clean(b.estado, 60),
     email,
     telefono,
     cargo: clean(b.cargo, 120),
@@ -126,13 +141,15 @@ router.post('/registro', (req, res) => {
   const ev = eventoDe(req);
   // Si ya está registrado en este evento, respondemos de forma amistosa.
   const dup = data.leads.find((l) => l.eventId === ev.id && ((email && l.email === email) || (telefono && l.telefono === telefono)));
-  if (dup) return res.status(200).json({ ok: true, yaRegistrado: true });
+  if (dup) return res.status(200).json({ ok: true, yaRegistrado: true, folio: dup.folio || '' });
 
   const lead = {
     id: newId('lead'),
     eventId: ev.id,
+    folio: nuevoFolioLead(),
     nombre,
     empresa: clean(b.empresa, 160),
+    estado: clean(b.estado, 60),
     email,
     telefono,
     cargo: '',
@@ -151,7 +168,7 @@ router.post('/registro', (req, res) => {
   };
   data.leads.push(lead);
   save();
-  res.status(201).json({ ok: true });
+  res.status(201).json({ ok: true, folio: lead.folio });
 });
 
 // GET /api/leads/meta — catálogos para el formulario (público).
@@ -180,11 +197,12 @@ router.get('/', (req, res) => {
 
 // GET /api/leads/export.csv — exportación CSV (opcionalmente por evento).
 router.get('/export.csv', (req, res) => {
-  const cols = ['nombre', 'empresa', 'cargo', 'email', 'telefono', 'interes', 'volumen', 'fuente', 'metodoCaptura', 'consentimiento', 'capturadoPor', 'createdAt'];
+  const cols = ['folio', 'evento', 'nombre', 'empresa', 'estado', 'cargo', 'email', 'telefono', 'interes', 'volumen', 'fuente', 'metodoCaptura', 'consentimiento', 'capturadoPor', 'createdAt'];
   const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const rows = [cols.join(',')];
   const leads = req.query.event ? db().leads.filter((l) => l.eventId === req.query.event) : db().leads;
-  for (const l of leads) rows.push(cols.map((c) => esc(l[c])).join(','));
+  const nombreEvento = (id) => { const e = getEvent(id); return e ? e.name : ''; };
+  for (const l of leads) rows.push(cols.map((c) => esc(c === 'evento' ? nombreEvento(l.eventId) : l[c])).join(','));
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="leads-anaberries.csv"');
   res.send('﻿' + rows.join('\r\n'));

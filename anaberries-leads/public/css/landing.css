@@ -100,6 +100,11 @@ input.invalid { border-color: var(--err); background: var(--err-bg); }
 .success p { color: var(--ink-600); margin: 0 0 6px; }
 .success .redir-note { margin-top: 16px; font-size: 13px; color: var(--ink-600); }
 .success .redir-note a { color: var(--accent); font-weight: 700; text-decoration: none; margin-left: 4px; }
+.folio-box { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 14px auto; padding: 14px 18px; background: #fef3f3; border: 2px dashed var(--accent); border-radius: 12px; max-width: 340px; }
+.folio-label { font-size: 12px; color: var(--ink-600); text-transform: uppercase; letter-spacing: .04em; }
+.folio-code { font-size: 28px; font-weight: 800; letter-spacing: 3px; color: var(--accent-700, #9b3234); }
+.folio-hint { font-size: 12px; color: var(--ink-600); }
+.gafete-note { margin-top: 10px; font-size: 13px; color: var(--warn, #b45309); }
 
 /* ---------- Legales ---------- */
 .legal { max-width: 760px; margin: 0 auto; padding: 24px 18px 48px; }

@@ -65,6 +65,7 @@ test('E2E · jornada completa del stand', async (t) => {
     await visitor.goto(BASE + '/registro', { waitUntil: 'networkidle' });
     await visitor.fill('[name=nombre]', 'Visitante E2E');
     await visitor.fill('[name=empresa]', 'Agrícola E2E');
+    await visitor.selectOption('[name=estado]', 'Jalisco');
     await visitor.fill('[name=telefono]', '5512349876');
     await visitor.fill('[name=email]', 'visitante.e2e@correo.mx');
     await visitor.check('[name=aceptaTerminos]');
@@ -72,10 +73,16 @@ test('E2E · jornada completa del stand', async (t) => {
     await visitor.click('#btn-enviar');
     await visitor.waitForSelector('#ok-view:not([hidden])', { timeout: 8000 });
     assert.ok(await visitor.isVisible('#ok-view'), 'la landing muestra confirmación');
+    // Se pinta el folio de registro generado para el lead.
+    await visitor.waitForSelector('#ok-folio-box:not([hidden])', { timeout: 5000 });
+    const folio = (await visitor.textContent('#ok-folio')) || '';
+    assert.match(folio, /^ANB-[A-Z0-9]{6}$/, 'muestra el folio de registro del lead');
+    // Nota de que los datos deben coincidir con el gafete.
+    assert.ok(await visitor.isVisible('.gafete-note'), 'muestra la nota del gafete');
     // Enlace de respaldo al sitio oficial visible en la confirmación.
     assert.equal(await visitor.getAttribute('#redir-note a', 'href'), 'https://mallatex.com.mx/', 'ofrece enlace al sitio oficial');
-    // Tras el registro exitoso, redirige al sitio oficial de Mallatex.
-    await visitor.waitForURL('**://mallatex.com.mx/**', { timeout: 8000 });
+    // Tras el registro exitoso, redirige al sitio oficial de Mallatex (tras el margen para anotar el folio).
+    await visitor.waitForURL('**://mallatex.com.mx/**', { timeout: 15000 });
     assert.match(visitor.url(), /mallatex\.com\.mx/, 'redirige al sitio oficial tras el registro');
     await visitor.close();
 

@@ -170,11 +170,15 @@ $('#lead-form').addEventListener('submit', async (e) => {
   const msg = $('#lead-msg');
   const btn = $('#btn-guardar');
   btn.disabled = true;
+  const okGuardado = (saved) => {
+    msg.innerHTML = `✓ Lead guardado — Folio del lead: <b>${escapeHtml(saved && saved.folio || '')}</b>`
+      + `<br><span class="nota-gafete">Verifica que los datos coincidan con el gafete de registro del visitante.</span>`;
+    msg.className = 'form-msg ok';
+  };
   try {
     localStorage.setItem('captador', body.capturadoPor || '');
-    await api('/leads', { method: 'POST', body });
-    msg.textContent = '✓ Lead guardado';
-    msg.className = 'form-msg ok';
+    const saved = await api('/leads', { method: 'POST', body });
+    okGuardado(saved);
     const captador = body.capturadoPor;
     form.reset();
     $('#captador').value = captador || '';
@@ -186,7 +190,7 @@ $('#lead-form').addEventListener('submit', async (e) => {
     if (err.status === 409) {
       if (confirm(`${err.data?.error}. ¿Guardar de todas formas?`)) {
         body.forzar = true;
-        try { await api('/leads', { method: 'POST', body }); msg.textContent = '✓ Lead guardado'; msg.className = 'form-msg ok'; form.reset(); $('#captador').value = body.capturadoPor || ''; resetGafete(); refreshRecent(); }
+        try { const saved2 = await api('/leads', { method: 'POST', body }); okGuardado(saved2); form.reset(); $('#captador').value = body.capturadoPor || ''; resetGafete(); refreshRecent(); }
         catch (e2) { msg.textContent = e2.message; msg.className = 'form-msg err'; }
       }
     } else {
@@ -403,6 +407,8 @@ $('#btn-ocr').addEventListener('click', async () => {
 
 // ---------- Eventos (estado compartido) ----------
 const eventos = { list: [], activeId: '', selectedId: '', premioImagen: undefined };
+// Nombre del evento por id (para la tabla del dashboard).
+function nombreEvento(id) { const e = eventos.list.find((x) => x.id === id); return e ? e.name : '—'; }
 
 async function loadEventos() {
   try {
@@ -443,7 +449,16 @@ function poblarSelectoresEvento() {
   }
 }
 
-function sorteoEventId() { const s = $('#sorteo-evento-sel'); return (s && s.value) || eventos.activeId; }
+// Evento del sorteo: refleja EXACTAMENTE el selector (vacío = sin evento vigente).
+// No cae al evento activo, para no sortear en un evento finalizado.
+function sorteoEventId() { const s = $('#sorteo-evento-sel'); return s ? s.value : (eventos.activeId || ''); }
+
+// Habilita/inhabilita los controles del sorteo según haya (o no) evento vigente.
+function setSorteoDisponible(vigente) {
+  const sortear = $('#btn-sortear'); const fin = $('#btn-finalizar-evento');
+  if (sortear) { sortear.disabled = !vigente; sortear.title = vigente ? '' : 'No hay un evento vigente para sortear'; }
+  if (fin) fin.disabled = !vigente;
+}
 
 // ---------- Sorteo ----------
 function raffleOpts() {
@@ -461,10 +476,16 @@ async function loadPool() {
   try {
     const o = raffleOpts();
     const data = await api(`/raffle/eligible?event=${encodeURIComponent(sorteoEventId())}&consentimiento=${o.consentimiento}&repetidos=${o.repetidos}`);
+    const vigente = data.vigente !== false && !!sorteoEventId();
+    setSorteoDisponible(vigente);
     $('#pool-count').textContent = data.total;
-    $('#sorteo-correo').textContent = data.correoActivo
-      ? '✉ El ganador recibirá su folio por correo automáticamente.'
-      : '✉ Envío de correo no configurado: entrega el folio manualmente (o configura SMTP).';
+    if (!vigente) {
+      $('#sorteo-correo').textContent = '⚠ No hay un evento vigente. Activa o crea un evento (pestaña Evento) para poder sortear.';
+    } else {
+      $('#sorteo-correo').textContent = data.correoActivo
+        ? '✉ El ganador recibirá su folio por correo automáticamente.'
+        : '✉ Envío de correo no configurado: entrega el folio manualmente (o configura SMTP).';
+    }
   } catch { /* sin acceso */ }
 }
 $('#opt-consent').addEventListener('change', loadPool);
@@ -514,6 +535,7 @@ async function renderHistorico() {
 $('#btn-sortear').addEventListener('click', async () => {
   const btn = $('#btn-sortear');
   const reel = $('#reel');
+  if (!sorteoEventId()) { toast('No hay un evento vigente para sortear. Activa o crea un evento.', 'err'); return; }
   btn.disabled = true;
   reel.className = 'reel spinning';
   const nombres = ['🎲', '🎁', '⭐', '🎉', '🏆', '🎊'];
@@ -631,10 +653,11 @@ async function loadLeadsTable() {
           <td class="contact">${escapeHtml(l.telefono || '')}${l.telefono && l.email ? '<br>' : ''}${escapeHtml(l.email || '')}</td>
           <td><span class="tag">${escapeHtml(l.interes || '—')}</span></td>
           <td>${escapeHtml(l.fuente || '')}</td>
+          <td>${escapeHtml(nombreEvento(l.eventId))}</td>
           <td class="contact">${fmtDate(l.createdAt)}</td>
           <td><button class="del-lead" data-id="${l.id}" title="Eliminar">🗑</button></td>
         </tr>`).join('')
-      : '<tr><td colspan="7" class="empty">No hay leads que coincidan.</td></tr>';
+      : '<tr><td colspan="8" class="empty">No hay leads que coincidan.</td></tr>';
   } catch (err) { if (err.status !== 401) toast(err.message, 'err'); }
 }
 
