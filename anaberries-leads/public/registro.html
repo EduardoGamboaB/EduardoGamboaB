@@ -12,7 +12,7 @@
   <meta property="og:title" content="Regístrate y participa · Mallatex" />
   <meta property="og:description" content="Regístrate en el stand de Mallatex en el evento Anaberries y participa por un premio." />
   <meta property="og:url" content="https://sorteo-mallatex.com/registro" />
-  <link rel="stylesheet" href="/css/landing.css?v=5" />
+  <link rel="stylesheet" href="/css/landing.css?v=7" />
 </head>
 <body>
   <header class="hero">
@@ -42,6 +42,37 @@
       </div>
 
       <div class="card">
+        <!-- Modo de captura: principal = foto del gafete (OCR); secundario = manual -->
+        <div class="capture-modes" id="capture-modes">
+          <button type="button" class="cap-mode is-active" data-mode="gafete">📷 Tomar foto del gafete</button>
+          <button type="button" class="cap-mode" data-mode="manual">✍️ Capturar manual</button>
+        </div>
+
+        <!-- Panel de foto del gafete (OCR) -->
+        <div class="gafete-panel" id="gafete-panel">
+          <div class="gafete-stage">
+            <video id="cam-video" playsinline autoplay muted hidden></video>
+            <img id="cam-photo" alt="Foto del gafete" hidden />
+            <div class="gafete-hint" id="gafete-hint">
+              <span class="ico">🪪</span>
+              <p>Toma o sube una foto de tu gafete y llenamos tus datos automáticamente.</p>
+            </div>
+            <canvas id="cam-canvas" hidden></canvas>
+          </div>
+          <div class="gafete-actions">
+            <button type="button" class="btn-sec" id="btn-cam-start">📷 Abrir cámara</button>
+            <button type="button" class="btn-sec" id="btn-cam-shot" hidden>Tomar foto</button>
+            <button type="button" class="btn-sec" id="btn-cam-retake" hidden>Repetir</button>
+            <label class="btn-sec file-btn">⬆ Subir imagen<input type="file" id="cam-file" accept="image/*" capture="environment" hidden></label>
+            <button type="button" class="btn-primary btn-ocr" id="btn-ocr" hidden>✨ Extraer datos</button>
+          </div>
+          <div class="ocr-progress" id="ocr-progress" hidden>
+            <div class="ocr-bar"><span id="ocr-bar-fill"></span></div>
+            <span id="ocr-status">Procesando…</span>
+          </div>
+          <p class="gafete-tip">Después de extraer, <b>revisa y completa tu celular y correo</b> abajo. También puedes escribir todo a mano con «Capturar manual».</p>
+        </div>
+
         <form id="registro-form" autocomplete="on" novalidate>
           <label>Nombre completo <span class="req">*</span>
             <input name="nombre" required maxlength="120" autocomplete="name" placeholder="Ej. Juan Pérez" />
@@ -116,6 +147,7 @@
 
   <p class="foot">Mallatex · Protegemos lo que siembras — Evento Anaberries</p>
 
-  <script src="/js/registro.js?v=6" type="module"></script>
+  <script src="/vendor/tesseract/tesseract.min.js"></script>
+  <script src="/js/registro.js?v=7" type="module"></script>
 </body>
 </html>

@@ -220,3 +220,52 @@ test('E2E · CRUD de eventos (crear, finalizar, reabrir, eliminar)', async (t) =
     await browser.close();
   }
 });
+
+test('E2E · landing: foto del gafete (principal) y manual (secundario)', async (t) => {
+  if (!chromium) return t.skip('Playwright no está instalado');
+  const browser = await launchBrowser();
+  if (!browser) return t.skip('Chromium no disponible en este entorno');
+  // PNG 1×1 para simular la foto del gafete (sin depender de OCR real).
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  try {
+    const p = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+    await p.route('**://mallatex.com.mx/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: 'ok' }));
+    await p.goto(BASE + '/registro', { waitUntil: 'networkidle' });
+
+    // El modo principal es «foto del gafete» y su panel está visible por defecto.
+    assert.ok(await p.isVisible('#gafete-panel'), 'el panel del gafete es visible por defecto (principal)');
+    assert.ok((await p.getAttribute('.cap-mode[data-mode="gafete"]', 'class')).includes('is-active'), 'gafete es el modo activo por defecto');
+
+    // Cambiar a manual oculta el panel; volver a gafete lo muestra.
+    await p.click('.cap-mode[data-mode="manual"]');
+    await p.waitForFunction(() => document.getElementById('gafete-panel').hidden === true, null, { timeout: 6000 });
+    await p.click('.cap-mode[data-mode="gafete"]');
+    await p.waitForFunction(() => document.getElementById('gafete-panel').hidden === false, null, { timeout: 6000 });
+
+    // Subir una imagen del gafete → aparece el botón «Extraer datos» (foto capturada).
+    await p.setInputFiles('#cam-file', { name: 'gafete.png', mimeType: 'image/png', buffer: png });
+    await p.waitForSelector('#btn-ocr:not([hidden])', { timeout: 5000 });
+
+    // Celular y correo siguen presentes en ambos modos; se llenan y se envía con foto.
+    await p.fill('[name=nombre]', 'Lead Gafete E2E');
+    await p.fill('[name=telefono]', '5599990000');
+    await p.fill('[name=email]', 'gafete.e2e@empresa.com');
+    await p.check('[name=aceptaTerminos]');
+    await p.check('[name=aceptaPrivacidad]');
+    await p.click('#btn-enviar');
+    await p.waitForSelector('#ok-view:not([hidden])', { timeout: 8000 });
+    assert.match((await p.textContent('#ok-folio')) || '', /^ANB-[A-Z0-9]{6}$/, 'registro con foto genera folio');
+    await p.close();
+
+    // El lead quedó como método «gafete» y con foto (tieneFoto) — vía API con sesión admin.
+    const lr = await fetch(`${BASE}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'admin@test.com', password: 'admin1234' }) });
+    const token = (await lr.json()).token;
+    const leads = await (await fetch(`${BASE}/api/leads`, { headers: { Authorization: 'Bearer ' + token } })).json();
+    const lead = leads.items.find((l) => l.email === 'gafete.e2e@empresa.com');
+    assert.ok(lead, 'el lead con foto se guardó');
+    assert.equal(lead.metodoCaptura, 'gafete', 'el método de captura es gafete');
+    assert.equal(lead.tieneFoto, true, 'se guardó la foto del gafete');
+  } finally {
+    await browser.close();
+  }
+});
