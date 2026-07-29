@@ -123,7 +123,7 @@ router.post('/', requireAuth, async (req, res) => {
 // POST /api/leads/registro — autoregistro del visitante desde la landing (público).
 // Exige correo y celular válidos (por ahí se contacta al ganador) y aceptación de
 // términos y aviso de privacidad.
-router.post('/registro', (req, res) => {
+router.post('/registro', async (req, res) => {
   const b = req.body || {};
   // Honeypot anti-bots: campo oculto que un humano no llena.
   if (b.website) return res.status(400).json({ error: 'Solicitud inválida' });
@@ -162,10 +162,12 @@ router.post('/registro', (req, res) => {
     consentimientoAt: new Date().toISOString(),
     fuente: 'Autoregistro (QR)',
     capturadoPor: '',
-    metodoCaptura: 'autoregistro',
+    metodoCaptura: b.metodoCaptura === 'gafete' ? 'gafete' : 'autoregistro',
     tieneFoto: false,
     createdAt: new Date().toISOString(),
   };
+  // Foto del gafete opcional (blob, fuera del JSON). Sin bloquear si falla.
+  try { lead.tieneFoto = await guardarFoto(lead.id, b.foto); } catch { lead.tieneFoto = false; }
   data.leads.push(lead);
   save();
   res.status(201).json({ ok: true, folio: lead.folio });
