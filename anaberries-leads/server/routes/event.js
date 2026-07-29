@@ -84,7 +84,10 @@ router.post('/', async (req, res) => {
   e.actualizadoAt = new Date().toISOString();
   const data = db();
   data.events.push(e);
-  data.activeEventId = e.id;
+  // El nuevo evento se vuelve activo solo si no hay un activo vigente
+  // (primer evento, o el activo estaba finalizado/ausente). No roba el activo actual.
+  const activoVigente = data.events.some((x) => x.id === data.activeEventId && !x.finalizado);
+  if (!activoVigente) data.activeEventId = e.id;
   save();
   res.status(201).json(e);
 });

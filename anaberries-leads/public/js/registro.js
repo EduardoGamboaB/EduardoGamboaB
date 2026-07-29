@@ -102,9 +102,9 @@ $('#registro-form').addEventListener('submit', async (e) => {
     $('#form-view').hidden = true;
     $('#ok-view').hidden = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Tras el registro exitoso, redirige al sitio oficial de Mallatex. Se da tiempo
-    // suficiente para que el visitante anote su folio antes de la redirección.
-    setTimeout(function () { window.location.href = 'https://mallatex.com.mx/'; }, 12000);
+    // Tras el registro exitoso, redirige al sitio oficial de Mallatex. Se da un
+    // breve margen para que el visitante alcance a ver/anotar su folio.
+    setTimeout(function () { window.location.href = 'https://mallatex.com.mx/'; }, 5000);
   } catch (err) {
     fail(err.message || 'No se pudo completar el registro');
     btn.disabled = false;

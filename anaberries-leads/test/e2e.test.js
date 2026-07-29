@@ -175,3 +175,48 @@ test('E2E · jornada completa del stand', async (t) => {
     await browser.close();
   }
 });
+
+test('E2E · CRUD de eventos (crear, finalizar, reabrir, eliminar)', async (t) => {
+  if (!chromium) return t.skip('Playwright no está instalado');
+  const browser = await launchBrowser();
+  if (!browser) return t.skip('Chromium no disponible en este entorno');
+  try {
+    const page = await browser.newPage({ viewport: { width: 1240, height: 1000 } });
+    page.on('dialog', (d) => d.accept());
+    await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+    await page.fill('#login-form [name=email]', 'admin@test.com');
+    await page.fill('#login-form [name=password]', 'admin1234');
+    await page.click('#btn-login');
+    await page.waitForSelector('#app-shell:not(.hidden)', { timeout: 8000 });
+
+    await page.click('.tab[data-view="evento"]');
+    await page.waitForSelector('#view-evento.is-active', { timeout: 5000 });
+
+    // La lista (CRUD) de eventos se muestra.
+    await page.waitForSelector('#eventos-tbody tr', { timeout: 5000 });
+    const antes = await page.locator('#eventos-tbody tr').count();
+    assert.ok(antes >= 1, 'la lista de eventos muestra al menos un evento');
+
+    // Crear un evento.
+    await page.click('#btn-evento-nuevo');
+    await page.waitForFunction((n) => document.querySelectorAll('#eventos-tbody tr').length > n, antes, { timeout: 8000 });
+    assert.ok(await page.isVisible('#eventos-tbody tr.sel'), 'el evento nuevo queda seleccionado en la lista');
+
+    // Finalizar el evento nuevo desde la lista.
+    await page.click('#eventos-tbody tr.sel [data-act="finalizar"]');
+    await page.waitForFunction(() => document.querySelector('#eventos-tbody tr.sel .est')?.textContent?.includes('Finalizado'), { timeout: 8000 });
+
+    // Reabrirlo.
+    await page.click('#eventos-tbody tr.sel [data-act="reabrir"]');
+    await page.waitForFunction(() => document.querySelector('#eventos-tbody tr.sel .est')?.textContent?.includes('Vigente'), { timeout: 8000 });
+
+    // Eliminarlo (no tiene leads) → la lista vuelve al conteo original.
+    await page.click('#eventos-tbody tr.sel [data-act="eliminar"]');
+    await page.waitForFunction((n) => document.querySelectorAll('#eventos-tbody tr').length === n, antes, { timeout: 8000 });
+    assert.equal(await page.locator('#eventos-tbody tr').count(), antes, 'el evento se eliminó de la lista');
+
+    await page.close();
+  } finally {
+    await browser.close();
+  }
+});

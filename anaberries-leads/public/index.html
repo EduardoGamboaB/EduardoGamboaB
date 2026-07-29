@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Anaberries · Captura de Leads — Mallatex</title>
   <meta name="theme-color" content="#ed3237" />
-  <link rel="stylesheet" href="/css/styles.css?v=5" />
+  <link rel="stylesheet" href="/css/styles.css?v=6" />
 </head>
 <body>
   <!-- ============ LOGIN ============ -->
@@ -248,6 +248,14 @@
         <p class="muted">Crea y configura múltiples eventos. Cada uno tiene su propio <b>código QR</b>.
           Al guardar, los <b>Términos y Condiciones</b> y la <b>landing</b> se actualizan con esta información.</p>
 
+        <!-- Lista (CRUD) de eventos -->
+        <div class="table-wrap eventos-lista">
+          <table class="leads-table eventos-table">
+            <thead><tr><th>Evento</th><th>Edición</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="eventos-tbody"></tbody>
+          </table>
+        </div>
+
         <div class="evento-bar">
           <label class="evento-sel">Evento
             <select id="evento-select"></select>
@@ -357,6 +365,6 @@
   </div><!-- /#app-shell -->
 
   <script src="/vendor/tesseract/tesseract.min.js"></script>
-  <script src="/js/app.js?v=5" type="module"></script>
+  <script src="/js/app.js?v=6" type="module"></script>
 </body>
 </html>
