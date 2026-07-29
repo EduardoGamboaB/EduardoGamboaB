@@ -79,7 +79,9 @@ router.post('/test-mail', async (req, res) => {
   if (!to) return res.status(400).json({ error: 'Indica un correo destino' });
   const r = await sendTestEmail(to);
   if (r.sent) return res.json({ ok: true, to, proveedor: mailerProvider() });
-  res.status(502).json({ error: r.error || 'No se pudo enviar el correo de prueba', skipped: !!r.skipped });
+  const error = r.error || 'No se pudo enviar el correo de prueba';
+  console.error('Prueba de correo falló:', error);
+  res.status(502).json({ error, skipped: !!r.skipped });
 });
 
 // POST /api/raffle/draw — realiza un sorteo, genera folio y notifica por correo.
