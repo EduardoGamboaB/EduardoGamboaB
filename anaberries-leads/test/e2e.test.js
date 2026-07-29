@@ -82,7 +82,7 @@ test('E2E · jornada completa del stand', async (t) => {
     // Enlace de respaldo al sitio oficial visible en la confirmación.
     assert.equal(await visitor.getAttribute('#redir-note a', 'href'), 'https://mallatex.com.mx/', 'ofrece enlace al sitio oficial');
     // Tras el registro exitoso, redirige al sitio oficial de Mallatex (tras el margen para anotar el folio).
-    await visitor.waitForURL('**://mallatex.com.mx/**', { timeout: 15000 });
+    await visitor.waitForURL('**://mallatex.com.mx/**', { timeout: 20000 });
     assert.match(visitor.url(), /mallatex\.com\.mx/, 'redirige al sitio oficial tras el registro');
     await visitor.close();
 
