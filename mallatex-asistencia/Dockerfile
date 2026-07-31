@@ -12,10 +12,11 @@ RUN npm ci --omit=dev || npm install --omit=dev
 COPY server ./server
 COPY public ./public
 
-# Directorio de datos persistente (montar como volumen)
+# Directorio de datos (sólo para STORAGE=file; en producción se recomienda STORAGE=postgres).
+# Sin instrucción VOLUME: Railway no la soporta (usa Railway Volumes). Para persistir con
+# archivo, monta un volumen en /data desde tu orquestador (docker -v, compose o Railway Volumes).
 ENV DATA_DIR=/data
 RUN mkdir -p /data && chown -R node:node /data /app
-VOLUME ["/data"]
 
 USER node
 EXPOSE 3000
