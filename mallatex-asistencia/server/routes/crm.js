@@ -3,15 +3,18 @@
 
 import express from 'express';
 import * as db from '../db.js';
-import { requireRole, ROLES } from '../auth.js';
+import { requireRole } from '../auth.js';
+import { CRM_ROLES } from '../access.js';
 import { log } from '../audit.js';
 import { aspelTimbrar, integrationsStatus } from '../integrations.js';
 
 const router = express.Router();
-const WRITE = requireRole(ROLES.ADMIN, ROLES.CONTADOR);
+// La administración comercial (lectura y escritura) es sólo para roles comerciales.
+const READ = requireRole(...CRM_ROLES);
+const WRITE = requireRole(...CRM_ROLES);
 
 // ---------- Clientes / prospectos ----------
-router.get('/crm/clients', (req, res) => {
+router.get('/crm/clients', READ, (req, res) => {
   let items = db.all('clients');
   if (req.query.active === 'true') items = items.filter((c) => c.active !== false);
   if (req.query.assignedTo) items = items.filter((c) => c.assignedTo === Number(req.query.assignedTo));
@@ -68,7 +71,7 @@ router.post('/crm/assign', WRITE, (req, res) => {
 });
 
 // Seguimiento: visitas de un cliente (para el gerente)
-router.get('/crm/clients/:id/visits', (req, res) => {
+router.get('/crm/clients/:id/visits', READ, (req, res) => {
   const visits = db.all('visits', (v) => v.clientId === Number(req.params.id))
     .map((v) => ({ ...v, photos: undefined, photoCount: (v.photos || []).length }))
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -76,7 +79,7 @@ router.get('/crm/clients/:id/visits', (req, res) => {
 });
 
 // ---------- Objetivos de venta ----------
-router.get('/crm/objectives', (req, res) => {
+router.get('/crm/objectives', READ, (req, res) => {
   let items = db.all('salesObjectives');
   if (req.query.employeeId) items = items.filter((o) => o.employeeId === Number(req.query.employeeId));
   if (req.query.period) items = items.filter((o) => o.period === req.query.period);
@@ -97,7 +100,7 @@ router.post('/crm/objectives', WRITE, (req, res) => {
 const empName = (id) => (db.get('employees', id) || {}).name || `#${id}`;
 
 // Viáticos: revisión y aprobación/rechazo
-router.get('/crm/expense-requests', (req, res) => {
+router.get('/crm/expense-requests', READ, (req, res) => {
   let items = db.all('expenseRequests');
   if (req.query.status) items = items.filter((r) => r.status === req.query.status);
   items = items.map((r) => ({ ...r, employeeName: empName(r.employeeId) }))
@@ -118,7 +121,7 @@ router.post('/crm/expense-requests/:id/decision', WRITE, (req, res) => {
 });
 
 // Gastos: comprobaciones (con evidencia) y aprobación
-router.get('/crm/expenses', (req, res) => {
+router.get('/crm/expenses', READ, (req, res) => {
   let items = db.all('expenses');
   if (req.query.status) items = items.filter((e) => e.status === req.query.status);
   if (req.query.employeeId) items = items.filter((e) => e.employeeId === Number(req.query.employeeId));
@@ -128,7 +131,7 @@ router.get('/crm/expenses', (req, res) => {
 });
 
 // Evidencia de un gasto (imagen del ticket/factura)
-router.get('/crm/expenses/:id/photo', (req, res) => {
+router.get('/crm/expenses/:id/photo', READ, (req, res) => {
   const e = db.get('expenses', req.params.id);
   if (!e || !e.photo) return res.status(404).json({ error: 'Sin evidencia' });
   res.json({ photo: e.photo });
@@ -145,7 +148,7 @@ router.post('/crm/expenses/:id/decision', WRITE, (req, res) => {
 });
 
 // Facturación: solicitudes y emisión (integración Aspel — fase posterior)
-router.get('/crm/invoices', (req, res) => {
+router.get('/crm/invoices', READ, (req, res) => {
   let items = db.all('invoices');
   if (req.query.status) items = items.filter((i) => i.status === req.query.status);
   const cliById = Object.fromEntries(db.all('clients').map((c) => [c.id, c.name]));
@@ -168,7 +171,7 @@ router.post('/crm/invoices/:id/emit', WRITE, async (req, res) => {
 });
 
 // Estado de los conectores externos (G3 / MES / Aspel) para diagnóstico del gerente.
-router.get('/crm/integrations/status', (req, res) => {
+router.get('/crm/integrations/status', READ, (req, res) => {
   res.json(integrationsStatus());
 });
 

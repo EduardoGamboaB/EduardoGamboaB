@@ -21,7 +21,7 @@ export default async function facturacion(el) {
   el.appendChild(h('div', { class: 'card' },
     h('div', { class: 'card-head' }, h('h2', {}, 'Solicitudes de factura'), h('span', { class: 'sub' }, `${items.length} registro(s)`)),
     h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
-      h('thead', {}, h('tr', {}, h('th', {}, 'Folio'), h('th', {}, 'Cliente'), h('th', {}, 'RFC'), h('th', {}, 'Uso'), h('th', {}, 'Vendedor'), h('th', {}, 'Fecha'), h('th', { class: 'num' }, 'Importe'), h('th', {}, 'Estatus'), h('th', {}, 'UUID'), can('admin', 'contador') ? h('th', {}, '') : null)),
+      h('thead', {}, h('tr', {}, h('th', {}, 'Folio'), h('th', {}, 'Cliente'), h('th', {}, 'RFC'), h('th', {}, 'Uso'), h('th', {}, 'Vendedor'), h('th', {}, 'Fecha'), h('th', { class: 'num' }, 'Importe'), h('th', {}, 'Estatus'), h('th', {}, 'UUID'), can('admin', 'contador', 'comercial') ? h('th', {}, '') : null)),
       h('tbody', {}, ...items.map((i) => {
         const [cls, label] = STATUS[i.status] || ['b-gray', i.status];
         return h('tr', {},
@@ -34,7 +34,7 @@ export default async function facturacion(el) {
           h('td', { class: 'num mono' }, money(i.amount)),
           h('td', {}, h('span', { class: `badge ${cls}` }, label)),
           h('td', { class: 'muted mono', style: 'font-size:11px' }, i.uuid || '—'),
-          can('admin', 'contador') ? h('td', {}, i.status === 'solicitada'
+          can('admin', 'contador', 'comercial') ? h('td', {}, i.status === 'solicitada'
             ? h('div', { class: 'row', style: 'gap:6px' },
                 h('button', { class: 'btn btn-sm btn-primary', onClick: () => emitir(i) }, 'Emitir'),
                 h('button', { class: 'btn btn-sm', onClick: () => cancelar(i) }, 'Cancelar'))

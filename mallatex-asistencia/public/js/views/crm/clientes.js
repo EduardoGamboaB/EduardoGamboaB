@@ -13,7 +13,7 @@ export default async function clientes(el) {
   el.appendChild(h('div', { class: 'card card-pad mb' },
     h('div', { class: 'row spread' },
       h('div', {}, h('h2', { style: 'margin:0' }, 'Cartera de clientes'), h('div', { class: 'muted mt' }, `${clients.length} clientes/prospectos · asigna la cartera a cada vendedor`)),
-      can('admin', 'contador') ? h('button', { class: 'btn btn-primary', onClick: () => clientModal(null, vendorList) }, '+ Cliente') : null,
+      can('admin', 'contador', 'comercial') ? h('button', { class: 'btn btn-primary', onClick: () => clientModal(null, vendorList) }, '+ Cliente') : null,
     ),
   ));
 
@@ -23,7 +23,7 @@ export default async function clientes(el) {
   const table = h('div', { class: 'card' },
     h('div', { class: 'card-head' }, h('h2', {}, 'Clientes'), h('span', { class: 'sub' }, `${clients.length} registros`)),
     h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
-      h('thead', {}, h('tr', {}, h('th', {}, 'Cliente'), h('th', {}, 'Tipo'), h('th', {}, 'Etapa'), h('th', {}, 'Cultivo'), h('th', {}, 'Vendedor'), h('th', {}, 'Contacto'), can('admin', 'contador') ? h('th', {}, '') : null)),
+      h('thead', {}, h('tr', {}, h('th', {}, 'Cliente'), h('th', {}, 'Tipo'), h('th', {}, 'Etapa'), h('th', {}, 'Cultivo'), h('th', {}, 'Vendedor'), h('th', {}, 'Contacto'), can('admin', 'contador', 'comercial') ? h('th', {}, '') : null)),
       h('tbody', {}, ...clients.map((c) => {
         const [cls, label] = STAGE[c.stage] || ['b-gray', c.stage || '—'];
         return h('tr', {},
@@ -33,7 +33,7 @@ export default async function clientes(el) {
           h('td', { class: 'muted' }, c.cultivo || '—'),
           h('td', {}, c.assignedToName || h('span', { class: 'muted' }, 'Sin asignar')),
           h('td', { class: 'muted' }, [c.contactName, c.phone].filter(Boolean).join(' · ') || '—'),
-          can('admin', 'contador') ? h('td', {}, h('div', { class: 'row', style: 'gap:6px' },
+          can('admin', 'contador', 'comercial') ? h('td', {}, h('div', { class: 'row', style: 'gap:6px' },
             h('button', { class: 'btn btn-sm', onClick: () => clientModal(c, vendorList) }, 'Editar'),
             h('button', { class: 'btn btn-sm', onClick: () => seguimiento(c) }, 'Seguimiento'),
           )) : null,

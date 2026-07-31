@@ -34,7 +34,7 @@ async function renderViaticos(host) {
   host.appendChild(h('div', { class: 'card' },
     h('div', { class: 'card-head' }, h('h2', {}, 'Solicitudes de viáticos'), h('span', { class: 'sub' }, `${items.length} solicitud(es)`)),
     h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
-      h('thead', {}, h('tr', {}, h('th', {}, 'Folio'), h('th', {}, 'Vendedor'), h('th', {}, 'Concepto'), h('th', {}, 'Destino'), h('th', { class: 'num' }, 'Monto'), h('th', {}, 'Estatus'), can('admin', 'contador') ? h('th', {}, '') : null)),
+      h('thead', {}, h('tr', {}, h('th', {}, 'Folio'), h('th', {}, 'Vendedor'), h('th', {}, 'Concepto'), h('th', {}, 'Destino'), h('th', { class: 'num' }, 'Monto'), h('th', {}, 'Estatus'), can('admin', 'contador', 'comercial') ? h('th', {}, '') : null)),
       h('tbody', {}, ...items.map((r) => {
         const [cls, label] = VIA_STATUS[r.status] || ['b-gray', r.status];
         return h('tr', {},
@@ -44,7 +44,7 @@ async function renderViaticos(host) {
           h('td', { class: 'muted' }, r.destination || '—'),
           h('td', { class: 'num mono' }, money(r.amount)),
           h('td', {}, h('span', { class: `badge ${cls}` }, label)),
-          can('admin', 'contador') ? h('td', {}, r.status === 'solicitado'
+          can('admin', 'contador', 'comercial') ? h('td', {}, r.status === 'solicitado'
             ? h('div', { class: 'row', style: 'gap:6px' },
                 h('button', { class: 'btn btn-sm btn-primary', onClick: () => decide('/crm/expense-requests', r.id, 'aprobado') }, 'Aprobar'),
                 h('button', { class: 'btn btn-sm', onClick: () => decide('/crm/expense-requests', r.id, 'rechazado') }, 'Rechazar'))
@@ -62,7 +62,7 @@ async function renderGastos(host) {
   host.appendChild(h('div', { class: 'card' },
     h('div', { class: 'card-head' }, h('h2', {}, 'Comprobación de gastos'), h('span', { class: 'sub' }, `${items.length} · ${money(total)}`)),
     h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
-      h('thead', {}, h('tr', {}, h('th', {}, 'Folio'), h('th', {}, 'Vendedor'), h('th', {}, 'Categoría'), h('th', {}, 'Comercio'), h('th', {}, 'Fecha'), h('th', { class: 'num' }, 'Monto'), h('th', {}, 'Evidencia'), h('th', {}, 'Estatus'), can('admin', 'contador') ? h('th', {}, '') : null)),
+      h('thead', {}, h('tr', {}, h('th', {}, 'Folio'), h('th', {}, 'Vendedor'), h('th', {}, 'Categoría'), h('th', {}, 'Comercio'), h('th', {}, 'Fecha'), h('th', { class: 'num' }, 'Monto'), h('th', {}, 'Evidencia'), h('th', {}, 'Estatus'), can('admin', 'contador', 'comercial') ? h('th', {}, '') : null)),
       h('tbody', {}, ...items.map((e) => {
         const [cls, label] = GTO_STATUS[e.status] || ['b-gray', e.status];
         return h('tr', {},
@@ -74,7 +74,7 @@ async function renderGastos(host) {
           h('td', { class: 'num mono' }, money(e.amount)),
           h('td', {}, e.hasPhoto ? h('button', { class: 'btn btn-sm', onClick: () => verEvidencia(e) }, '📷 Ver') : h('span', { class: 'muted' }, e.hasInvoice ? 'Factura' : '—')),
           h('td', {}, h('span', { class: `badge ${cls}` }, label)),
-          can('admin', 'contador') ? h('td', {}, e.status === 'pendiente'
+          can('admin', 'contador', 'comercial') ? h('td', {}, e.status === 'pendiente'
             ? h('div', { class: 'row', style: 'gap:6px' },
                 h('button', { class: 'btn btn-sm btn-primary', onClick: () => decide('/crm/expenses', e.id, 'aprobado') }, 'Aprobar'),
                 h('button', { class: 'btn btn-sm', onClick: () => decide('/crm/expenses', e.id, 'rechazado') }, 'Rechazar'))

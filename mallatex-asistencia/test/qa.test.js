@@ -483,3 +483,46 @@ test('Integraciones: webhook con factura inexistente responde 404', async () => 
   const r = await json('POST', '/api/integrations/aspel/payment', { token: null, body: { invoiceId: 999999, amount: 10 } });
   assert.equal(r.status, 404);
 });
+
+// ---------------------------------------------------------------------------
+// Acceso por perfil / rol — menú y funcionalidades según el usuario
+// ---------------------------------------------------------------------------
+
+test('Acceso web: /me devuelve los módulos permitidos según el rol', async () => {
+  const admin = (await json('GET', '/api/auth/me', { token: tokens.admin })).data;
+  assert.ok(admin.modules.includes('users') && admin.modules.includes('crm-clientes'), 'admin ve todo');
+  const nomina = (await json('GET', '/api/auth/me', { token: tokens.nomina })).data;
+  assert.ok(nomina.modules.includes('periods'), 'nómina ve nómina');
+  assert.ok(!nomina.modules.includes('crm-clientes') && !nomina.modules.includes('users'), 'nómina no ve comercial ni usuarios');
+  const comercialTok = (await json('POST', '/api/auth/login', { body: { email: 'comercial@mallatex.mx', password: 'mallatex2026' } })).data.token;
+  const com = (await json('GET', '/api/auth/me', { token: comercialTok })).data;
+  assert.deepEqual([...com.modules].sort(), ['crm-administrativo', 'crm-clientes', 'crm-facturacion', 'crm-objetivos'], 'comercial sólo ve el CRM');
+});
+
+test('Acceso web: el gerente comercial administra CRM; nómina no puede', async () => {
+  const comercialTok = (await json('POST', '/api/auth/login', { body: { email: 'comercial@mallatex.mx', password: 'mallatex2026' } })).data.token;
+  assert.equal((await json('GET', '/api/crm/clients', { token: comercialTok })).status, 200);
+  assert.equal((await json('GET', '/api/crm/invoices', { token: comercialTok })).status, 200);
+  // nómina no tiene acceso a la administración comercial
+  assert.equal((await json('GET', '/api/crm/clients', { token: tokens.nomina })).status, 403);
+});
+
+test('Acceso móvil: /field/me expone perfil y módulos por puesto', async () => {
+  const vend = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const meV = (await json('GET', '/api/field/me', { token: vend })).data;
+  assert.equal(meV.profile, 'comercial');
+  for (const k of ['ruta', 'clientes', 'cotizador', 'facturas', 'asistencia', 'perfil']) assert.ok(meV.modules.includes(k), `comercial ve ${k}`);
+  const driver = (await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } })).data.token;
+  const meD = (await json('GET', '/api/field/me', { token: driver })).data;
+  assert.equal(meD.profile, 'operativo');
+  assert.deepEqual([...meD.modules].sort(), ['asistencia', 'perfil'], 'operativo sólo asistencia y perfil');
+});
+
+test('Acceso móvil: el API de ventas exige perfil comercial', async () => {
+  const vend = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  assert.equal((await json('GET', '/api/sales/my-clients', { token: vend })).status, 200);
+  // un colaborador operativo (Reparto) no accede al CRM de ventas
+  const driver = (await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } })).data.token;
+  const denied = await json('GET', '/api/sales/my-clients', { token: driver });
+  assert.equal(denied.status, 403);
+});

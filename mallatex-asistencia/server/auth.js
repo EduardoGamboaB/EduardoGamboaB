@@ -26,12 +26,14 @@ export const ROLES = {
   ADMIN: 'admin',
   CONTADOR: 'contador',
   NOMINA: 'nomina',
+  COMERCIAL: 'comercial',
 };
 
 export const ROLE_LABEL = {
   admin: 'Administrador',
   contador: 'Contador general',
   nomina: 'Responsable de nómina',
+  comercial: 'Gerente comercial',
 };
 
 export function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {

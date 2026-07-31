@@ -1,6 +1,6 @@
 // Bootstrap del SPA: acceso, shell, navegación y contexto global (admin + empleado).
 import { api, getToken, setToken } from './api.js';
-import { state, loadContext, currentPeriod } from './state.js';
+import { state, loadContext, currentPeriod, hasModule } from './state.js';
 import { ROUTES, render, setRenderHook, defaultRoute } from './router.js';
 import { h, clear, initials } from './ui.js';
 
@@ -70,7 +70,8 @@ function buildNav() {
   const groups = {};
   for (const r of ROUTES) {
     if (r.principal !== state.principal) continue;
-    if (r.roles && !(state.user && r.roles.includes(state.user.role))) continue;
+    // El menú lo dicta el backend: sólo se muestran los módulos permitidos para el rol/perfil.
+    if (!hasModule(r.key)) continue;
     (groups[r.group] ||= []).push(r);
   }
   for (const [group, items] of Object.entries(groups)) {

@@ -1,6 +1,6 @@
 // Router simple basado en hash + configuración de navegación (admin y empleado).
 import { clear, h, toast } from './ui.js';
-import { can, state } from './state.js';
+import { state, hasModule } from './state.js';
 
 export const ROUTES = [
   // ---- Administrativo ----
@@ -21,7 +21,7 @@ export const ROUTES = [
   { key: 'employees', label: 'Empleados', icon: '👤', group: 'Catálogos', principal: 'admin', load: () => import('./views/employees.js') },
   { key: 'schedules', label: 'Horarios y reglas', icon: '◷', group: 'Catálogos', principal: 'admin', load: () => import('./views/schedules.js') },
   { key: 'checador', label: 'Checador', icon: '⧉', group: 'Catálogos', principal: 'admin', load: () => import('./views/checador.js') },
-  { key: 'users', label: 'Usuarios', icon: '⚙', group: 'Administración', principal: 'admin', load: () => import('./views/users.js'), roles: ['admin'] },
+  { key: 'users', label: 'Usuarios', icon: '⚙', group: 'Administración', principal: 'admin', load: () => import('./views/users.js') },
   { key: 'audit', label: 'Bitácora', icon: '❐', group: 'Administración', principal: 'admin', load: () => import('./views/audit.js') },
   // ---- Portal del empleado ----
   { key: 'portal-asistencia', label: 'Mi asistencia', icon: '☑', group: 'Mi portal', principal: 'empleado', load: () => import('./views/portal/asistencia.js') },
@@ -31,6 +31,9 @@ export const ROUTES = [
 ];
 
 export function defaultRoute() {
+  // Primer módulo permitido para este usuario (respeta el orden de ROUTES).
+  const first = ROUTES.find((r) => r.principal === state.principal && hasModule(r.key));
+  if (first) return first.key;
   return state.principal === 'empleado' ? 'portal-asistencia' : 'dashboard';
 }
 export function routeFor(key) { return ROUTES.find((r) => r.key === key); }
@@ -48,10 +51,10 @@ export async function render() {
   const seq = ++renderSeq; // descarta renders obsoletos (anti-carrera)
   const key = location.hash.slice(1) || defaultRoute();
   let route = routeFor(key);
-  // No permitir cruzar de persona
-  if (!route || route.principal !== state.principal || (route.roles && !can(...route.roles))) {
+  // No permitir cruzar de persona ni entrar a un módulo no permitido para el rol/perfil.
+  if (!route || route.principal !== state.principal || !hasModule(route.key)) {
     if (route && route.principal !== state.principal) return navigate(defaultRoute());
-    if (route && route.roles && !can(...route.roles)) { toast('No tienes acceso a esa sección', 'err'); return navigate(defaultRoute()); }
+    if (route && !hasModule(route.key)) { toast('No tienes acceso a esa sección', 'err'); return navigate(defaultRoute()); }
     route = routeFor(defaultRoute());
   }
   const view = document.getElementById('view');

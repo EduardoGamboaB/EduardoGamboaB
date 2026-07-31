@@ -40,6 +40,7 @@ export function seed({ reset = false } = {}) {
     { name: 'Armando Ríos', email: 'admin@mallatex.mx', role: ROLES.ADMIN, position: 'Dirección / Administrador' },
     { name: 'Laura Méndez', email: 'contabilidad@mallatex.mx', role: ROLES.CONTADOR, position: 'Contador general' },
     { name: 'Sofía Herrera', email: 'nomina@mallatex.mx', role: ROLES.NOMINA, position: 'Responsable de nómina' },
+    { name: 'Diego Fuentes', email: 'comercial@mallatex.mx', role: ROLES.COMERCIAL, position: 'Gerente comercial' },
   ];
   for (const u of users) {
     db.insert('users', { ...u, password: hashPassword(DEMO_PASSWORD), active: true });

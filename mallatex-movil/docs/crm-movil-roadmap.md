@@ -5,6 +5,23 @@ vendedores**: cartera asignada desde central, rutas de visita con GPS y evidenci
 cotizador/pedidos, inventario, objetivos de venta, asistente técnico y esquema
 administrativo (viáticos, gastos, facturas). Todo con **modo offline**.
 
+## Acceso por perfil (menú dinámico)
+
+El menú y las funcionalidades se cargan **según el usuario**, con el backend como fuente de
+verdad: `/api/field/me` (móvil) y `/api/auth/me` (web) devuelven `modules` y, en móvil, el
+`profile`. El cliente sólo renderiza lo permitido; los endpoints además lo hacen cumplir.
+
+- **Perfil `comercial`** (área Ventas): CRM completo — ruta, clientes, visitas, desempeño,
+  inventario, cotizador, pedidos, bot, viáticos, gastos, facturas, asistencia y perfil.
+- **Perfil `operativo`** (Reparto, Producción, etc.): sólo **asistencia** y **perfil**
+  (asistencia de campo remota). El API de ventas (`/api/sales/*`) le responde 403.
+- El perfil se deriva del área/puesto y admite override explícito (`employee.appProfile`).
+  Modelo en `server/access.js`.
+
+**Roles web (SPA admin):** `admin` (todo), `contador` (todo salvo Usuarios), `nómina`
+(operación/nómina/RH/catálogos, sin Comercial ni Usuarios) y `comercial` (Gerente comercial:
+sólo el módulo Comercial: cartera, objetivos, viáticos/gastos y facturación).
+
 ## Roles y flujo web ↔ móvil
 
 - **Gerente comercial (app web):** administra el catálogo de clientes/prospectos, **asigna

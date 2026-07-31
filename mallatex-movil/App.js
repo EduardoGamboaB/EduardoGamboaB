@@ -40,6 +40,8 @@ const MENU = [
 ];
 const GROUPS = ['Ventas', 'Herramientas', 'Administración', 'Cuenta'];
 const titleOf = (key) => (MENU.find((m) => m.key === key) || {}).label || 'Mallatex Ventas';
+// El menú lo dicta el backend (perfil del colaborador). Si no llega la lista, se muestra todo.
+const allowedMenu = (modules) => (modules ? MENU.filter((m) => modules.includes(m.key)) : MENU);
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -50,6 +52,11 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [queueVersion, setQueueVersion] = useState(0);
   const [bioName, setBioName] = useState('biometría');
+
+  const modules = profile?.modules || null;
+  const menu = allowedMenu(modules);
+  // Pantalla efectiva: nunca renderiza un módulo no permitido para el perfil.
+  const activeScreen = modules && !modules.includes(screen) ? (menu[0]?.key || 'perfil') : screen;
 
   const loadProfile = useCallback(async () => {
     try { const me = await api.me(); setProfile(me); setAuthed(true); return true; }
@@ -89,6 +96,11 @@ export default function App() {
 
   useEffect(() => { if (authed) { flushQueue(true); flushTrackBuffer(); } }, [authed, flushQueue]);
 
+  // Si la pantalla actual no está permitida para el perfil, salta a la primera disponible.
+  useEffect(() => {
+    if (profile && modules && !modules.includes(screen)) setScreen(menu[0]?.key || 'perfil');
+  }, [profile]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function onLoggedIn() {
     const ok = await loadProfile();
     if (ok && !(await getBiometricEnabled()) && (await biometricAvailable())) {
@@ -127,22 +139,22 @@ export default function App() {
           <Text style={st.avatarTxt}>{(profile?.employee?.name || '?').split(' ').slice(0, 2).map((s) => s[0]).join('').toUpperCase()}</Text>
         </TouchableOpacity>
       </View>
-      <View style={st.subbar}><Text style={st.subbarTxt}>{titleOf(screen)}</Text></View>
+      <View style={st.subbar}><Text style={st.subbarTxt}>{titleOf(activeScreen)}</Text></View>
 
       <View style={{ flex: 1 }}>
-        {screen === 'ruta' && <RouteScreen onGoVisit={() => go('visita')} />}
-        {screen === 'clientes' && <ClientsScreen />}
-        {screen === 'visita' && <VisitScreen />}
-        {screen === 'desempeno' && <PerformanceScreen />}
-        {screen === 'asistencia' && <CheckinScreen profile={profile} onQueued={() => setQueueVersion((v) => v + 1)} />}
-        {screen === 'perfil' && <ProfileScreen profile={profile} onLogout={logout} />}
-        {screen === 'inventario' && <InventoryScreen />}
-        {screen === 'cotizador' && <QuoteScreen />}
-        {screen === 'pedidos' && <OrdersScreen />}
-        {screen === 'bot' && <BotScreen />}
-        {screen === 'viaticos' && <ViaticosScreen />}
-        {screen === 'gastos' && <GastosScreen />}
-        {screen === 'facturas' && <FacturasScreen />}
+        {activeScreen === 'ruta' && <RouteScreen onGoVisit={() => go('visita')} />}
+        {activeScreen === 'clientes' && <ClientsScreen />}
+        {activeScreen === 'visita' && <VisitScreen />}
+        {activeScreen === 'desempeno' && <PerformanceScreen />}
+        {activeScreen === 'asistencia' && <CheckinScreen profile={profile} onQueued={() => setQueueVersion((v) => v + 1)} />}
+        {activeScreen === 'perfil' && <ProfileScreen profile={profile} onLogout={logout} />}
+        {activeScreen === 'inventario' && <InventoryScreen />}
+        {activeScreen === 'cotizador' && <QuoteScreen />}
+        {activeScreen === 'pedidos' && <OrdersScreen />}
+        {activeScreen === 'bot' && <BotScreen />}
+        {activeScreen === 'viaticos' && <ViaticosScreen />}
+        {activeScreen === 'gastos' && <GastosScreen />}
+        {activeScreen === 'facturas' && <FacturasScreen />}
       </View>
 
       {/* Menú lateral (drawer) */}
@@ -155,18 +167,22 @@ export default function App() {
               <Text style={st.drawerSub}>{profile?.employee?.code} · {profile?.employee?.department}</Text>
             </View>
             <ScrollView>
-              {GROUPS.map((group) => (
-                <View key={group}>
-                  <Text style={st.group}>{group}</Text>
-                  {MENU.filter((m) => m.group === group).map((m) => (
-                    <TouchableOpacity key={m.key} style={[st.item, screen === m.key && st.itemOn]} onPress={() => go(m.key)} disabled={false}>
-                      <Text style={st.itemIcon}>{m.icon}</Text>
-                      <Text style={[st.itemLabel, screen === m.key && st.itemLabelOn, m.soon && st.itemSoon]}>{m.label}</Text>
-                      {m.soon && <Text style={st.soonTag}>pronto</Text>}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ))}
+              {GROUPS.map((group) => {
+                const items = menu.filter((m) => m.group === group);
+                if (!items.length) return null;
+                return (
+                  <View key={group}>
+                    <Text style={st.group}>{group}</Text>
+                    {items.map((m) => (
+                      <TouchableOpacity key={m.key} style={[st.item, activeScreen === m.key && st.itemOn]} onPress={() => go(m.key)} disabled={false}>
+                        <Text style={st.itemIcon}>{m.icon}</Text>
+                        <Text style={[st.itemLabel, activeScreen === m.key && st.itemLabelOn, m.soon && st.itemSoon]}>{m.label}</Text>
+                        {m.soon && <Text style={st.soonTag}>pronto</Text>}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                );
+              })}
             </ScrollView>
             <TouchableOpacity style={st.logout} onPress={logout}><Text style={st.logoutTxt}>Cerrar sesión</Text></TouchableOpacity>
             <Text style={st.foot}>v1.0.0 · powered by Evorgyn</Text>

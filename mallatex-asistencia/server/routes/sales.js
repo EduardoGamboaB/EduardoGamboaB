@@ -4,11 +4,13 @@
 import express from 'express';
 import * as db from '../db.js';
 import { requireEmployee } from '../auth.js';
+import { requireCommercialProfile } from '../access.js';
 import { logSystem } from '../audit.js';
 import { recommend } from '../advisor.js';
 
 const router = express.Router();
-router.use(requireEmployee);
+// Todo el CRM móvil de ventas requiere sesión de empleado CON perfil comercial.
+router.use(requireEmployee, requireCommercialProfile);
 
 // ---------- Asistente técnico (recomendación de malla) ----------
 router.post('/advisor', (req, res) => {

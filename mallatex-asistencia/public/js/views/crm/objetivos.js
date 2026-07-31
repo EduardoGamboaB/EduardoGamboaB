@@ -12,14 +12,14 @@ export default async function objetivos(el) {
   el.appendChild(h('div', { class: 'card card-pad mb' },
     h('div', { class: 'row spread' },
       h('div', {}, h('h2', { style: 'margin:0' }, 'Objetivos de venta'), h('div', { class: 'muted mt' }, 'Meta por vendedor y trimestre')),
-      can('admin', 'contador') ? h('button', { class: 'btn btn-primary', onClick: () => objModal(null, vendorList) }, '+ Objetivo') : null,
+      can('admin', 'contador', 'comercial') ? h('button', { class: 'btn btn-primary', onClick: () => objModal(null, vendorList) }, '+ Objetivo') : null,
     ),
   ));
 
   el.appendChild(h('div', { class: 'card' },
     h('div', { class: 'card-head' }, h('h2', {}, 'Metas'), h('span', { class: 'sub' }, `${objs.length} objetivo(s)`)),
     objs.length ? h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
-      h('thead', {}, h('tr', {}, h('th', {}, 'Vendedor'), h('th', {}, 'Periodo'), h('th', { class: 'num' }, 'Meta'), h('th', { class: 'num' }, 'Alcanzado'), h('th', {}, 'Avance'), can('admin', 'contador') ? h('th', {}, '') : null)),
+      h('thead', {}, h('tr', {}, h('th', {}, 'Vendedor'), h('th', {}, 'Periodo'), h('th', { class: 'num' }, 'Meta'), h('th', { class: 'num' }, 'Alcanzado'), h('th', {}, 'Avance'), can('admin', 'contador', 'comercial') ? h('th', {}, '') : null)),
       h('tbody', {}, ...objs.map((o) => {
         const pct = o.targetAmount ? Math.min(100, Math.round((o.achievedAmount / o.targetAmount) * 100)) : 0;
         return h('tr', {},
@@ -31,7 +31,7 @@ export default async function objetivos(el) {
             h('div', { style: 'flex:1;height:8px;background:var(--line-2);border-radius:4px;overflow:hidden;min-width:80px' },
               h('div', { style: `height:8px;width:${pct}%;background:${pct >= 100 ? 'var(--ok)' : 'var(--accent)'}` })),
             h('span', { class: 'mono', style: 'font-size:12px' }, pct + '%'))),
-          can('admin', 'contador') ? h('td', {}, h('button', { class: 'btn btn-sm', onClick: () => objModal(o, vendorList) }, 'Editar')) : null,
+          can('admin', 'contador', 'comercial') ? h('td', {}, h('button', { class: 'btn btn-sm', onClick: () => objModal(o, vendorList) }, 'Editar')) : null,
         );
       })),
     )) : empty('🎯', 'Sin objetivos. Usa “+ Objetivo”.'),
