@@ -526,3 +526,51 @@ test('Acceso móvil: el API de ventas exige perfil comercial', async () => {
   const denied = await json('GET', '/api/sales/my-clients', { token: driver });
   assert.equal(denied.status, 403);
 });
+
+// ---------------------------------------------------------------------------
+// Configuración: usuarios, roles, módulos, permisos y asignación
+// ---------------------------------------------------------------------------
+
+test('Configuración: catálogo y permisos sólo para administrador', async () => {
+  const cat = await json('GET', '/api/access/catalog', { token: tokens.admin });
+  assert.equal(cat.status, 200);
+  assert.ok(cat.data.roles.length >= 4 && cat.data.webModules.length > 15 && cat.data.mobileModules.length > 8);
+  assert.deepEqual(cat.data.profiles.map((p) => p.value), ['comercial', 'operativo']);
+  // contador y nómina no acceden a la configuración de acceso
+  assert.equal((await json('GET', '/api/access/catalog', { token: tokens.contador })).status, 403);
+  assert.equal((await json('GET', '/api/access/permissions', { token: tokens.nomina })).status, 403);
+});
+
+test('Configuración: editar la matriz de permisos cambia el menú del rol', async () => {
+  const base = (await json('GET', '/api/access/permissions', { token: tokens.admin })).data.web.comercial;
+  // conceder "dashboard" al rol comercial
+  await json('PUT', '/api/access/permissions', { token: tokens.admin, body: { web: { comercial: [...base, 'dashboard'] } } });
+  const com = (await json('POST', '/api/auth/login', { body: { email: 'comercial@mallatex.mx', password: 'mallatex2026' } })).data.token;
+  assert.ok((await json('GET', '/api/auth/me', { token: com })).data.modules.includes('dashboard'), 'el rol comercial ahora ve el tablero');
+  // restaurar
+  await json('PUT', '/api/access/permissions', { token: tokens.admin, body: { web: { comercial: base } } });
+  assert.ok(!(await json('GET', '/api/auth/me', { token: com })).data.modules.includes('dashboard'));
+});
+
+test('Configuración: asignar módulos extra a un usuario', async () => {
+  const nomUser = (await json('GET', '/api/access/users', { token: tokens.admin })).data.find((u) => u.role === 'nomina');
+  await json('PUT', `/api/access/users/${nomUser.id}`, { token: tokens.admin, body: { role: 'nomina', extraModules: ['crm-clientes'], revokedModules: [] } });
+  assert.ok((await json('GET', '/api/auth/me', { token: tokens.nomina })).data.modules.includes('crm-clientes'), 'el usuario recibe el módulo extra');
+  // restaurar
+  await json('PUT', `/api/access/users/${nomUser.id}`, { token: tokens.admin, body: { extraModules: [] } });
+  assert.ok(!(await json('GET', '/api/auth/me', { token: tokens.nomina })).data.modules.includes('crm-clientes'));
+});
+
+test('Configuración: asignar perfil móvil a un colaborador', async () => {
+  const driver = (await json('GET', '/api/access/employees', { token: tokens.admin })).data.find((e) => e.code === 'MTX013');
+  assert.equal(driver.profile, 'operativo');
+  const upd = await json('PUT', `/api/access/employees/${driver.id}`, { token: tokens.admin, body: { appProfile: 'comercial' } });
+  assert.equal(upd.data.profile, 'comercial');
+  // ahora el conductor puede entrar al CRM de ventas y ve el menú comercial
+  const dtok = (await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } })).data.token;
+  assert.equal((await json('GET', '/api/sales/my-clients', { token: dtok })).status, 200);
+  assert.equal((await json('GET', '/api/field/me', { token: dtok })).data.profile, 'comercial');
+  // restaurar (automático por área)
+  const back = await json('PUT', `/api/access/employees/${driver.id}`, { token: tokens.admin, body: { appProfile: null } });
+  assert.equal(back.data.profile, 'operativo');
+});

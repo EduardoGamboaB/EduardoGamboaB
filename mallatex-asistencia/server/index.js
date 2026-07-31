@@ -23,6 +23,7 @@ import salesRoutes from './routes/sales.js';
 import sitesRoutes from './routes/sites.js';
 import crmRoutes from './routes/crm.js';
 import integrationsRoutes from './routes/integrations.js';
+import accessRoutes from './routes/access.js';
 import rhRoutes from './routes/rh.js';
 import { requireAuth, adminOnly } from './auth.js';
 
@@ -94,6 +95,7 @@ app.use('/api/integrations', integrationsRoutes);
 app.use('/api', requireAuth, adminOnly, catalogRoutes);
 app.use('/api', requireAuth, adminOnly, sitesRoutes);
 app.use('/api', requireAuth, adminOnly, crmRoutes);
+app.use('/api', requireAuth, adminOnly, accessRoutes);
 app.use('/api', requireAuth, adminOnly, operationsRoutes);
 app.use('/api', requireAuth, adminOnly, periodRoutes);
 app.use('/api', requireAuth, adminOnly, variablePayRoutes);

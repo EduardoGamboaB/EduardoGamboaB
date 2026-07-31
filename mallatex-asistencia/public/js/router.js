@@ -21,8 +21,12 @@ export const ROUTES = [
   { key: 'employees', label: 'Empleados', icon: '👤', group: 'Catálogos', principal: 'admin', load: () => import('./views/employees.js') },
   { key: 'schedules', label: 'Horarios y reglas', icon: '◷', group: 'Catálogos', principal: 'admin', load: () => import('./views/schedules.js') },
   { key: 'checador', label: 'Checador', icon: '⧉', group: 'Catálogos', principal: 'admin', load: () => import('./views/checador.js') },
-  { key: 'users', label: 'Usuarios', icon: '⚙', group: 'Administración', principal: 'admin', load: () => import('./views/users.js') },
   { key: 'audit', label: 'Bitácora', icon: '❐', group: 'Administración', principal: 'admin', load: () => import('./views/audit.js') },
+  { key: 'users', label: 'Usuarios', icon: '👤', group: 'Configuración', principal: 'admin', load: () => import('./views/users.js') },
+  { key: 'cfg-roles', label: 'Roles', icon: '🛡', group: 'Configuración', principal: 'admin', load: () => import('./views/config/roles.js') },
+  { key: 'cfg-modulos', label: 'Módulos', icon: '🧩', group: 'Configuración', principal: 'admin', load: () => import('./views/config/modulos.js') },
+  { key: 'cfg-permisos', label: 'Permisos', icon: '🔐', group: 'Configuración', principal: 'admin', load: () => import('./views/config/permisos.js') },
+  { key: 'cfg-asignacion', label: 'Asignación', icon: '🧑‍💼', group: 'Configuración', principal: 'admin', load: () => import('./views/config/asignacion.js') },
   // ---- Portal del empleado ----
   { key: 'portal-asistencia', label: 'Mi asistencia', icon: '☑', group: 'Mi portal', principal: 'empleado', load: () => import('./views/portal/asistencia.js') },
   { key: 'portal-vacaciones', label: 'Vacaciones y permisos', icon: '🌴', group: 'Mi portal', principal: 'empleado', load: () => import('./views/portal/vacaciones.js') },
