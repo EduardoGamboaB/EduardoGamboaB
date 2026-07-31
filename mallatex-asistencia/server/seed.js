@@ -40,6 +40,7 @@ export function seed({ reset = false } = {}) {
     { name: 'Armando Ríos', email: 'admin@mallatex.mx', role: ROLES.ADMIN, position: 'Dirección / Administrador' },
     { name: 'Laura Méndez', email: 'contabilidad@mallatex.mx', role: ROLES.CONTADOR, position: 'Contador general' },
     { name: 'Sofía Herrera', email: 'nomina@mallatex.mx', role: ROLES.NOMINA, position: 'Responsable de nómina' },
+    { name: 'Diego Fuentes', email: 'comercial@mallatex.mx', role: ROLES.COMERCIAL, position: 'Gerente comercial' },
   ];
   for (const u of users) {
     db.insert('users', { ...u, password: hashPassword(DEMO_PASSWORD), active: true });
@@ -172,6 +173,64 @@ export function seed({ reset = false } = {}) {
   if (byCode['MTX013']) db.update('employees', byCode['MTX013'].id, { workMode: 'campo', allowedSiteIds: [obraNorte.id, clienteCentro.id, bodegaSur.id] });
   if (byCode['MTX006']) db.update('employees', byCode['MTX006'].id, { workMode: 'campo', allowedSiteIds: [clienteCentro.id] });
   if (byCode['MTX010']) db.update('employees', byCode['MTX010'].id, { workMode: 'hibrido', allowedSiteIds: [clienteCentro.id, obraNorte.id] });
+
+  // ----- CRM de ventas: cartera y objetivos (demo) -----
+  const vGabriela = byCode['MTX006'] ? byCode['MTX006'].id : null;
+  const vKarla = byCode['MTX010'] ? byCode['MTX010'].id : null;
+  const clientes = [
+    ['Invernaderos del Valle', 'cliente', 'cliente', 'Tomate', 20.68, -103.42, vGabriela],
+    ['Agrícola San Isidro', 'cliente', 'cliente', 'Berries', 20.61, -103.35, vGabriela],
+    ['Vivero La Huerta', 'prospecto', 'prospecto', 'Ornamentales', 20.72, -103.30, vGabriela],
+    ['Hortalizas del Bajío', 'cliente', 'negociacion', 'Chile', 20.55, -103.48, vKarla],
+    ['Frutícola El Roble', 'prospecto', 'prospecto', 'Aguacate', 20.78, -103.39, vKarla],
+    ['Semillas y Mallas GDL', 'prospecto', 'prospecto', 'Multicultivo', 20.65, -103.33, vKarla],
+  ];
+  for (const [name, type, stage, cultivo, lat, lng, assignedTo] of clientes) {
+    if (!assignedTo) continue;
+    db.insert('clients', {
+      name, type, stage, cultivo, lat, lng, assignedTo,
+      contactName: 'Contacto ' + name.split(' ')[0], phone: '33-1234-0000', email: '', address: 'Jalisco',
+      notes: '', active: true, createdAt: '2026-07-01T09:00:00.000Z',
+    });
+  }
+  if (vGabriela) db.insert('salesObjectives', { employeeId: vGabriela, period: 'Q3-2026', targetAmount: 850000, achievedAmount: 520000 });
+  if (vKarla) db.insert('salesObjectives', { employeeId: vKarla, period: 'Q3-2026', targetAmount: 900000, achievedAmount: 610000 });
+
+  // ----- Administrativo: viáticos, gastos y facturas (demo) -----
+  const stampVia = (id) => 'VIA-' + String(id).padStart(5, '0');
+  const stampGto = (id) => 'GTO-' + String(id).padStart(5, '0');
+  const stampFac = (id) => 'FAC-' + String(id).padStart(5, '0');
+  if (vGabriela) {
+    const v1 = db.insert('expenseRequests', { employeeId: vGabriela, concept: 'Gira comercial Zona Bajío', destination: 'Zamora / La Piedad', amount: 4500, fromDate: '2026-07-28', toDate: '2026-07-30', description: 'Hospedaje 2 noches, casetas y combustible', status: 'aprobado', decidedBy: 'Laura Méndez', decidedAt: '2026-07-27T16:00:00.000Z', decisionNote: 'Autorizado', createdAt: '2026-07-25T10:00:00.000Z' });
+    db.update('expenseRequests', v1.id, { folio: stampVia(v1.id) });
+    const g1 = db.insert('expenses', { employeeId: vGabriela, requestId: v1.id, category: 'combustible', merchant: 'Gasolinera Pemex Zamora', amount: 1180.5, date: '2026-07-28', hasInvoice: true, rfc: 'PEP970814SF3', notes: '', photo: null, status: 'aprobado', decidedBy: 'Laura Méndez', decidedAt: '2026-07-31T09:00:00.000Z', createdAt: '2026-07-28T19:30:00.000Z' });
+    db.update('expenses', g1.id, { folio: stampGto(g1.id) });
+    const g2 = db.insert('expenses', { employeeId: vGabriela, requestId: v1.id, category: 'hospedaje', merchant: 'Hotel Fénix', amount: 1740, date: '2026-07-29', hasInvoice: true, rfc: 'HFE080910AB1', notes: '', photo: null, status: 'pendiente', createdAt: '2026-07-29T22:10:00.000Z' });
+    db.update('expenses', g2.id, { folio: stampGto(g2.id) });
+    const f1 = db.insert('invoices', { employeeId: vGabriela, clientId: null, orderId: null, rfc: 'IVA860512QK8', razonSocial: 'Invernaderos del Valle SA de CV', usoCfdi: 'G03', amount: 92800, status: 'solicitada', uuid: null, emittedAt: null, emittedBy: null, createdAt: '2026-07-30T12:00:00.000Z' });
+    db.update('invoices', f1.id, { folio: stampFac(f1.id) });
+  }
+  if (vKarla) {
+    const v2 = db.insert('expenseRequests', { employeeId: vKarla, concept: 'Visita de cobranza cliente Chile', destination: 'Cd. Guzmán', amount: 2200, fromDate: '2026-08-04', toDate: '2026-08-04', description: 'Casetas y alimentos', status: 'solicitado', createdAt: '2026-07-31T08:30:00.000Z' });
+    db.update('expenseRequests', v2.id, { folio: stampVia(v2.id) });
+    const f2 = db.insert('invoices', { employeeId: vKarla, clientId: null, orderId: null, rfc: 'HDB900127TT2', razonSocial: 'Hortalizas del Bajío', usoCfdi: 'G01', amount: 46400, status: 'emitida', uuid: 'MTX-DEMO-3F9A2C', emittedAt: '2026-07-29T15:00:00.000Z', emittedBy: 'Laura Méndez', createdAt: '2026-07-28T11:00:00.000Z' });
+    db.update('invoices', f2.id, { folio: stampFac(f2.id) });
+  }
+
+  // ----- Inventario (mallas Mallatex) -----
+  const productos = [
+    ['MS-35', 'Malla sombra 35%', 'sombra', 'm²', 18.5, 12000, 'Sombreo 35% · uso general'],
+    ['MS-50', 'Malla sombra 50%', 'sombra', 'm²', 22.0, 9800, 'Sombreo 50% · hortalizas'],
+    ['MS-70', 'Malla sombra 70%', 'sombra', 'm²', 27.5, 4300, 'Sombreo 70% · vivero/ornamental'],
+    ['MAG-01', 'Malla antigranizo', 'antigranizo', 'm²', 34.0, 6100, 'Protección antigranizo · frutales'],
+    ['MAI-50', 'Malla antiinsecto 50 mesh', 'antiinsecto', 'm²', 41.0, 3800, 'Barrera antiáfidos/mosca blanca'],
+    ['MAP-01', 'Malla antipájaros', 'antipajaros', 'm²', 12.0, 15000, 'Protección contra aves · berries/vid'],
+    ['MT-01', 'Malla tutora (espaldera)', 'tutora', 'rollo', 890.0, 320, 'Entutorado de cultivos verticales'],
+    ['GC-01', 'Ground cover', 'groundcover', 'm²', 15.5, 8700, 'Cubierta de suelo antimaleza'],
+  ];
+  for (const [sku, name, category, unit, price, stock, specs] of productos) {
+    db.insert('products', { sku, name, category, unit, price, stock, warehouse: 'CD Guadalajara', specs, active: true });
+  }
 
   // ----- Algunas incidencias de ejemplo -----
   db.insert('incidents', {

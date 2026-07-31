@@ -18,11 +18,43 @@ motor de reglas y a la exportación a **Aspel NOI**.
 |---|---|
 | ![Confirmación](docs/screenshots/04-confirmacion.png) | ![Historial](docs/screenshots/05-historial.png) |
 
+| Menú (escalable) | Mi perfil (con biometría) |
+|---|---|
+| ![Menú](docs/screenshots/06-menu.png) | ![Perfil](docs/screenshots/07-perfil.png) |
+
 > Capturas del flujo real (acceso → registro con selfie + GPS → validación de geocerca →
 > historial), tomadas contra el backend con datos demo.
 
-## Funcionalidades
+> **En evolución a CRM móvil de ventas.** Ver la arquitectura y hoja de ruta completa en
+> [`docs/crm-movil-roadmap.md`](docs/crm-movil-roadmap.md).
 
+## CRM de ventas (Fase 1)
+
+| Menú (Ventas / Herramientas) | Mis clientes (cartera) | Mi desempeño |
+|---|---|---|
+| ![Menú](docs/screenshots/11-crm-menu.png) | ![Clientes](docs/screenshots/12-crm-clientes.png) | ![Desempeño](docs/screenshots/13-crm-desempeno.png) |
+
+- **Cartera de clientes/prospectos** asignada desde central (app web del gerente comercial);
+  el vendedor la consulta y da de alta prospectos en campo.
+- **Ruta de visitas**: inicia la ruta (registro de recorrido por **GPS**), la actualiza y la
+  finaliza.
+- **Registrar visita** con **evidencia (foto)**, **estatus** (realizada / no localizado /
+  reagendada), **tipo** (prospección, seguimiento, cierre, cobranza, entrega, postventa),
+  si se **encontró** al cliente, notas y ubicación. **Funciona offline**.
+- **Mi desempeño**: objetivo de venta del trimestre, avance y KPIs (cartera, prospectos,
+  visitas).
+- **Próximos módulos** (en el menú, *pronto*): Inventario, Cotizador, Pedidos, Asistente
+  técnico (bot), Viáticos, Gastos, Facturas.
+
+## Funcionalidades base
+
+- **Identidad Mallatex**: logotipo oficial en acceso, encabezado y menú; icono de app,
+  splash y adaptive icon con la marca.
+- **Acceso biométrico** (Face ID / huella, `expo-local-authentication`): tras el primer
+  acceso con código + PIN, la app ofrece activar biometría; al reabrir, la sesión se
+  desbloquea con el sensor del dispositivo. Se administra desde *Mi perfil*.
+- **Menú lateral escalable**: navegación por secciones (Asistencia · Cuenta) con espacio
+  para futuros módulos (Recibos, Vacaciones, Tickets — marcados *pronto*).
 - **Acceso del colaborador** con código + PIN (misma cuenta del portal).
 - **Registro de entrada/salida** desde el campo con:
   - **Selfie** (cámara frontal) como evidencia de identidad.

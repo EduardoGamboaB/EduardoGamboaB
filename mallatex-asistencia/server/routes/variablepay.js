@@ -21,12 +21,12 @@ router.get('/variable-sources', (_req, res) => {
 
 // Sincroniza una fuente externa (G3 / MES / Aspel) para un periodo. Simulada en esta
 // fase; en producción consultaría la API del sistema externo.
-router.post('/variable-sync', requireRole(ROLES.ADMIN, ROLES.CONTADOR, ROLES.NOMINA), (req, res) => {
+router.post('/variable-sync', requireRole(ROLES.ADMIN, ROLES.CONTADOR, ROLES.NOMINA), async (req, res) => {
   const { source, periodId } = req.body || {};
   if (!source || !periodId) return res.status(400).json({ error: 'source y periodId son obligatorios' });
   try {
-    const result = syncSource(source, periodId, req.user.name);
-    log(req, { action: 'sync', entity: 'variableEntry', detail: `Sincronización ${result.label}: ${result.created} nueva(s), ${result.updated} actualizada(s)` });
+    const result = await syncSource(source, periodId, req.user.name);
+    log(req, { action: 'sync', entity: 'variableEntry', detail: `Sincronización ${result.label} (${result.mode}): ${result.created} nueva(s), ${result.updated} actualizada(s)` });
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });

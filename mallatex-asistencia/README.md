@@ -153,7 +153,9 @@ npm run seed   # node server/seed.js --reset
 ### 🚀 Producción
 
 Para salir a producción, sigue la **[guía de despliegue (`DEPLOY.md`)](DEPLOY.md)** y el
-**[checklist de go-live (`docs/go-live-checklist.md`)](docs/go-live-checklist.md)**. En resumen:
+**[checklist de go-live (`docs/go-live-checklist.md`)](docs/go-live-checklist.md)**.
+Para **Windows Server** (IIS + PostgreSQL como servicio), ver
+**[`docs/instalacion-windows-server.md`](docs/instalacion-windows-server.md)**. En resumen:
 
 ```bash
 cp .env.example .env          # ajusta admin, dominio y TLS

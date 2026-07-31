@@ -1,5 +1,6 @@
 import express from 'express';
 import { login, loginEmployee, logout, requireAuth, ROLE_LABEL } from '../auth.js';
+import { webModulesFor } from '../access.js';
 import { log } from '../audit.js';
 
 const router = express.Router();
@@ -29,9 +30,9 @@ router.post('/logout', requireAuth, (req, res) => {
 
 router.get('/me', requireAuth, (req, res) => {
   if (req.principal === 'empleado') {
-    res.json({ principal: 'empleado', employee: req.employee, roleLabel: 'Colaborador' });
+    res.json({ principal: 'empleado', employee: req.employee, roleLabel: 'Colaborador', modules: webModulesFor('empleado', req.employee) });
   } else {
-    res.json({ principal: 'admin', user: req.user, roleLabel: ROLE_LABEL[req.user.role] });
+    res.json({ principal: 'admin', user: req.user, roleLabel: ROLE_LABEL[req.user.role], modules: webModulesFor('admin', req.user) });
   }
 });
 

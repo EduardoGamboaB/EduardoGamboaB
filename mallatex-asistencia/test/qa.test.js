@@ -324,3 +324,278 @@ test('campo: exige ubicación y es sólo para empleados', async () => {
   const asAdmin = await json('POST', '/api/field/checkin', { token: tokens.contador, body: { lat: 20, lng: -103 } });
   assert.equal(asAdmin.status, 403);
 });
+
+test('CRM ventas: cartera, ruta, visita y desempeño del vendedor', async () => {
+  const login = await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } });
+  assert.equal(login.status, 200);
+  const et = login.data.token;
+  const clients = (await json('GET', '/api/sales/my-clients', { token: et })).data;
+  assert.ok(clients.length >= 2, 'el vendedor tiene cartera asignada');
+  // alta de prospecto en campo
+  const prospect = await json('POST', '/api/sales/clients', { token: et, body: { name: 'Prospecto QA', cultivo: 'Tomate' } });
+  assert.equal(prospect.status, 201);
+  assert.ok(prospect.data.assignedTo, 'el prospecto queda asignado al vendedor');
+  // inicia ruta
+  const route = await json('POST', '/api/sales/routes/start', { token: et, body: { lat: 20.68, lng: -103.42 } });
+  assert.equal(route.status, 201);
+  // registra visita con evidencia, estatus y tipo
+  const visit = await json('POST', '/api/sales/visits', { token: et, body: { clientId: clients[0].id, routeId: route.data.id, type: 'seguimiento', status: 'realizada', found: true, lat: 20.68, lng: -103.42, notes: 'QA', photos: ['data:image/png;base64,AAAA'] } });
+  assert.equal(visit.status, 201);
+  assert.equal(visit.data.type, 'seguimiento');
+  // agrega puntos al recorrido
+  const track = await json('POST', `/api/sales/routes/${route.data.id}/track`, { token: et, body: { points: [{ lat: 20.69, lng: -103.43 }, { lat: 20.70, lng: -103.44 }] } });
+  assert.ok(track.data.points >= 3);
+  // desempeño (objetivo del trimestre)
+  const perf = (await json('GET', '/api/sales/objectives/me', { token: et })).data;
+  assert.ok(perf.objective && perf.objective.targetAmount > 0);
+  assert.ok(perf.progressPct > 0 && perf.kpis.cartera >= 2);
+  // finaliza ruta
+  const end = await json('POST', `/api/sales/routes/${route.data.id}/end`, { token: et });
+  assert.equal(end.data.status, 'finalizada');
+});
+
+test('CRM ventas: inventario, cotización y pedido', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const products = (await json('GET', '/api/sales/products', { token: et })).data;
+  assert.ok(products.length >= 5 && products[0].price > 0, 'hay inventario');
+  const client = (await json('GET', '/api/sales/my-clients', { token: et })).data[0];
+  const quote = await json('POST', '/api/sales/quotes', { token: et, body: { clientId: client.id, items: [{ productId: products[0].id, qty: 100 }, { productId: products[1].id, qty: 50, discount: 10 }] } });
+  assert.equal(quote.status, 201);
+  assert.ok(quote.data.total > 0 && quote.data.folio.startsWith('COT-'));
+  const order = await json('POST', '/api/sales/orders', { token: et, body: { quoteId: quote.data.id } });
+  assert.equal(order.status, 201);
+  assert.ok(order.data.folio.startsWith('PED-'));
+  assert.equal(order.data.total, quote.data.total);
+  const quotes = (await json('GET', '/api/sales/quotes', { token: et })).data;
+  assert.equal(quotes.find((q) => q.id === quote.data.id).status, 'convertida');
+});
+
+test('CRM ventas: asistente técnico recomienda malla', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const granizo = (await json('POST', '/api/sales/advisor', { token: et, body: { cultivo: 'Manzana', clima: 'templado', objetivo: 'granizo' } })).data;
+  assert.equal(granizo.category, 'antigranizo');
+  assert.ok(granizo.recommendation && granizo.recommendation.sku);
+  const sombra = (await json('POST', '/api/sales/advisor', { token: et, body: { cultivo: 'vivero ornamental', clima: 'caluroso' } })).data;
+  assert.equal(sombra.category, 'sombra');
+  assert.ok(sombra.shadePct, 'sugiere porcentaje de sombreo');
+});
+
+test('CRM ventas: el gerente asigna cartera; el vendedor no accede a la admin', async () => {
+  const c = await json('POST', '/api/crm/clients', { token: tokens.contador, body: { name: 'Cliente Central QA', type: 'cliente' } });
+  assert.equal(c.status, 201);
+  const emp = (await json('GET', '/api/employees?active=true', { token: tokens.contador })).data.find((e) => e.code === 'MTX010');
+  const assign = await json('POST', '/api/crm/assign', { token: tokens.contador, body: { employeeId: emp.id, clientIds: [c.data.id] } });
+  assert.equal(assign.data.assigned, 1);
+  // seguridad: la administración de CRM es sólo para personal administrativo
+  const vendorToken = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const denied = await json('GET', '/api/crm/clients', { token: vendorToken });
+  assert.equal(denied.status, 403);
+});
+
+test('Administrativo: el vendedor solicita viáticos y el gerente los aprueba', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const req = await json('POST', '/api/sales/expense-requests', { token: et, body: { concept: 'Viaje QA', destination: 'León', amount: 3000, fromDate: '2026-08-01', toDate: '2026-08-02' } });
+  assert.equal(req.status, 201);
+  assert.ok(/^VIA-\d{5}$/.test(req.data.folio), 'genera folio VIA');
+  assert.equal(req.data.status, 'solicitado');
+  // el gerente ve la solicitud y la aprueba
+  const pending = (await json('GET', '/api/crm/expense-requests?status=solicitado', { token: tokens.contador })).data;
+  assert.ok(pending.find((r) => r.id === req.data.id));
+  const dec = await json('POST', `/api/crm/expense-requests/${req.data.id}/decision`, { token: tokens.contador, body: { decision: 'aprobado', note: 'OK' } });
+  assert.equal(dec.data.status, 'aprobado');
+});
+
+test('Administrativo: comprobación de gastos con evidencia y aprobación', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const gto = await json('POST', '/api/sales/expenses', { token: et, body: { category: 'alimentos', merchant: 'Rest. QA', amount: 480.5, hasInvoice: false, photo: 'data:image/png;base64,AAAA' } });
+  assert.equal(gto.status, 201);
+  assert.ok(/^GTO-\d{5}$/.test(gto.data.folio));
+  assert.equal(gto.data.hasPhoto, true);
+  assert.equal(gto.data.photo, undefined, 'no expone la imagen en la lista');
+  // el gerente consulta la evidencia y aprueba
+  const photo = (await json('GET', `/api/crm/expenses/${gto.data.id}/photo`, { token: tokens.contador })).data;
+  assert.ok(photo.photo && photo.photo.startsWith('data:image'), 'la evidencia es recuperable por el gerente');
+  const dec = await json('POST', `/api/crm/expenses/${gto.data.id}/decision`, { token: tokens.contador, body: { decision: 'aprobado' } });
+  assert.equal(dec.data.status, 'aprobado');
+});
+
+test('Administrativo: solicitud de factura desde pedido y emisión (Aspel)', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const products = (await json('GET', '/api/sales/products', { token: et })).data;
+  const client = (await json('GET', '/api/sales/my-clients', { token: et })).data[0];
+  const order = await json('POST', '/api/sales/orders', { token: et, body: { clientId: client.id, items: [{ productId: products[0].id, qty: 30 }] } });
+  const inv = await json('POST', '/api/sales/invoices', { token: et, body: { orderId: order.data.id, rfc: 'XAXX010101000', razonSocial: 'Cliente QA', usoCfdi: 'G03' } });
+  assert.equal(inv.status, 201);
+  assert.ok(/^FAC-\d{5}$/.test(inv.data.folio));
+  assert.equal(inv.data.amount, order.data.total, 'hereda el importe del pedido');
+  assert.equal(inv.data.status, 'solicitada');
+  // sin RFC se rechaza
+  const bad = await json('POST', '/api/sales/invoices', { token: et, body: { orderId: order.data.id } });
+  assert.equal(bad.status, 400);
+  // el gerente emite el CFDI (punto de integración Aspel)
+  const emit = await json('POST', `/api/crm/invoices/${inv.data.id}/emit`, { token: tokens.contador, body: {} });
+  assert.equal(emit.data.status, 'emitida');
+  assert.ok(emit.data.uuid, 'asigna UUID al timbrar');
+  // no se puede emitir dos veces
+  const again = await json('POST', `/api/crm/invoices/${inv.data.id}/emit`, { token: tokens.contador, body: {} });
+  assert.equal(again.status, 409);
+});
+
+test('Integraciones: estado de conectores (mock por defecto)', async () => {
+  const st = (await json('GET', '/api/crm/integrations/status', { token: tokens.contador })).data;
+  for (const id of ['g3', 'mes', 'aspel']) assert.ok(st.find((s) => s.id === id && s.mode === 'mock'), `conector ${id} en mock`);
+});
+
+test('Integraciones: timbrado Aspel genera UUID con formato CFDI', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const inv = await json('POST', '/api/sales/invoices', { token: et, body: { rfc: 'XAXX010101000', amount: 5000 } });
+  const emit = await json('POST', `/api/crm/invoices/${inv.data.id}/emit`, { token: tokens.contador, body: {} });
+  assert.equal(emit.data.timbreMode, 'mock');
+  assert.match(emit.data.uuid, /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/, 'UUID con formato CFDI');
+});
+
+test('Integraciones: webhook de pago Aspel marca pagada y genera comisión', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const emp = (await json('GET', '/api/employees?active=true', { token: tokens.contador })).data.find((e) => e.code === 'MTX006');
+  // la comisión se contabiliza en el periodo ABIERTO en que cae el pago
+  const period = (await json('POST', '/api/periods', { token: tokens.contador, body: { name: 'Periodo comisión QA', startDate: '2026-08-01', endDate: '2026-08-15' } })).data;
+  const inv = await json('POST', '/api/sales/invoices', { token: et, body: { rfc: 'XAXX010101000', amount: 100000 } });
+  await json('POST', `/api/crm/invoices/${inv.data.id}/emit`, { token: tokens.contador, body: {} });
+  // Aspel confirma el pago (webhook sin sesión; en pruebas no hay secreto configurado)
+  const pay = await json('POST', '/api/integrations/aspel/payment', { token: null, body: { invoiceId: inv.data.id, amount: 100000, paymentRef: 'PAGO-QA-1' } });
+  assert.equal(pay.status, 200);
+  assert.equal(pay.data.invoice.status, 'pagada');
+  assert.equal(pay.data.commission.status, 'creada');
+  assert.equal(pay.data.commission.importe, 3000, 'comisión = 3% de 100,000');
+  assert.equal(pay.data.commission.periodId, period.id, 'se contabiliza en el periodo abierto');
+  // la comisión aparece como percepción variable del vendedor con origen aspel
+  const entries = (await json('GET', `/api/variable-entries?periodId=${period.id}`, { token: tokens.contador })).data;
+  const entry = entries.find((v) => v.externalId === `aspel-invoice-${inv.data.id}`);
+  assert.ok(entry && entry.employeeId === emp.id && entry.source === 'aspel', 'comisión asignada al vendedor');
+  // idempotente: re-notificar el pago no duplica
+  const again = await json('POST', '/api/integrations/aspel/payment', { token: null, body: { invoiceId: inv.data.id, amount: 100000 } });
+  assert.equal(again.data.commission.status, 'actualizada');
+  const entries2 = (await json('GET', `/api/variable-entries?periodId=${period.id}`, { token: tokens.contador })).data;
+  assert.equal(entries2.filter((v) => v.externalId === `aspel-invoice-${inv.data.id}`).length, 1, 'no duplica la comisión');
+});
+
+test('Integraciones: webhook con factura inexistente responde 404', async () => {
+  const r = await json('POST', '/api/integrations/aspel/payment', { token: null, body: { invoiceId: 999999, amount: 10 } });
+  assert.equal(r.status, 404);
+});
+
+// ---------------------------------------------------------------------------
+// Acceso por perfil / rol — menú y funcionalidades según el usuario
+// ---------------------------------------------------------------------------
+
+test('Acceso web: /me devuelve los módulos permitidos según el rol', async () => {
+  const admin = (await json('GET', '/api/auth/me', { token: tokens.admin })).data;
+  assert.ok(admin.modules.includes('users') && admin.modules.includes('crm-clientes'), 'admin ve todo');
+  const nomina = (await json('GET', '/api/auth/me', { token: tokens.nomina })).data;
+  assert.ok(nomina.modules.includes('periods'), 'nómina ve nómina');
+  assert.ok(!nomina.modules.includes('crm-clientes') && !nomina.modules.includes('users'), 'nómina no ve comercial ni usuarios');
+  const comercialTok = (await json('POST', '/api/auth/login', { body: { email: 'comercial@mallatex.mx', password: 'mallatex2026' } })).data.token;
+  const com = (await json('GET', '/api/auth/me', { token: comercialTok })).data;
+  assert.deepEqual([...com.modules].sort(), ['crm-administrativo', 'crm-clientes', 'crm-facturacion', 'crm-objetivos'], 'comercial sólo ve el CRM');
+});
+
+test('Acceso web: el gerente comercial administra CRM; nómina no puede', async () => {
+  const comercialTok = (await json('POST', '/api/auth/login', { body: { email: 'comercial@mallatex.mx', password: 'mallatex2026' } })).data.token;
+  assert.equal((await json('GET', '/api/crm/clients', { token: comercialTok })).status, 200);
+  assert.equal((await json('GET', '/api/crm/invoices', { token: comercialTok })).status, 200);
+  // nómina no tiene acceso a la administración comercial
+  assert.equal((await json('GET', '/api/crm/clients', { token: tokens.nomina })).status, 403);
+});
+
+test('Acceso móvil: /field/me expone perfil y módulos por puesto', async () => {
+  const vend = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const meV = (await json('GET', '/api/field/me', { token: vend })).data;
+  assert.equal(meV.profile, 'comercial');
+  for (const k of ['ruta', 'clientes', 'cotizador', 'facturas', 'asistencia', 'perfil']) assert.ok(meV.modules.includes(k), `comercial ve ${k}`);
+  const driver = (await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } })).data.token;
+  const meD = (await json('GET', '/api/field/me', { token: driver })).data;
+  assert.equal(meD.profile, 'operativo');
+  assert.deepEqual([...meD.modules].sort(), ['asistencia', 'perfil'], 'operativo sólo asistencia y perfil');
+});
+
+test('Acceso móvil: el API de ventas exige perfil comercial', async () => {
+  const vend = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  assert.equal((await json('GET', '/api/sales/my-clients', { token: vend })).status, 200);
+  // un colaborador operativo (Reparto) no accede al CRM de ventas
+  const driver = (await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } })).data.token;
+  const denied = await json('GET', '/api/sales/my-clients', { token: driver });
+  assert.equal(denied.status, 403);
+});
+
+// ---------------------------------------------------------------------------
+// Configuración: usuarios, roles, módulos, permisos y asignación
+// ---------------------------------------------------------------------------
+
+test('Configuración: catálogo y permisos sólo para administrador', async () => {
+  const cat = await json('GET', '/api/access/catalog', { token: tokens.admin });
+  assert.equal(cat.status, 200);
+  assert.ok(cat.data.roles.length >= 4 && cat.data.webModules.length > 15 && cat.data.mobileModules.length > 8);
+  assert.deepEqual(cat.data.profiles.map((p) => p.value), ['comercial', 'operativo']);
+  // contador y nómina no acceden a la configuración de acceso
+  assert.equal((await json('GET', '/api/access/catalog', { token: tokens.contador })).status, 403);
+  assert.equal((await json('GET', '/api/access/permissions', { token: tokens.nomina })).status, 403);
+});
+
+test('Configuración: editar la matriz de permisos cambia el menú del rol', async () => {
+  const base = (await json('GET', '/api/access/permissions', { token: tokens.admin })).data.web.comercial;
+  // conceder "dashboard" al rol comercial
+  await json('PUT', '/api/access/permissions', { token: tokens.admin, body: { web: { comercial: [...base, 'dashboard'] } } });
+  const com = (await json('POST', '/api/auth/login', { body: { email: 'comercial@mallatex.mx', password: 'mallatex2026' } })).data.token;
+  assert.ok((await json('GET', '/api/auth/me', { token: com })).data.modules.includes('dashboard'), 'el rol comercial ahora ve el tablero');
+  // restaurar
+  await json('PUT', '/api/access/permissions', { token: tokens.admin, body: { web: { comercial: base } } });
+  assert.ok(!(await json('GET', '/api/auth/me', { token: com })).data.modules.includes('dashboard'));
+});
+
+test('Configuración: asignar módulos extra a un usuario', async () => {
+  const nomUser = (await json('GET', '/api/access/users', { token: tokens.admin })).data.find((u) => u.role === 'nomina');
+  await json('PUT', `/api/access/users/${nomUser.id}`, { token: tokens.admin, body: { role: 'nomina', extraModules: ['crm-clientes'], revokedModules: [] } });
+  assert.ok((await json('GET', '/api/auth/me', { token: tokens.nomina })).data.modules.includes('crm-clientes'), 'el usuario recibe el módulo extra');
+  // restaurar
+  await json('PUT', `/api/access/users/${nomUser.id}`, { token: tokens.admin, body: { extraModules: [] } });
+  assert.ok(!(await json('GET', '/api/auth/me', { token: tokens.nomina })).data.modules.includes('crm-clientes'));
+});
+
+test('Configuración: asignar perfil móvil a un colaborador', async () => {
+  const driver = (await json('GET', '/api/access/employees', { token: tokens.admin })).data.find((e) => e.code === 'MTX013');
+  assert.equal(driver.profile, 'operativo');
+  const upd = await json('PUT', `/api/access/employees/${driver.id}`, { token: tokens.admin, body: { appProfile: 'comercial' } });
+  assert.equal(upd.data.profile, 'comercial');
+  // ahora el conductor puede entrar al CRM de ventas y ve el menú comercial
+  const dtok = (await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } })).data.token;
+  assert.equal((await json('GET', '/api/sales/my-clients', { token: dtok })).status, 200);
+  assert.equal((await json('GET', '/api/field/me', { token: dtok })).data.profile, 'comercial');
+  // restaurar (automático por área)
+  const back = await json('PUT', `/api/access/employees/${driver.id}`, { token: tokens.admin, body: { appProfile: null } });
+  assert.equal(back.data.profile, 'operativo');
+});
+
+test('Configuración: la asignación del colaborador cubre app móvil y portal web', async () => {
+  const cat = (await json('GET', '/api/access/catalog', { token: tokens.admin })).data;
+  assert.equal(cat.portalModules.length, 4, 'catálogo de módulos del portal web');
+  const perms = (await json('GET', '/api/access/permissions', { token: tokens.admin })).data;
+  assert.equal(perms.portal.operativo.length, 4, 'matriz de portal por perfil');
+  const drv = (await json('GET', '/api/access/employees', { token: tokens.admin })).data.find((e) => e.code === 'MTX013');
+  assert.equal(drv.mobileModules.length, 2, 'módulos de app móvil');
+  assert.equal(drv.portalModules.length, 4, 'módulos de portal web');
+  const dtok = (await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } })).data.token;
+
+  // 1) revocar un módulo del portal web al colaborador
+  await json('PUT', `/api/access/employees/${drv.id}`, { token: tokens.admin, body: { portalRevokedModules: ['portal-recibos'] } });
+  const me1 = (await json('GET', '/api/auth/me', { token: dtok })).data;
+  assert.ok(me1.modules.includes('portal-asistencia') && !me1.modules.includes('portal-recibos'), 'el portal web respeta la revocación por colaborador');
+  await json('PUT', `/api/access/employees/${drv.id}`, { token: tokens.admin, body: { portalRevokedModules: [] } });
+
+  // 2) editar la matriz de portal por perfil también aplica al colaborador
+  await json('PUT', '/api/access/permissions', { token: tokens.admin, body: { portal: { operativo: ['portal-asistencia'] } } });
+  const me2 = (await json('GET', '/api/auth/me', { token: dtok })).data;
+  assert.deepEqual(me2.modules.filter((m) => m.startsWith('portal-')).sort(), ['portal-asistencia'], 'la matriz de portal por perfil aplica');
+  // restaurar
+  await json('PUT', '/api/access/permissions', { token: tokens.admin, body: { portal: { operativo: ['portal-asistencia', 'portal-vacaciones', 'portal-recibos', 'portal-tickets'] } } });
+  assert.equal((await json('GET', '/api/auth/me', { token: dtok })).data.modules.filter((m) => m.startsWith('portal-')).length, 4);
+});

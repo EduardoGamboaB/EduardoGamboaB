@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { h, clear, field, modal, toast, empty } from '../ui.js';
 
-const ROLE_LABEL = { admin: 'Administrador', contador: 'Contador general', nomina: 'Responsable de nómina' };
+const ROLE_LABEL = { admin: 'Administrador', contador: 'Contador general', nomina: 'Responsable de nómina', comercial: 'Gerente comercial' };
 
 export default async function users(el) {
   clear(el);

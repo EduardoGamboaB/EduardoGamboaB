@@ -5,6 +5,7 @@
 import express from 'express';
 import * as db from '../db.js';
 import { requireEmployee } from '../auth.js';
+import { mobileAccessFor } from '../access.js';
 import { reprocess, STATUS, minutesToHm } from '../rules.js';
 import { logSystem } from '../audit.js';
 import { evaluateGeofence, euclidean, FACE_MATCH_THRESHOLD } from '../geo.js';
@@ -31,8 +32,11 @@ router.get('/me', (req, res) => {
   const recent = db.all('checadas', (c) => c.employeeId === emp.id && c.method === 'campo')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 20)
     .map(publicCheckin);
+  const access = mobileAccessFor(emp);
   res.json({
-    employee: { id: emp.id, name: emp.name, code: emp.code, department: emp.department, workMode: emp.workMode || 'planta', faceEnrolled: Array.isArray(emp.faceDescriptor) && emp.faceDescriptor.length === 128 },
+    employee: { id: emp.id, name: emp.name, code: emp.code, department: emp.department, position: emp.position, workMode: emp.workMode || 'planta', faceEnrolled: Array.isArray(emp.faceDescriptor) && emp.faceDescriptor.length === 128 },
+    profile: access.profile,
+    modules: access.modules,
     sites: allowedSitesFor(emp).map(publicSite),
     recent,
   });

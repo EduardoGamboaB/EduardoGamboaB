@@ -6,6 +6,15 @@ import * as SecureStore from 'expo-secure-store';
 const TOKEN_KEY = 'mtx_token';
 const URL_KEY = 'mtx_server_url';
 const QUEUE_KEY = 'mtx_offline_queue';
+const BIO_KEY = 'mtx_biometric';
+
+// ---- Preferencia de acceso biométrico ----
+export async function getBiometricEnabled() {
+  return (await AsyncStorage.getItem(BIO_KEY)) === '1';
+}
+export async function setBiometricEnabled(on) {
+  await AsyncStorage.setItem(BIO_KEY, on ? '1' : '0');
+}
 
 // ---- Token de sesión ----
 // En dispositivo se usa el almacenamiento seguro (SecureStore); en web —donde SecureStore
