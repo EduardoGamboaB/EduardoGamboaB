@@ -1,0 +1,56 @@
+# Blueprint de despliegue en Render (https://render.com) — URL pública con HTTPS + PostgreSQL.
+#
+# Está en la RAÍZ del repo para que Render lo detecte con "New +" → "Blueprint".
+# Despliega la plataforma web + backend (mallatex-asistencia). La app móvil (mallatex-movil)
+# se compila aparte con EAS (ver mallatex-movil/docs/build-nativo-eas.md) y apunta a esta URL.
+#
+# Nota sobre la rama: este trabajo vive en la rama `claude/app-requisitos-3528w4`. Al crear el
+# Blueprint selecciona esa rama (o fusiona el PR a la rama por defecto y quita el campo `branch`).
+
+databases:
+  - name: mallatex-db
+    plan: free
+    databaseName: mallatex
+    user: mallatex
+
+services:
+  - type: web
+    name: mallatex-asistencia
+    runtime: node
+    plan: free
+    branch: claude/app-requisitos-3528w4
+    rootDir: mallatex-asistencia
+    buildCommand: npm ci --omit=dev
+    startCommand: node server/index.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STORAGE
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mallatex-db
+          property: connectionString
+      - key: TRUST_PROXY
+        value: "1"
+      - key: ENABLE_HSTS
+        value: "true"
+      - key: SESSION_TTL_HOURS
+        value: "12"
+      # Datos demostrativos para probar de inmediato con las cuentas demo
+      # (admin@ / contabilidad@ / nomina@ / comercial@ mallatex.mx · contraseña mallatex2026;
+      #  empleados por código MTX0xx + PIN 1234). Para producción real: pon "false" y define
+      #  BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD.
+      - key: SEED_DEMO
+        value: "true"
+      - key: COMPANY_NAME
+        value: Mallatex
+      # --- Integraciones externas (opcionales) ---
+      # Por defecto operan en modo 'mock' (sin credenciales). Para conectarlas de verdad,
+      # define aquí <FUENTE>_MODE=http y su URL/token (ver mallatex-asistencia/docs/integraciones.md):
+      #   G3_MODE, G3_BASE_URL, G3_TOKEN · MES_MODE, MES_BASE_URL, MES_TOKEN
+      #   ASPEL_MODE, ASPEL_CFDI_URL, ASPEL_TOKEN · ASPEL_WEBHOOK_SECRET
+      - key: ASPEL_WEBHOOK_SECRET
+        sync: false

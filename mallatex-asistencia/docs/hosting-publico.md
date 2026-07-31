@@ -12,12 +12,28 @@ Resultado: una URL tipo `https://mallatex-asistencia.onrender.com`.
 
 ### A) Un clic con Blueprint
 
-1. Copia [`render.yaml`](../render.yaml) a la **raíz** del repositorio y súbelo.
-2. En <https://render.com> → **New +** → **Blueprint** → conecta tu cuenta de GitHub y
+El archivo `render.yaml` **ya está en la raíz del repositorio**, listo para auto-detección.
+
+1. En <https://render.com> → **New +** → **Blueprint** → conecta tu cuenta de GitHub y
    selecciona el repo `eduardogamboab/eduardogamboab`.
+2. Elige la rama **`claude/app-requisitos-3528w4`** (donde vive este trabajo). Si ya
+   fusionaste el PR a tu rama por defecto, selecciónala y quita el campo `branch` del yaml.
 3. Render lee `render.yaml` y crea **el servicio web + la base PostgreSQL** con las
-   variables ya configuradas. Pulsa **Apply**.
-4. Al terminar, abre la URL `https://…onrender.com`.
+   variables ya configuradas. Te pedirá el valor de `ASPEL_WEBHOOK_SECRET` (déjalo vacío o
+   pon cualquier cadena; sólo se usa si conectas Aspel real). Pulsa **Apply**.
+4. Al terminar (2-4 min), abre la URL `https://…onrender.com`.
+
+**Cuentas para probar de inmediato** (con `SEED_DEMO=true`):
+- Administrativos (correo + `mallatex2026`): `admin@`, `contabilidad@`, `nomina@`,
+  `comercial@` `mallatex.mx` — cada uno ve su menú según su rol.
+- Colaboradores (portal web y app móvil): código **MTX001**…**MTX013** + PIN **1234**.
+
+**App móvil:** apúntala a esta URL pública desde su pantalla de acceso (o en
+`mallatex-movil/src/config.js`). Para el binario nativo, ver `mallatex-movil/docs/build-nativo-eas.md`.
+
+> Notas del plan Free de Render: el servicio **se duerme tras inactividad** (el primer acceso
+> tarda ~30 s en “despertar”) y la base PostgreSQL free tiene vigencia limitada. Para una demo
+> estable o producción, sube ambos a un plan de pago.
 
 ### B) Manual (sin mover el archivo)
 
