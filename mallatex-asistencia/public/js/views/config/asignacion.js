@@ -35,35 +35,94 @@ export default async function asignacion(el) {
   )));
   el.appendChild(uCard);
 
-  // ---------- Colaboradores (móvil) ----------
+  // ---------- Colaboradores (app móvil + portal web) ----------
   const eCard = h('div', { class: 'card' },
-    h('div', { class: 'card-head' }, h('h2', {}, 'Colaboradores · perfil de la app móvil'), h('span', { class: 'sub' }, `${employees.length} colaboradores`)),
+    h('div', { class: 'card-head' }, h('h2', {}, 'Colaboradores · app móvil y portal web'), h('span', { class: 'sub' }, `${employees.length} colaboradores`)),
   );
   if (!employees.length) eCard.appendChild(empty('🧑‍💼', 'Sin colaboradores.'));
   else eCard.appendChild(h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
-    h('thead', {}, h('tr', {}, h('th', {}, 'Colaborador'), h('th', {}, 'Área'), h('th', {}, 'Perfil (app móvil)'), h('th', { class: 'num' }, 'Módulos'))),
-    h('tbody', {}, ...employees.map((e) => {
-      const count = h('td', { class: 'num mono' }, String((e.modules || []).length));
-      const sel = h('select', {},
-        opt('', `Automático (${e.profile})`, !e.appProfile),
-        ...catalog.profiles.map((p) => opt(p.value, p.label, e.appProfile === p.value)),
-      );
-      sel.addEventListener('change', async () => {
-        try {
-          const r = await api.put(`/access/employees/${e.id}`, { appProfile: sel.value || null });
-          count.textContent = String((r.modules || []).length);
-          toast(`Perfil de ${e.name}: ${r.profile}`, 'ok');
-        } catch (err) { toast(err.message, 'err'); }
-      });
-      return h('tr', {},
-        h('td', {}, h('div', { class: 'strong' }, e.name), h('div', { class: 'muted mono', style: 'font-size:11px' }, `${e.code} · ${e.department || '—'}`)),
-        h('td', { class: 'muted' }, e.position || '—'),
-        h('td', {}, sel),
-        count,
-      );
-    })),
+    h('thead', {}, h('tr', {}, h('th', {}, 'Colaborador'), h('th', {}, 'Área'), h('th', {}, 'Perfil'), h('th', { class: 'num' }, 'App móvil'), h('th', { class: 'num' }, 'Portal web'), h('th', {}, ''))),
+    h('tbody', {}, ...employees.map((e) => h('tr', {},
+      h('td', {}, h('div', { class: 'strong' }, e.name), h('div', { class: 'muted mono', style: 'font-size:11px' }, `${e.code} · ${e.department || '—'}`)),
+      h('td', { class: 'muted' }, e.position || '—'),
+      h('td', {}, h('span', { class: 'badge b-info' }, e.profile), e.appProfile ? null : h('span', { class: 'muted', style: 'font-size:11px;margin-left:6px' }, 'auto')),
+      h('td', { class: 'num mono' }, String((e.mobileModules || []).length)),
+      h('td', { class: 'num mono' }, String((e.portalModules || []).length)),
+      h('td', {}, h('button', { class: 'btn btn-sm', onClick: () => employeeAccessModal(e, catalog, perms) }, 'Editar acceso')),
+    ))),
   )));
   el.appendChild(eCard);
+}
+
+function employeeAccessModal(emp, catalog, perms) {
+  const profileSel = h('select', {},
+    opt('', `Automático (por área → ${emp.profile})`, !emp.appProfile),
+    ...catalog.profiles.map((p) => opt(p.value, p.label, emp.appProfile === p.value)),
+  );
+  const effProfile = () => profileSel.value || emp.profile;
+
+  const mob = checkGroup(catalog.mobileModules, emp.mobileModules);
+  const portal = checkGroup(catalog.portalModules || [], emp.portalModules);
+  // Al cambiar de perfil, recargar los módulos por defecto de ese perfil (móvil y portal).
+  profileSel.addEventListener('change', () => {
+    const p = effProfile();
+    mob.setChecked(perms.mobile[p] || []);
+    portal.setChecked((perms.portal || {})[p] || []);
+  });
+
+  const m = modal({
+    title: `Acceso · ${emp.name}`,
+    body: h('div', { class: 'form-grid' },
+      field('Perfil', profileSel, 'Define el punto de partida de módulos en la app móvil y el portal. Puedes afinar debajo.'),
+      h('div', { class: 'form-grid two' },
+        field('App móvil (Mallatex Campo)', mob.el),
+        field('Portal web del empleado', portal.el),
+      ),
+    ),
+    footer: [
+      h('button', { class: 'btn', onClick: () => m.close() }, 'Cancelar'),
+      h('button', { class: 'btn btn-primary', onClick: async () => {
+        const p = effProfile();
+        const mBase = perms.mobile[p] || [];
+        const pBase = (perms.portal || {})[p] || [];
+        const mChecked = mob.checked();
+        const pChecked = portal.checked();
+        const body = {
+          appProfile: profileSel.value || null,
+          extraModules: mChecked.filter((k) => !mBase.includes(k)),
+          revokedModules: mBase.filter((k) => !mChecked.includes(k)),
+          portalExtraModules: pChecked.filter((k) => !pBase.includes(k)),
+          portalRevokedModules: pBase.filter((k) => !pChecked.includes(k)),
+        };
+        try { await api.put(`/access/employees/${emp.id}`, body); toast('Acceso actualizado', 'ok'); m.close(); reload(); }
+        catch (e) { toast(e.message, 'err'); }
+      } }, 'Guardar'),
+    ],
+    size: 'lg',
+  });
+}
+
+// Construye una lista de checkboxes agrupada; expone checked(), setChecked() y el elemento.
+function checkGroup(modules, preChecked) {
+  const boxes = {};
+  const groups = {};
+  for (const mod of modules) (groups[mod.group] ||= []).push(mod);
+  const el = h('div', { style: 'max-height:40vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px' });
+  if (!modules.length) el.appendChild(h('div', { class: 'muted', style: 'font-size:12px' }, 'Sin módulos.'));
+  for (const [group, items] of Object.entries(groups)) {
+    el.appendChild(h('div', { class: 'muted', style: 'font-size:11px;font-weight:700;text-transform:uppercase;margin:6px 0 4px' }, group));
+    for (const mod of items) {
+      const cb = h('input', { type: 'checkbox' });
+      cb.checked = (preChecked || []).includes(mod.key);
+      boxes[mod.key] = cb;
+      el.appendChild(h('label', { style: 'display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer' }, cb, h('span', {}, mod.label)));
+    }
+  }
+  return {
+    el,
+    checked: () => Object.entries(boxes).filter(([, cb]) => cb.checked).map(([k]) => k),
+    setChecked: (keys) => { for (const [k, cb] of Object.entries(boxes)) cb.checked = keys.includes(k); },
+  };
 }
 
 function userAccessModal(user, catalog, perms) {

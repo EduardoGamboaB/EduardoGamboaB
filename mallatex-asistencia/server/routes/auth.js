@@ -30,7 +30,7 @@ router.post('/logout', requireAuth, (req, res) => {
 
 router.get('/me', requireAuth, (req, res) => {
   if (req.principal === 'empleado') {
-    res.json({ principal: 'empleado', employee: req.employee, roleLabel: 'Colaborador', modules: webModulesFor('empleado', null) });
+    res.json({ principal: 'empleado', employee: req.employee, roleLabel: 'Colaborador', modules: webModulesFor('empleado', req.employee) });
   } else {
     res.json({ principal: 'admin', user: req.user, roleLabel: ROLE_LABEL[req.user.role], modules: webModulesFor('admin', req.user) });
   }

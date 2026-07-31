@@ -6,8 +6,8 @@ import express from 'express';
 import * as db from '../db.js';
 import { requireRole, ROLES, ROLE_LABEL, publicUser } from '../auth.js';
 import {
-  WEB_MODULE_CATALOG, MOBILE_MODULE_CATALOG, PROFILE_CATALOG,
-  getAccessConfig, saveAccessConfig, webModulesFor, mobileAccessFor,
+  WEB_MODULE_CATALOG, MOBILE_MODULE_CATALOG, PORTAL_MODULE_CATALOG, PROFILE_CATALOG,
+  getAccessConfig, saveAccessConfig, webModulesFor, mobileAccessFor, portalAccessFor,
 } from '../access.js';
 import { log } from '../audit.js';
 
@@ -21,6 +21,7 @@ router.get('/access/catalog', ADMIN, (_req, res) => {
     roles: Object.entries(ROLE_LABEL).map(([value, label]) => ({ value, label })),
     webModules: WEB_MODULE_CATALOG,
     mobileModules: MOBILE_MODULE_CATALOG,
+    portalModules: PORTAL_MODULE_CATALOG,
     profiles: PROFILE_CATALOG,
   });
 });
@@ -59,15 +60,25 @@ router.put('/access/users/:id', ADMIN, (req, res) => {
   res.json({ ...publicUser(updated), extraModules: updated.extraModules || [], revokedModules: updated.revokedModules || [], modules: webModulesFor('admin', updated) });
 });
 
-// Colaboradores con su perfil móvil efectivo.
+// Colaboradores con su acceso efectivo en la app móvil y en el portal web.
+const employeeAccess = (e) => {
+  const mob = mobileAccessFor(e);
+  const portal = portalAccessFor(e);
+  return {
+    id: e.id, code: e.code, name: e.name, department: e.department, position: e.position,
+    appProfile: e.appProfile || null, profile: mob.profile,
+    mobileModules: mob.modules,
+    portalModules: portal.modules,
+    extraModules: e.extraModules || [], revokedModules: e.revokedModules || [],
+    portalExtraModules: e.portalExtraModules || [], portalRevokedModules: e.portalRevokedModules || [],
+  };
+};
+
 router.get('/access/employees', ADMIN, (_req, res) => {
-  res.json(db.all('employees', (e) => e.active !== false).map((e) => {
-    const a = mobileAccessFor(e);
-    return { id: e.id, code: e.code, name: e.name, department: e.department, position: e.position, appProfile: e.appProfile || null, profile: a.profile, modules: a.modules };
-  }));
+  res.json(db.all('employees', (e) => e.active !== false).map(employeeAccess));
 });
 
-// Asignación de perfil (y ajustes finos de módulos) a un colaborador.
+// Asignación de perfil y ajustes finos de módulos (app móvil + portal web) a un colaborador.
 router.put('/access/employees/:id', ADMIN, (req, res) => {
   const e = db.get('employees', req.params.id);
   if (!e) return res.status(404).json({ error: 'Colaborador no encontrado' });
@@ -76,10 +87,12 @@ router.put('/access/employees/:id', ADMIN, (req, res) => {
   if ('appProfile' in b) patch.appProfile = b.appProfile && PROFILE_CATALOG.some((p) => p.value === b.appProfile) ? b.appProfile : null;
   if ('extraModules' in b) patch.extraModules = arr(b.extraModules);
   if ('revokedModules' in b) patch.revokedModules = arr(b.revokedModules);
+  if ('portalExtraModules' in b) patch.portalExtraModules = arr(b.portalExtraModules);
+  if ('portalRevokedModules' in b) patch.portalRevokedModules = arr(b.portalRevokedModules);
   const updated = db.update('employees', e.id, patch);
-  const a = mobileAccessFor(updated);
-  log(req, { action: 'update', entity: 'employee', entityId: e.id, detail: `Perfil móvil de ${updated.name}: ${a.profile}` });
-  res.json({ id: updated.id, appProfile: updated.appProfile || null, profile: a.profile, modules: a.modules });
+  const acc = employeeAccess(updated);
+  log(req, { action: 'update', entity: 'employee', entityId: e.id, detail: `Acceso de ${updated.name}: móvil ${acc.profile} (${acc.mobileModules.length}), portal (${acc.portalModules.length})` });
+  res.json(acc);
 });
 
 export default router;

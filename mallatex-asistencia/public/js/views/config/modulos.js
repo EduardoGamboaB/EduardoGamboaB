@@ -10,8 +10,9 @@ export default async function modulos(el) {
     h('div', { class: 'muted mt' }, 'Catálogo de funcionalidades de la plataforma web y de la app móvil. Referencia para armar los permisos.'),
   ));
 
-  el.appendChild(section('Módulos web (plataforma administrativa)', catalog.webModules, `${catalog.webModules.length} módulos`));
-  el.appendChild(section('Módulos móviles (Mallatex Campo)', catalog.mobileModules, `${catalog.mobileModules.length} módulos · perfiles: ${catalog.profiles.map((p) => p.label).join(', ')}`));
+  el.appendChild(section('Portal web administrativo', catalog.webModules, `${catalog.webModules.length} módulos`));
+  el.appendChild(section('App móvil (Mallatex Campo)', catalog.mobileModules, `${catalog.mobileModules.length} módulos · perfiles: ${catalog.profiles.map((p) => p.label).join(', ')}`));
+  el.appendChild(section('Portal web del empleado (autoservicio)', catalog.portalModules || [], `${(catalog.portalModules || []).length} módulos`));
 }
 
 function section(title, modules, sub) {

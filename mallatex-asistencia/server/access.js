@@ -53,8 +53,21 @@ export const DEFAULT_WEB_MODULES = {
   [ROLES.COMERCIAL]: keysInGroups('Comercial'),
 };
 
-// Módulos del portal del empleado (web). Aplican a todo colaborador.
-export const PORTAL_MODULES = ['portal-asistencia', 'portal-vacaciones', 'portal-recibos', 'portal-tickets'];
+// Catálogo de módulos del PORTAL WEB del empleado (autoservicio). Configurable por perfil.
+export const PORTAL_MODULE_CATALOG = [
+  { key: 'portal-asistencia', label: 'Mi asistencia', group: 'Portal del empleado' },
+  { key: 'portal-vacaciones', label: 'Vacaciones y permisos', group: 'Portal del empleado' },
+  { key: 'portal-recibos', label: 'Mis recibos', group: 'Portal del empleado' },
+  { key: 'portal-tickets', label: 'Mis tickets', group: 'Portal del empleado' },
+];
+export const PORTAL_MODULE_KEYS = PORTAL_MODULE_CATALOG.map((m) => m.key);
+// Compatibilidad: lista plana con todos los módulos del portal.
+export const PORTAL_MODULES = [...PORTAL_MODULE_KEYS];
+// Portal por PERFIL (mismo eje que la app móvil). Por defecto todo el autoservicio.
+export const DEFAULT_PORTAL_MODULES = {
+  comercial: [...PORTAL_MODULE_KEYS],
+  operativo: [...PORTAL_MODULE_KEYS],
+};
 
 // Roles con acceso a la administración comercial (CRM) — usado por guardas de ruta.
 export const CRM_ROLES = [ROLES.ADMIN, ROLES.CONTADOR, ROLES.COMERCIAL];
@@ -94,6 +107,7 @@ export function getAccessConfig() {
   return {
     web,
     mobile: { ...DEFAULT_MOBILE_MODULES, ...(stored.mobile || {}) },
+    portal: { ...DEFAULT_PORTAL_MODULES, ...(stored.portal || {}) },
   };
 }
 
@@ -103,6 +117,7 @@ export function saveAccessConfig(patch) {
   const next = {
     web: { ...(stored.web || {}), ...clean(patch.web, WEB_MODULE_KEYS) },
     mobile: { ...(stored.mobile || {}), ...clean(patch.mobile, MOBILE_MODULE_KEYS) },
+    portal: { ...(stored.portal || {}), ...clean(patch.portal, PORTAL_MODULE_KEYS) },
   };
   db.saveSettings({ access: next });
   return getAccessConfig();
@@ -116,12 +131,20 @@ function applyOverrides(base, extra, revoked, validOrder) {
   return validOrder.filter((k) => set.has(k));
 }
 
-// ---------- Web: módulos del usuario administrativo ----------
-export function webModulesFor(principal, user) {
-  if (principal === 'empleado') return PORTAL_MODULES;
+// ---------- Web: módulos del usuario administrativo o del portal del empleado ----------
+export function webModulesFor(principal, subject) {
+  if (principal === 'empleado') return portalAccessFor(subject).modules;
   const cfg = getAccessConfig();
-  const base = cfg.web[user?.role] || [];
-  return applyOverrides(base, user?.extraModules, user?.revokedModules, WEB_MODULE_KEYS);
+  const base = cfg.web[subject?.role] || [];
+  return applyOverrides(base, subject?.extraModules, subject?.revokedModules, WEB_MODULE_KEYS);
+}
+
+// Portal web del empleado: módulos según su perfil + ajustes finos del colaborador.
+export function portalAccessFor(emp) {
+  const profile = employeeProfile(emp);
+  const cfg = getAccessConfig();
+  const base = cfg.portal[profile] || DEFAULT_PORTAL_MODULES.operativo;
+  return { profile, modules: applyOverrides(base, emp?.portalExtraModules, emp?.portalRevokedModules, PORTAL_MODULE_KEYS) };
 }
 
 // ---------- Móvil: perfil del colaborador y sus módulos ----------

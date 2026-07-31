@@ -10,21 +10,26 @@ export default async function permisos(el) {
   for (const r of catalog.roles) webState[r.value] = new Set(perms.web[r.value] || []);
   const mobState = {};
   for (const p of catalog.profiles) mobState[p.value] = new Set(perms.mobile[p.value] || []);
+  const portalState = {};
+  for (const p of catalog.profiles) portalState[p.value] = new Set((perms.portal || {})[p.value] || []);
 
   el.appendChild(h('div', { class: 'card card-pad mb' },
     h('div', { class: 'row spread' },
-      h('div', {}, h('h2', { style: 'margin:0' }, 'Permisos'), h('div', { class: 'muted mt' }, 'Define qué módulos ve cada rol (web) y cada perfil (móvil). El administrador siempre conserva acceso total.')),
+      h('div', {}, h('h2', { style: 'margin:0' }, 'Permisos'), h('div', { class: 'muted mt' }, 'Define qué módulos ve cada rol (portal web administrativo), cada perfil en la app móvil y cada perfil en el portal web del empleado. El administrador siempre conserva acceso total.')),
       h('button', { class: 'btn btn-primary', onClick: save }, 'Guardar cambios'),
     ),
   ));
 
-  el.appendChild(matrix('Web — módulos por rol', catalog.webModules, catalog.roles.map((r) => ({ id: r.value, label: r.label })), webState, { lockedCol: 'admin' }));
-  el.appendChild(matrix('Móvil — módulos por perfil', catalog.mobileModules, catalog.profiles.map((p) => ({ id: p.value, label: p.label })), mobState, {}));
+  const profCols = catalog.profiles.map((p) => ({ id: p.value, label: p.label }));
+  el.appendChild(matrix('Portal web · administrativo — módulos por rol', catalog.webModules, catalog.roles.map((r) => ({ id: r.value, label: r.label })), webState, { lockedCol: 'admin' }));
+  el.appendChild(matrix('App móvil (Campo) — módulos por perfil', catalog.mobileModules, profCols, mobState, {}));
+  el.appendChild(matrix('Portal web · empleado (autoservicio) — módulos por perfil', catalog.portalModules || [], profCols, portalState, {}));
 
   async function save() {
     const web = Object.fromEntries(catalog.roles.map((r) => [r.value, [...webState[r.value]]]));
     const mobile = Object.fromEntries(catalog.profiles.map((p) => [p.value, [...mobState[p.value]]]));
-    try { await api.put('/access/permissions', { web, mobile }); toast('Permisos guardados', 'ok'); }
+    const portal = Object.fromEntries(catalog.profiles.map((p) => [p.value, [...portalState[p.value]]]));
+    try { await api.put('/access/permissions', { web, mobile, portal }); toast('Permisos guardados', 'ok'); }
     catch (e) { toast(e.message, 'err'); }
   }
 }

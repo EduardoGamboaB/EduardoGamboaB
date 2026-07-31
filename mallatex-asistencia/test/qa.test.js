@@ -574,3 +574,28 @@ test('Configuración: asignar perfil móvil a un colaborador', async () => {
   const back = await json('PUT', `/api/access/employees/${driver.id}`, { token: tokens.admin, body: { appProfile: null } });
   assert.equal(back.data.profile, 'operativo');
 });
+
+test('Configuración: la asignación del colaborador cubre app móvil y portal web', async () => {
+  const cat = (await json('GET', '/api/access/catalog', { token: tokens.admin })).data;
+  assert.equal(cat.portalModules.length, 4, 'catálogo de módulos del portal web');
+  const perms = (await json('GET', '/api/access/permissions', { token: tokens.admin })).data;
+  assert.equal(perms.portal.operativo.length, 4, 'matriz de portal por perfil');
+  const drv = (await json('GET', '/api/access/employees', { token: tokens.admin })).data.find((e) => e.code === 'MTX013');
+  assert.equal(drv.mobileModules.length, 2, 'módulos de app móvil');
+  assert.equal(drv.portalModules.length, 4, 'módulos de portal web');
+  const dtok = (await json('POST', '/api/auth/login', { body: { code: 'MTX013', pin: '1234' } })).data.token;
+
+  // 1) revocar un módulo del portal web al colaborador
+  await json('PUT', `/api/access/employees/${drv.id}`, { token: tokens.admin, body: { portalRevokedModules: ['portal-recibos'] } });
+  const me1 = (await json('GET', '/api/auth/me', { token: dtok })).data;
+  assert.ok(me1.modules.includes('portal-asistencia') && !me1.modules.includes('portal-recibos'), 'el portal web respeta la revocación por colaborador');
+  await json('PUT', `/api/access/employees/${drv.id}`, { token: tokens.admin, body: { portalRevokedModules: [] } });
+
+  // 2) editar la matriz de portal por perfil también aplica al colaborador
+  await json('PUT', '/api/access/permissions', { token: tokens.admin, body: { portal: { operativo: ['portal-asistencia'] } } });
+  const me2 = (await json('GET', '/api/auth/me', { token: dtok })).data;
+  assert.deepEqual(me2.modules.filter((m) => m.startsWith('portal-')).sort(), ['portal-asistencia'], 'la matriz de portal por perfil aplica');
+  // restaurar
+  await json('PUT', '/api/access/permissions', { token: tokens.admin, body: { portal: { operativo: ['portal-asistencia', 'portal-vacaciones', 'portal-recibos', 'portal-tickets'] } } });
+  assert.equal((await json('GET', '/api/auth/me', { token: dtok })).data.modules.filter((m) => m.startsWith('portal-')).length, 4);
+});
