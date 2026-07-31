@@ -92,4 +92,84 @@ router.post('/crm/objectives', WRITE, (req, res) => {
   res.status(existing ? 200 : 201).json(saved);
 });
 
+// ---------- Administrativo: viáticos, gastos y facturas (gerente) ----------
+const empName = (id) => (db.get('employees', id) || {}).name || `#${id}`;
+
+// Viáticos: revisión y aprobación/rechazo
+router.get('/crm/expense-requests', (req, res) => {
+  let items = db.all('expenseRequests');
+  if (req.query.status) items = items.filter((r) => r.status === req.query.status);
+  items = items.map((r) => ({ ...r, employeeName: empName(r.employeeId) }))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(items);
+});
+
+router.post('/crm/expense-requests/:id/decision', WRITE, (req, res) => {
+  const r = db.get('expenseRequests', req.params.id);
+  if (!r) return res.status(404).json({ error: 'Solicitud no encontrada' });
+  const decision = req.body?.decision === 'aprobado' ? 'aprobado' : req.body?.decision === 'rechazado' ? 'rechazado' : null;
+  if (!decision) return res.status(400).json({ error: 'decision debe ser aprobado o rechazado' });
+  const updated = db.update('expenseRequests', r.id, {
+    status: decision, decidedBy: req.user?.name || 'Gerente', decidedAt: new Date().toISOString(), decisionNote: req.body?.note || '',
+  });
+  log(req, { action: decision, entity: 'expenseRequest', entityId: r.id, detail: `Viático ${r.folio} ${decision}` });
+  res.json(updated);
+});
+
+// Gastos: comprobaciones (con evidencia) y aprobación
+router.get('/crm/expenses', (req, res) => {
+  let items = db.all('expenses');
+  if (req.query.status) items = items.filter((e) => e.status === req.query.status);
+  if (req.query.employeeId) items = items.filter((e) => e.employeeId === Number(req.query.employeeId));
+  items = items.map((e) => ({ ...e, employeeName: empName(e.employeeId), photo: undefined, hasPhoto: !!e.photo }))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(items);
+});
+
+// Evidencia de un gasto (imagen del ticket/factura)
+router.get('/crm/expenses/:id/photo', (req, res) => {
+  const e = db.get('expenses', req.params.id);
+  if (!e || !e.photo) return res.status(404).json({ error: 'Sin evidencia' });
+  res.json({ photo: e.photo });
+});
+
+router.post('/crm/expenses/:id/decision', WRITE, (req, res) => {
+  const e = db.get('expenses', req.params.id);
+  if (!e) return res.status(404).json({ error: 'Gasto no encontrado' });
+  const decision = req.body?.decision === 'aprobado' ? 'aprobado' : req.body?.decision === 'rechazado' ? 'rechazado' : null;
+  if (!decision) return res.status(400).json({ error: 'decision debe ser aprobado o rechazado' });
+  const updated = db.update('expenses', e.id, { status: decision, decidedBy: req.user?.name || 'Gerente', decidedAt: new Date().toISOString() });
+  log(req, { action: decision, entity: 'expense', entityId: e.id, detail: `Gasto ${e.folio} ${decision}` });
+  res.json({ ...updated, photo: undefined, hasPhoto: !!updated.photo });
+});
+
+// Facturación: solicitudes y emisión (integración Aspel — fase posterior)
+router.get('/crm/invoices', (req, res) => {
+  let items = db.all('invoices');
+  if (req.query.status) items = items.filter((i) => i.status === req.query.status);
+  const cliById = Object.fromEntries(db.all('clients').map((c) => [c.id, c.name]));
+  items = items.map((i) => ({ ...i, employeeName: empName(i.employeeId), clientName: cliById[i.clientId] || i.razonSocial || '—' }))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(items);
+});
+
+router.post('/crm/invoices/:id/emit', WRITE, (req, res) => {
+  const i = db.get('invoices', req.params.id);
+  if (!i) return res.status(404).json({ error: 'Factura no encontrada' });
+  if (i.status === 'emitida') return res.status(409).json({ error: 'La factura ya fue emitida' });
+  // Punto de integración con Aspel: aquí se timbraría el CFDI y se recibiría el UUID.
+  const uuid = req.body?.uuid || `MTX-${i.id}-${Date.now().toString(36).toUpperCase()}`;
+  const updated = db.update('invoices', i.id, { status: 'emitida', uuid, emittedAt: new Date().toISOString(), emittedBy: req.user?.name || 'Gerente' });
+  log(req, { action: 'emit', entity: 'invoice', entityId: i.id, detail: `Factura ${i.folio} emitida (UUID ${uuid})` });
+  res.json(updated);
+});
+
+router.post('/crm/invoices/:id/cancel', WRITE, (req, res) => {
+  const i = db.get('invoices', req.params.id);
+  if (!i) return res.status(404).json({ error: 'Factura no encontrada' });
+  const updated = db.update('invoices', i.id, { status: 'cancelada' });
+  log(req, { action: 'cancel', entity: 'invoice', entityId: i.id, detail: `Factura ${i.folio} cancelada` });
+  res.json(updated);
+});
+
 export default router;

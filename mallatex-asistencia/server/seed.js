@@ -195,6 +195,27 @@ export function seed({ reset = false } = {}) {
   if (vGabriela) db.insert('salesObjectives', { employeeId: vGabriela, period: 'Q3-2026', targetAmount: 850000, achievedAmount: 520000 });
   if (vKarla) db.insert('salesObjectives', { employeeId: vKarla, period: 'Q3-2026', targetAmount: 900000, achievedAmount: 610000 });
 
+  // ----- Administrativo: viáticos, gastos y facturas (demo) -----
+  const stampVia = (id) => 'VIA-' + String(id).padStart(5, '0');
+  const stampGto = (id) => 'GTO-' + String(id).padStart(5, '0');
+  const stampFac = (id) => 'FAC-' + String(id).padStart(5, '0');
+  if (vGabriela) {
+    const v1 = db.insert('expenseRequests', { employeeId: vGabriela, concept: 'Gira comercial Zona Bajío', destination: 'Zamora / La Piedad', amount: 4500, fromDate: '2026-07-28', toDate: '2026-07-30', description: 'Hospedaje 2 noches, casetas y combustible', status: 'aprobado', decidedBy: 'Laura Méndez', decidedAt: '2026-07-27T16:00:00.000Z', decisionNote: 'Autorizado', createdAt: '2026-07-25T10:00:00.000Z' });
+    db.update('expenseRequests', v1.id, { folio: stampVia(v1.id) });
+    const g1 = db.insert('expenses', { employeeId: vGabriela, requestId: v1.id, category: 'combustible', merchant: 'Gasolinera Pemex Zamora', amount: 1180.5, date: '2026-07-28', hasInvoice: true, rfc: 'PEP970814SF3', notes: '', photo: null, status: 'aprobado', decidedBy: 'Laura Méndez', decidedAt: '2026-07-31T09:00:00.000Z', createdAt: '2026-07-28T19:30:00.000Z' });
+    db.update('expenses', g1.id, { folio: stampGto(g1.id) });
+    const g2 = db.insert('expenses', { employeeId: vGabriela, requestId: v1.id, category: 'hospedaje', merchant: 'Hotel Fénix', amount: 1740, date: '2026-07-29', hasInvoice: true, rfc: 'HFE080910AB1', notes: '', photo: null, status: 'pendiente', createdAt: '2026-07-29T22:10:00.000Z' });
+    db.update('expenses', g2.id, { folio: stampGto(g2.id) });
+    const f1 = db.insert('invoices', { employeeId: vGabriela, clientId: null, orderId: null, rfc: 'IVA860512QK8', razonSocial: 'Invernaderos del Valle SA de CV', usoCfdi: 'G03', amount: 92800, status: 'solicitada', uuid: null, emittedAt: null, emittedBy: null, createdAt: '2026-07-30T12:00:00.000Z' });
+    db.update('invoices', f1.id, { folio: stampFac(f1.id) });
+  }
+  if (vKarla) {
+    const v2 = db.insert('expenseRequests', { employeeId: vKarla, concept: 'Visita de cobranza cliente Chile', destination: 'Cd. Guzmán', amount: 2200, fromDate: '2026-08-04', toDate: '2026-08-04', description: 'Casetas y alimentos', status: 'solicitado', createdAt: '2026-07-31T08:30:00.000Z' });
+    db.update('expenseRequests', v2.id, { folio: stampVia(v2.id) });
+    const f2 = db.insert('invoices', { employeeId: vKarla, clientId: null, orderId: null, rfc: 'HDB900127TT2', razonSocial: 'Hortalizas del Bajío', usoCfdi: 'G01', amount: 46400, status: 'emitida', uuid: 'MTX-DEMO-3F9A2C', emittedAt: '2026-07-29T15:00:00.000Z', emittedBy: 'Laura Méndez', createdAt: '2026-07-28T11:00:00.000Z' });
+    db.update('invoices', f2.id, { folio: stampFac(f2.id) });
+  }
+
   // ----- Inventario (mallas Mallatex) -----
   const productos = [
     ['MS-35', 'Malla sombra 35%', 'sombra', 'm²', 18.5, 12000, 'Sombreo 35% · uso general'],

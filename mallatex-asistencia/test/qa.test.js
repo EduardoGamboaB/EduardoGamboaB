@@ -391,3 +391,52 @@ test('CRM ventas: el gerente asigna cartera; el vendedor no accede a la admin', 
   const denied = await json('GET', '/api/crm/clients', { token: vendorToken });
   assert.equal(denied.status, 403);
 });
+
+test('Administrativo: el vendedor solicita viáticos y el gerente los aprueba', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const req = await json('POST', '/api/sales/expense-requests', { token: et, body: { concept: 'Viaje QA', destination: 'León', amount: 3000, fromDate: '2026-08-01', toDate: '2026-08-02' } });
+  assert.equal(req.status, 201);
+  assert.ok(/^VIA-\d{5}$/.test(req.data.folio), 'genera folio VIA');
+  assert.equal(req.data.status, 'solicitado');
+  // el gerente ve la solicitud y la aprueba
+  const pending = (await json('GET', '/api/crm/expense-requests?status=solicitado', { token: tokens.contador })).data;
+  assert.ok(pending.find((r) => r.id === req.data.id));
+  const dec = await json('POST', `/api/crm/expense-requests/${req.data.id}/decision`, { token: tokens.contador, body: { decision: 'aprobado', note: 'OK' } });
+  assert.equal(dec.data.status, 'aprobado');
+});
+
+test('Administrativo: comprobación de gastos con evidencia y aprobación', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const gto = await json('POST', '/api/sales/expenses', { token: et, body: { category: 'alimentos', merchant: 'Rest. QA', amount: 480.5, hasInvoice: false, photo: 'data:image/png;base64,AAAA' } });
+  assert.equal(gto.status, 201);
+  assert.ok(/^GTO-\d{5}$/.test(gto.data.folio));
+  assert.equal(gto.data.hasPhoto, true);
+  assert.equal(gto.data.photo, undefined, 'no expone la imagen en la lista');
+  // el gerente consulta la evidencia y aprueba
+  const photo = (await json('GET', `/api/crm/expenses/${gto.data.id}/photo`, { token: tokens.contador })).data;
+  assert.ok(photo.photo && photo.photo.startsWith('data:image'), 'la evidencia es recuperable por el gerente');
+  const dec = await json('POST', `/api/crm/expenses/${gto.data.id}/decision`, { token: tokens.contador, body: { decision: 'aprobado' } });
+  assert.equal(dec.data.status, 'aprobado');
+});
+
+test('Administrativo: solicitud de factura desde pedido y emisión (Aspel)', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const products = (await json('GET', '/api/sales/products', { token: et })).data;
+  const client = (await json('GET', '/api/sales/my-clients', { token: et })).data[0];
+  const order = await json('POST', '/api/sales/orders', { token: et, body: { clientId: client.id, items: [{ productId: products[0].id, qty: 30 }] } });
+  const inv = await json('POST', '/api/sales/invoices', { token: et, body: { orderId: order.data.id, rfc: 'XAXX010101000', razonSocial: 'Cliente QA', usoCfdi: 'G03' } });
+  assert.equal(inv.status, 201);
+  assert.ok(/^FAC-\d{5}$/.test(inv.data.folio));
+  assert.equal(inv.data.amount, order.data.total, 'hereda el importe del pedido');
+  assert.equal(inv.data.status, 'solicitada');
+  // sin RFC se rechaza
+  const bad = await json('POST', '/api/sales/invoices', { token: et, body: { orderId: order.data.id } });
+  assert.equal(bad.status, 400);
+  // el gerente emite el CFDI (punto de integración Aspel)
+  const emit = await json('POST', `/api/crm/invoices/${inv.data.id}/emit`, { token: tokens.contador, body: {} });
+  assert.equal(emit.data.status, 'emitida');
+  assert.ok(emit.data.uuid, 'asigna UUID al timbrar');
+  // no se puede emitir dos veces
+  const again = await json('POST', `/api/crm/invoices/${inv.data.id}/emit`, { token: tokens.contador, body: {} });
+  assert.equal(again.status, 409);
+});

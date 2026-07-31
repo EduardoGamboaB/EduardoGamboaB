@@ -232,6 +232,115 @@ router.post('/orders', (req, res) => {
   res.status(201).json(updated);
 });
 
+// ---------- Administrativo: viáticos, gastos y facturas ----------
+// El vendedor levanta desde el campo; el gerente aprueba/emite desde la web (crm.js).
+const EXPENSE_CAT = ['hospedaje', 'alimentos', 'combustible', 'casetas', 'transporte', 'otros'];
+
+// Solicitud de viáticos (anticipo de gastos de viaje)
+router.get('/expense-requests', (req, res) => {
+  const items = db.all('expenseRequests', (r) => r.employeeId === req.employeeId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(items);
+});
+
+router.post('/expense-requests', (req, res) => {
+  const b = req.body || {};
+  const amount = Math.max(0, Number(b.amount) || 0);
+  if (!b.concept || !amount) return res.status(400).json({ error: 'Concepto y monto son obligatorios' });
+  const created = db.insert('expenseRequests', {
+    employeeId: req.employeeId,
+    concept: b.concept,
+    description: b.description || '',
+    destination: b.destination || '',
+    amount,
+    fromDate: b.fromDate || null,
+    toDate: b.toDate || null,
+    status: 'solicitado',
+    decidedBy: null, decidedAt: null, decisionNote: '',
+    createdAt: now(),
+  });
+  const updated = db.update('expenseRequests', created.id, { folio: 'VIA-' + String(created.id).padStart(5, '0') });
+  logSystem({ action: 'create', entity: 'expenseRequest', entityId: created.id, detail: `Viático ${updated.folio} (${amount}) vendedor ${req.employeeId}` });
+  res.status(201).json(updated);
+});
+
+// Comprobación de gastos (ticket/factura con evidencia)
+router.get('/expenses', (req, res) => {
+  const items = db.all('expenses', (e) => e.employeeId === req.employeeId)
+    .map((e) => ({ ...e, photo: undefined, hasPhoto: !!e.photo }))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(items);
+});
+
+router.post('/expenses', (req, res) => {
+  const b = req.body || {};
+  const amount = Math.max(0, Number(b.amount) || 0);
+  if (!amount) return res.status(400).json({ error: 'El monto es obligatorio' });
+  const category = EXPENSE_CAT.includes(b.category) ? b.category : 'otros';
+  if (b.requestId) {
+    const vr = db.get('expenseRequests', b.requestId);
+    if (!vr || vr.employeeId !== req.employeeId) return res.status(404).json({ error: 'Viático no encontrado' });
+  }
+  const created = db.insert('expenses', {
+    employeeId: req.employeeId,
+    requestId: b.requestId ? Number(b.requestId) : null,
+    category,
+    merchant: b.merchant || '',
+    amount,
+    date: b.date || now().slice(0, 10),
+    hasInvoice: b.hasInvoice === true,
+    rfc: b.rfc || '',
+    notes: b.notes || '',
+    photo: typeof b.photo === 'string' ? b.photo.slice(0, 900000) : null,
+    status: 'pendiente',
+    createdAt: now(),
+  });
+  const updated = db.update('expenses', created.id, { folio: 'GTO-' + String(created.id).padStart(5, '0') });
+  logSystem({ action: 'create', entity: 'expense', entityId: created.id, detail: `Gasto ${updated.folio} ${category} (${amount}) vendedor ${req.employeeId}` });
+  res.status(201).json({ ...updated, photo: undefined, hasPhoto: !!updated.photo });
+});
+
+// Solicitud de emisión de factura (CFDI) — se integra con Aspel al confirmar el pago (fase posterior)
+router.get('/invoices', (req, res) => {
+  const byId = Object.fromEntries(db.all('clients').map((c) => [c.id, c.name]));
+  const items = db.all('invoices', (i) => i.employeeId === req.employeeId)
+    .map((i) => ({ ...i, clientName: byId[i.clientId] || i.razonSocial || '—' }))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(items);
+});
+
+router.post('/invoices', (req, res) => {
+  const b = req.body || {};
+  let clientId = b.clientId ? Number(b.clientId) : null;
+  let amount = Math.max(0, Number(b.amount) || 0);
+  let orderId = null;
+  if (b.orderId) {
+    const o = db.get('orders', b.orderId);
+    if (!o || o.employeeId !== req.employeeId) return res.status(404).json({ error: 'Pedido no encontrado' });
+    orderId = o.id; clientId = o.clientId; amount = o.total;
+  }
+  if (clientId) {
+    const c = db.get('clients', clientId);
+    if (!c || c.assignedTo !== req.employeeId) return res.status(404).json({ error: 'Cliente no encontrado en tu cartera' });
+  }
+  if (!amount) return res.status(400).json({ error: 'El importe es obligatorio' });
+  if (!b.rfc) return res.status(400).json({ error: 'El RFC es obligatorio' });
+  const created = db.insert('invoices', {
+    employeeId: req.employeeId,
+    clientId, orderId,
+    rfc: b.rfc,
+    razonSocial: b.razonSocial || '',
+    usoCfdi: b.usoCfdi || 'G03',
+    amount,
+    status: 'solicitada',
+    uuid: null, emittedAt: null, emittedBy: null,
+    createdAt: now(),
+  });
+  const updated = db.update('invoices', created.id, { folio: 'FAC-' + String(created.id).padStart(5, '0') });
+  logSystem({ action: 'create', entity: 'invoice', entityId: created.id, detail: `Factura ${updated.folio} (${amount}) RFC ${b.rfc}` });
+  res.status(201).json(updated);
+});
+
 // ---------- Objetivos y desempeño ----------
 router.get('/objectives/me', (req, res) => {
   const objs = db.all('salesObjectives', (o) => o.employeeId === req.employeeId)

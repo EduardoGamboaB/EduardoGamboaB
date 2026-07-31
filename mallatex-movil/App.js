@@ -10,7 +10,6 @@ import LoginScreen from './src/screens/LoginScreen';
 import CheckinScreen from './src/screens/CheckinScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
-import ComingSoonScreen from './src/screens/ComingSoonScreen';
 import ClientsScreen from './src/screens/ClientsScreen';
 import VisitScreen from './src/screens/VisitScreen';
 import RouteScreen from './src/screens/RouteScreen';
@@ -19,6 +18,9 @@ import InventoryScreen from './src/screens/InventoryScreen';
 import QuoteScreen from './src/screens/QuoteScreen';
 import OrdersScreen from './src/screens/OrdersScreen';
 import BotScreen from './src/screens/BotScreen';
+import ViaticosScreen from './src/screens/ViaticosScreen';
+import GastosScreen from './src/screens/GastosScreen';
+import FacturasScreen from './src/screens/FacturasScreen';
 
 // Menú extensible: agregar un módulo nuevo = una entrada aquí + su pantalla.
 const MENU = [
@@ -31,9 +33,9 @@ const MENU = [
   { key: 'cotizador', label: 'Cotizador', icon: '🧮', group: 'Herramientas' },
   { key: 'pedidos', label: 'Pedidos', icon: '🛒', group: 'Herramientas' },
   { key: 'bot', label: 'Asistente técnico', icon: '🤖', group: 'Herramientas' },
-  { key: 'viaticos', label: 'Viáticos', icon: '✈️', group: 'Administración', soon: true },
-  { key: 'gastos', label: 'Gastos', icon: '🧾', group: 'Administración', soon: true },
-  { key: 'facturas', label: 'Facturas', icon: '📑', group: 'Administración', soon: true },
+  { key: 'viaticos', label: 'Viáticos', icon: '✈️', group: 'Administración' },
+  { key: 'gastos', label: 'Gastos', icon: '🧾', group: 'Administración' },
+  { key: 'facturas', label: 'Facturas', icon: '📑', group: 'Administración' },
   { key: 'perfil', label: 'Mi perfil', icon: '👤', group: 'Cuenta' },
 ];
 const GROUPS = ['Ventas', 'Herramientas', 'Administración', 'Cuenta'];
@@ -138,9 +140,9 @@ export default function App() {
         {screen === 'cotizador' && <QuoteScreen />}
         {screen === 'pedidos' && <OrdersScreen />}
         {screen === 'bot' && <BotScreen />}
-        {screen === 'viaticos' && <ComingSoonScreen title="Viáticos" icon="✈️" />}
-        {screen === 'gastos' && <ComingSoonScreen title="Gastos" icon="🧾" />}
-        {screen === 'facturas' && <ComingSoonScreen title="Facturas" icon="📑" />}
+        {screen === 'viaticos' && <ViaticosScreen />}
+        {screen === 'gastos' && <GastosScreen />}
+        {screen === 'facturas' && <FacturasScreen />}
       </View>
 
       {/* Menú lateral (drawer) */}

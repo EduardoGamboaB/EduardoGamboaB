@@ -26,13 +26,13 @@ administrativo (viáticos, gastos, facturas). Todo con **modo offline**.
 | **Visita con evidencia** | Estatus (localizado/no/reagendado), tipo, fotos, notas, geo. | ✅ 1 |
 | **Objetivos y desempeño** | Meta trimestral y avance del vendedor. | ✅ 1 |
 | **Offline** | Cola local + sincronización (visitas, recorrido). | ✅ 1 |
-| **Inventario** | Consulta de existencias por producto/almacén. | 2 |
-| **Cotizador** | Arma cotización con productos, precios y descuentos. | 2 |
-| **Pedidos** | Levanta pedido desde la cotización; seguimiento de estatus. | 2 |
-| **Asistente técnico (bot)** | Recomienda malla por cultivo, clima, terreno, etc. | 3 |
-| **Viáticos** | Solicitud de viáticos y autorización. | 3 |
-| **Gastos** | Comprobación de gastos con foto del ticket. | 3 |
-| **Facturas** | Emisión/consulta de facturas cuando aplique. | 3 |
+| **Inventario** | Consulta de existencias por producto/almacén. | ✅ 2 |
+| **Cotizador** | Arma cotización con productos, precios y descuentos. | ✅ 2 |
+| **Pedidos** | Levanta pedido desde la cotización; seguimiento de estatus. | ✅ 2 |
+| **Asistente técnico (bot)** | Recomienda malla por cultivo, clima, terreno, etc. | ✅ 3 |
+| **Viáticos** | Solicitud de viáticos; el gerente aprueba/rechaza desde la web. | ✅ 3 |
+| **Gastos** | Comprobación de gastos con foto del ticket; revisión y aprobación web. | ✅ 3 |
+| **Facturas** | Solicitud desde pedido/manual; emisión de CFDI (integración Aspel) desde la web. | ✅ 3 |
 
 ## Modelo de datos (CRM)
 
@@ -60,11 +60,15 @@ administrativo (viáticos, gastos, facturas). Todo con **modo offline**.
 
 ## API (resumen)
 
-- **Web / gerente (admin):** `/api/crm/clients` (CRUD + asignación), `/api/crm/objectives`.
+- **Web / gerente (admin):** `/api/crm/clients` (CRUD + asignación), `/api/crm/objectives`,
+  `/api/crm/expense-requests/:id/decision` (aprobar viáticos),
+  `/api/crm/expenses/:id/decision` + `/photo` (revisar gastos),
+  `/api/crm/invoices/:id/emit|cancel` (emisión CFDI · Aspel).
 - **Móvil / vendedor (sesión de empleado):**
   `/api/sales/my-clients`, `/api/sales/clients` (alta de prospecto),
   `/api/sales/visits` (registrar), `/api/sales/routes/start|:id/track|:id/end`,
-  `/api/sales/objectives/me`.
+  `/api/sales/objectives/me`, `/api/sales/products|quotes|orders`, `/api/sales/advisor`,
+  `/api/sales/expense-requests`, `/api/sales/expenses`, `/api/sales/invoices`.
 
 ## Notas
 

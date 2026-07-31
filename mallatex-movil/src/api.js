@@ -55,4 +55,11 @@ export const api = {
   orders: () => request('GET', '/api/sales/orders'),
   createOrder: (body) => request('POST', '/api/sales/orders', { body }),
   advisor: (body) => request('POST', '/api/sales/advisor', { body }),
+  // administrativo: viáticos, gastos, facturas
+  expenseRequests: () => request('GET', '/api/sales/expense-requests'),
+  createExpenseRequest: (body) => request('POST', '/api/sales/expense-requests', { body }),
+  expenses: () => request('GET', '/api/sales/expenses'),
+  createExpense: (body) => request('POST', '/api/sales/expenses', { body }),
+  invoices: () => request('GET', '/api/sales/invoices'),
+  createInvoice: (body) => request('POST', '/api/sales/invoices', { body }),
 };
