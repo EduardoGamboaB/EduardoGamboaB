@@ -48,4 +48,11 @@ export const api = {
   visits: () => request('GET', '/api/sales/visits'),
   createVisit: (body) => request('POST', '/api/sales/visits', { body }),
   myObjectives: () => request('GET', '/api/sales/objectives/me'),
+  // inventario / cotizador / pedidos
+  products: (q) => request('GET', '/api/sales/products' + (q ? `?q=${encodeURIComponent(q)}` : '')),
+  quotes: () => request('GET', '/api/sales/quotes'),
+  createQuote: (body) => request('POST', '/api/sales/quotes', { body }),
+  orders: () => request('GET', '/api/sales/orders'),
+  createOrder: (body) => request('POST', '/api/sales/orders', { body }),
+  advisor: (body) => request('POST', '/api/sales/advisor', { body }),
 };

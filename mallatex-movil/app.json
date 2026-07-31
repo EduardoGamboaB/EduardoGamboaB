@@ -17,9 +17,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "mx.mallatex.campo",
       "infoPlist": {
-        "NSCameraUsageDescription": "Se usa la cámara para tomar la selfie de verificación al registrar tu asistencia.",
-        "NSLocationWhenInUseUsageDescription": "Se usa tu ubicación sólo al registrar asistencia, para validar el sitio (geocerca).",
-        "NSFaceIDUsageDescription": "Se usa Face ID para acceder a la app de forma segura."
+        "NSCameraUsageDescription": "Se usa la cámara para la selfie de verificación y la evidencia de visitas.",
+        "NSLocationWhenInUseUsageDescription": "Se usa tu ubicación al registrar asistencia y visitas, y para validar el sitio (geocerca).",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Se registra tu recorrido de ruta mientras la app está en segundo plano.",
+        "NSFaceIDUsageDescription": "Se usa Face ID para acceder a la app de forma segura.",
+        "UIBackgroundModes": ["location"]
       }
     },
     "android": {
@@ -28,14 +30,19 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "USE_BIOMETRIC", "USE_FINGERPRINT"]
+      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_BACKGROUND_LOCATION", "FOREGROUND_SERVICE", "FOREGROUND_SERVICE_LOCATION", "USE_BIOMETRIC", "USE_FINGERPRINT"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       ["expo-camera", { "cameraPermission": "Se usa la cámara para tomar la selfie de verificación al registrar tu asistencia." }],
-      ["expo-location", { "locationWhenInUsePermission": "Se usa tu ubicación sólo al registrar asistencia, para validar el sitio (geocerca)." }],
+      ["expo-location", {
+        "locationWhenInUsePermission": "Se usa tu ubicación al registrar asistencia y visitas, y para validar el sitio (geocerca).",
+        "locationAlwaysAndWhenInUsePermission": "Se registra tu recorrido de ruta mientras la app está en segundo plano.",
+        "isAndroidBackgroundLocationEnabled": true,
+        "isAndroidForegroundServiceEnabled": true
+      }],
       ["expo-local-authentication", { "faceIDPermission": "Se usa Face ID para acceder a la app de forma segura." }]
     ]
   }

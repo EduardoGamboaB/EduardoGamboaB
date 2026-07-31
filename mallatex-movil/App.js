@@ -5,6 +5,7 @@ import { colors } from './src/theme';
 import { api } from './src/api';
 import { getToken, setToken, getQueue, saveQueue, getBiometricEnabled, setBiometricEnabled } from './src/storage';
 import { biometricAvailable, biometricLabel, biometricAuthenticate } from './src/biometrics';
+import { flushTrackBuffer } from './src/tracking';
 import LoginScreen from './src/screens/LoginScreen';
 import CheckinScreen from './src/screens/CheckinScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
@@ -14,6 +15,10 @@ import ClientsScreen from './src/screens/ClientsScreen';
 import VisitScreen from './src/screens/VisitScreen';
 import RouteScreen from './src/screens/RouteScreen';
 import PerformanceScreen from './src/screens/PerformanceScreen';
+import InventoryScreen from './src/screens/InventoryScreen';
+import QuoteScreen from './src/screens/QuoteScreen';
+import OrdersScreen from './src/screens/OrdersScreen';
+import BotScreen from './src/screens/BotScreen';
 
 // Menú extensible: agregar un módulo nuevo = una entrada aquí + su pantalla.
 const MENU = [
@@ -22,10 +27,10 @@ const MENU = [
   { key: 'visita', label: 'Registrar visita', icon: '📋', group: 'Ventas' },
   { key: 'desempeno', label: 'Mi desempeño', icon: '🎯', group: 'Ventas' },
   { key: 'asistencia', label: 'Mi asistencia', icon: '📍', group: 'Ventas' },
-  { key: 'inventario', label: 'Inventario', icon: '📦', group: 'Herramientas', soon: true },
-  { key: 'cotizador', label: 'Cotizador', icon: '🧮', group: 'Herramientas', soon: true },
-  { key: 'pedidos', label: 'Pedidos', icon: '🛒', group: 'Herramientas', soon: true },
-  { key: 'bot', label: 'Asistente técnico', icon: '🤖', group: 'Herramientas', soon: true },
+  { key: 'inventario', label: 'Inventario', icon: '📦', group: 'Herramientas' },
+  { key: 'cotizador', label: 'Cotizador', icon: '🧮', group: 'Herramientas' },
+  { key: 'pedidos', label: 'Pedidos', icon: '🛒', group: 'Herramientas' },
+  { key: 'bot', label: 'Asistente técnico', icon: '🤖', group: 'Herramientas' },
   { key: 'viaticos', label: 'Viáticos', icon: '✈️', group: 'Administración', soon: true },
   { key: 'gastos', label: 'Gastos', icon: '🧾', group: 'Administración', soon: true },
   { key: 'facturas', label: 'Facturas', icon: '📑', group: 'Administración', soon: true },
@@ -80,7 +85,7 @@ export default function App() {
     if (!silent) Alert.alert('Sincronización', `${sent} enviado(s), ${remaining.length} pendiente(s).`);
   }, []);
 
-  useEffect(() => { if (authed) flushQueue(true); }, [authed, flushQueue]);
+  useEffect(() => { if (authed) { flushQueue(true); flushTrackBuffer(); } }, [authed, flushQueue]);
 
   async function onLoggedIn() {
     const ok = await loadProfile();
@@ -129,10 +134,10 @@ export default function App() {
         {screen === 'desempeno' && <PerformanceScreen />}
         {screen === 'asistencia' && <CheckinScreen profile={profile} onQueued={() => setQueueVersion((v) => v + 1)} />}
         {screen === 'perfil' && <ProfileScreen profile={profile} onLogout={logout} />}
-        {screen === 'inventario' && <ComingSoonScreen title="Inventario" icon="📦" />}
-        {screen === 'cotizador' && <ComingSoonScreen title="Cotizador" icon="🧮" />}
-        {screen === 'pedidos' && <ComingSoonScreen title="Pedidos" icon="🛒" />}
-        {screen === 'bot' && <ComingSoonScreen title="Asistente técnico" icon="🤖" />}
+        {screen === 'inventario' && <InventoryScreen />}
+        {screen === 'cotizador' && <QuoteScreen />}
+        {screen === 'pedidos' && <OrdersScreen />}
+        {screen === 'bot' && <BotScreen />}
         {screen === 'viaticos' && <ComingSoonScreen title="Viáticos" icon="✈️" />}
         {screen === 'gastos' && <ComingSoonScreen title="Gastos" icon="🧾" />}
         {screen === 'facturas' && <ComingSoonScreen title="Facturas" icon="📑" />}

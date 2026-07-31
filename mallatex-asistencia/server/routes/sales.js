@@ -5,9 +5,15 @@ import express from 'express';
 import * as db from '../db.js';
 import { requireEmployee } from '../auth.js';
 import { logSystem } from '../audit.js';
+import { recommend } from '../advisor.js';
 
 const router = express.Router();
 router.use(requireEmployee);
+
+// ---------- Asistente técnico (recomendación de malla) ----------
+router.post('/advisor', (req, res) => {
+  res.json(recommend(req.body || {}));
+});
 
 const VISIT_STATUS = ['realizada', 'no_localizado', 'reagendada'];
 const VISIT_TYPE = ['prospeccion', 'seguimiento', 'cierre', 'cobranza', 'entrega', 'postventa'];
@@ -134,6 +140,96 @@ router.post('/visits', (req, res) => {
   }
   logSystem({ action: 'visit', entity: 'client', entityId: client.id, detail: `Visita ${type}/${status} a ${client.name} (vendedor ${req.employeeId})` });
   res.status(201).json({ id: created.id, ok: true, status, type });
+});
+
+// ---------- Inventario (consulta) ----------
+router.get('/products', (req, res) => {
+  let items = db.all('products', (p) => p.active !== false);
+  if (req.query.category) items = items.filter((p) => p.category === req.query.category);
+  if (req.query.q) {
+    const q = req.query.q.toLowerCase();
+    items = items.filter((p) => (p.name + ' ' + p.sku + ' ' + (p.category || '')).toLowerCase().includes(q));
+  }
+  items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  res.json(items.map((p) => ({ id: p.id, sku: p.sku, name: p.name, category: p.category, unit: p.unit, price: p.price, stock: p.stock, warehouse: p.warehouse, specs: p.specs || '' })));
+});
+
+// Calcula líneas e importes a partir de items {productId, qty, discount}
+function priceItems(rawItems) {
+  const items = [];
+  let subtotal = 0;
+  for (const it of rawItems || []) {
+    const p = db.get('products', it.productId);
+    if (!p) continue;
+    const qty = Math.max(0, Number(it.qty) || 0);
+    const discount = Math.min(100, Math.max(0, Number(it.discount) || 0));
+    const importe = round2(qty * p.price * (1 - discount / 100));
+    subtotal += importe;
+    items.push({ productId: p.id, sku: p.sku, name: p.name, unit: p.unit, price: p.price, qty, discount, importe });
+  }
+  const iva = round2(subtotal * 0.16);
+  return { items, subtotal: round2(subtotal), iva, total: round2(subtotal + iva) };
+}
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+// ---------- Cotizaciones ----------
+router.get('/quotes', (req, res) => {
+  const byId = Object.fromEntries(db.all('clients').map((c) => [c.id, c.name]));
+  const items = db.all('quotes', (q) => q.employeeId === req.employeeId)
+    .map((q) => ({ ...q, clientName: byId[q.clientId] || '—' }))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(items);
+});
+
+router.post('/quotes', (req, res) => {
+  const b = req.body || {};
+  const client = db.get('clients', b.clientId);
+  if (!client || client.assignedTo !== req.employeeId) return res.status(404).json({ error: 'Cliente no encontrado en tu cartera' });
+  const priced = priceItems(b.items);
+  if (!priced.items.length) return res.status(400).json({ error: 'Agrega al menos un producto' });
+  const created = db.insert('quotes', {
+    employeeId: req.employeeId, clientId: client.id,
+    ...priced, notes: b.notes || '', status: 'abierta', createdAt: now(),
+  });
+  const updated = db.update('quotes', created.id, { folio: 'COT-' + String(created.id).padStart(5, '0') });
+  logSystem({ action: 'create', entity: 'quote', entityId: created.id, detail: `Cotización ${updated.folio} a ${client.name}: ${priced.total}` });
+  res.status(201).json(updated);
+});
+
+// ---------- Pedidos ----------
+router.get('/orders', (req, res) => {
+  const byId = Object.fromEntries(db.all('clients').map((c) => [c.id, c.name]));
+  const items = db.all('orders', (o) => o.employeeId === req.employeeId)
+    .map((o) => ({ ...o, clientName: byId[o.clientId] || '—' }))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(items);
+});
+
+router.post('/orders', (req, res) => {
+  const b = req.body || {};
+  let clientId = b.clientId, priced;
+  if (b.quoteId) {
+    const q = db.get('quotes', b.quoteId);
+    if (!q || q.employeeId !== req.employeeId) return res.status(404).json({ error: 'Cotización no encontrada' });
+    clientId = q.clientId;
+    priced = { items: q.items, subtotal: q.subtotal, iva: q.iva, total: q.total };
+  } else {
+    priced = priceItems(b.items);
+  }
+  const client = db.get('clients', clientId);
+  if (!client || client.assignedTo !== req.employeeId) return res.status(404).json({ error: 'Cliente no encontrado en tu cartera' });
+  if (!priced.items.length) return res.status(400).json({ error: 'El pedido no tiene productos' });
+  const created = db.insert('orders', {
+    employeeId: req.employeeId, clientId: client.id, quoteId: b.quoteId ? Number(b.quoteId) : null,
+    ...priced, status: 'pendiente', notes: b.notes || '', createdAt: now(),
+  });
+  const updated = db.update('orders', created.id, { folio: 'PED-' + String(created.id).padStart(5, '0') });
+  if (b.quoteId) db.update('quotes', Number(b.quoteId), { status: 'convertida' });
+  // Acumula el importe al objetivo del vendedor (avance de venta)
+  const obj = db.all('salesObjectives', (o) => o.employeeId === req.employeeId).sort((a, c) => (a.period < c.period ? 1 : -1))[0];
+  if (obj) db.update('salesObjectives', obj.id, { achievedAmount: round2((obj.achievedAmount || 0) + priced.total) });
+  logSystem({ action: 'create', entity: 'order', entityId: created.id, detail: `Pedido ${updated.folio} de ${client.name}: ${priced.total}` });
+  res.status(201).json(updated);
 });
 
 // ---------- Objetivos y desempeño ----------

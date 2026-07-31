@@ -354,6 +354,32 @@ test('CRM ventas: cartera, ruta, visita y desempeño del vendedor', async () => 
   assert.equal(end.data.status, 'finalizada');
 });
 
+test('CRM ventas: inventario, cotización y pedido', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const products = (await json('GET', '/api/sales/products', { token: et })).data;
+  assert.ok(products.length >= 5 && products[0].price > 0, 'hay inventario');
+  const client = (await json('GET', '/api/sales/my-clients', { token: et })).data[0];
+  const quote = await json('POST', '/api/sales/quotes', { token: et, body: { clientId: client.id, items: [{ productId: products[0].id, qty: 100 }, { productId: products[1].id, qty: 50, discount: 10 }] } });
+  assert.equal(quote.status, 201);
+  assert.ok(quote.data.total > 0 && quote.data.folio.startsWith('COT-'));
+  const order = await json('POST', '/api/sales/orders', { token: et, body: { quoteId: quote.data.id } });
+  assert.equal(order.status, 201);
+  assert.ok(order.data.folio.startsWith('PED-'));
+  assert.equal(order.data.total, quote.data.total);
+  const quotes = (await json('GET', '/api/sales/quotes', { token: et })).data;
+  assert.equal(quotes.find((q) => q.id === quote.data.id).status, 'convertida');
+});
+
+test('CRM ventas: asistente técnico recomienda malla', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const granizo = (await json('POST', '/api/sales/advisor', { token: et, body: { cultivo: 'Manzana', clima: 'templado', objetivo: 'granizo' } })).data;
+  assert.equal(granizo.category, 'antigranizo');
+  assert.ok(granizo.recommendation && granizo.recommendation.sku);
+  const sombra = (await json('POST', '/api/sales/advisor', { token: et, body: { cultivo: 'vivero ornamental', clima: 'caluroso' } })).data;
+  assert.equal(sombra.category, 'sombra');
+  assert.ok(sombra.shadePct, 'sugiere porcentaje de sombreo');
+});
+
 test('CRM ventas: el gerente asigna cartera; el vendedor no accede a la admin', async () => {
   const c = await json('POST', '/api/crm/clients', { token: tokens.contador, body: { name: 'Cliente Central QA', type: 'cliente' } });
   assert.equal(c.status, 201);

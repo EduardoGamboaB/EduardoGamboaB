@@ -195,6 +195,21 @@ export function seed({ reset = false } = {}) {
   if (vGabriela) db.insert('salesObjectives', { employeeId: vGabriela, period: 'Q3-2026', targetAmount: 850000, achievedAmount: 520000 });
   if (vKarla) db.insert('salesObjectives', { employeeId: vKarla, period: 'Q3-2026', targetAmount: 900000, achievedAmount: 610000 });
 
+  // ----- Inventario (mallas Mallatex) -----
+  const productos = [
+    ['MS-35', 'Malla sombra 35%', 'sombra', 'm²', 18.5, 12000, 'Sombreo 35% · uso general'],
+    ['MS-50', 'Malla sombra 50%', 'sombra', 'm²', 22.0, 9800, 'Sombreo 50% · hortalizas'],
+    ['MS-70', 'Malla sombra 70%', 'sombra', 'm²', 27.5, 4300, 'Sombreo 70% · vivero/ornamental'],
+    ['MAG-01', 'Malla antigranizo', 'antigranizo', 'm²', 34.0, 6100, 'Protección antigranizo · frutales'],
+    ['MAI-50', 'Malla antiinsecto 50 mesh', 'antiinsecto', 'm²', 41.0, 3800, 'Barrera antiáfidos/mosca blanca'],
+    ['MAP-01', 'Malla antipájaros', 'antipajaros', 'm²', 12.0, 15000, 'Protección contra aves · berries/vid'],
+    ['MT-01', 'Malla tutora (espaldera)', 'tutora', 'rollo', 890.0, 320, 'Entutorado de cultivos verticales'],
+    ['GC-01', 'Ground cover', 'groundcover', 'm²', 15.5, 8700, 'Cubierta de suelo antimaleza'],
+  ];
+  for (const [sku, name, category, unit, price, stock, specs] of productos) {
+    db.insert('products', { sku, name, category, unit, price, stock, warehouse: 'CD Guadalajara', specs, active: true });
+  }
+
   // ----- Algunas incidencias de ejemplo -----
   db.insert('incidents', {
     employeeId: emps[1].id, type: 'vacaciones',

@@ -3,22 +3,29 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Scr
 import { colors } from '../theme';
 import { api } from '../api';
 import { getLocation } from '../location';
+import { startBackgroundTracking, stopBackgroundTracking, flushTrackBuffer } from '../tracking';
 
 export default function RouteScreen({ onGoVisit }) {
   const [route, setRoute] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  const [bg, setBg] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
-    try { setRoute(await api.activeRoute()); } catch {}
+    try { const r = await api.activeRoute(); setRoute(r); if (r) flushTrackBuffer(); } catch {}
     setLoading(false);
   }, []);
   useEffect(() => { load(); }, [load]);
 
   async function start() {
     setBusy(true);
-    try { const geo = await getLocation(); setRoute(await api.startRoute({ lat: geo.lat, lng: geo.lng })); }
+    try {
+      const geo = await getLocation();
+      const r = await api.startRoute({ lat: geo.lat, lng: geo.lng });
+      setRoute(r);
+      const t = await startBackgroundTracking(r.id); setBg(t.background);
+    }
     catch (e) { Alert.alert('No se pudo iniciar', e.message); }
     setBusy(false);
   }
@@ -31,7 +38,7 @@ export default function RouteScreen({ onGoVisit }) {
   async function end() {
     Alert.alert('Finalizar ruta', '¿Cerrar el recorrido de hoy?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Finalizar', style: 'destructive', onPress: async () => { try { await api.endRoute(route.id); setRoute(null); } catch (e) { Alert.alert('Error', e.message); } } },
+      { text: 'Finalizar', style: 'destructive', onPress: async () => { try { await stopBackgroundTracking(); await api.endRoute(route.id); setRoute(null); setBg(false); } catch (e) { Alert.alert('Error', e.message); } } },
     ]);
   }
 
@@ -63,7 +70,9 @@ export default function RouteScreen({ onGoVisit }) {
       <TouchableOpacity style={st.primary} onPress={() => onGoVisit && onGoVisit()}><Text style={st.primaryTxt}>＋ Registrar visita</Text></TouchableOpacity>
       <TouchableOpacity style={[st.secondary, busy && { opacity: 0.6 }]} onPress={updateTrack} disabled={busy}><Text style={st.secondaryTxt}>📍 Actualizar recorrido</Text></TouchableOpacity>
       <TouchableOpacity style={st.endBtn} onPress={end}><Text style={st.endTxt}>■ Finalizar ruta</Text></TouchableOpacity>
-      <Text style={st.note}>El recorrido se registra al iniciar y cada vez que actualizas. El seguimiento continuo en segundo plano llega en una próxima versión.</Text>
+      <Text style={st.note}>{bg
+        ? '📡 Seguimiento en segundo plano activo: tu recorrido se registra automáticamente aunque cierres la app.'
+        : 'El recorrido se registra al iniciar y al actualizar. El seguimiento continuo en segundo plano requiere la app instalada (build nativo), no Expo Go.'}</Text>
     </ScrollView>
   );
 }
