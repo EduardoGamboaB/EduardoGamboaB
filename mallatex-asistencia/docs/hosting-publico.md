@@ -67,10 +67,39 @@ El archivo `render.yaml` **ya está en la raíz del repositorio**, listo para au
 
 ---
 
-## Alternativas
+## Railway (URL pública con HTTPS + PostgreSQL)
 
-- **Railway** (<https://railway.app>): "New Project" → *Deploy from GitHub* → Root Directory
-  `mallatex-asistencia`; agrega un **PostgreSQL** y las mismas variables. Da URL HTTPS.
+Resultado: una URL tipo `https://mallatex-asistencia.up.railway.app`.
+
+> **Monorepo:** este repositorio contiene **dos proyectos** (`anaberries-leads` y
+> `mallatex-asistencia`). El `railway.json`/`Dockerfile` de la **raíz** son de Anaberries,
+> así que para desplegar Mallatex hay que fijar el **Root Directory = `mallatex-asistencia`**
+> (ahí vive su propio `railway.json` + `Dockerfile`). Así Railway construye el proyecto correcto
+> y no toca Anaberries.
+
+1. En <https://railway.app> → **New Project** → **Deploy from GitHub repo** → autoriza y elige
+   `eduardogamboab/eduardogamboab`.
+2. En el servicio → **Settings** → **Source**: fija **Root Directory** = `mallatex-asistencia`
+   y **Branch** = `main` (o `claude/app-requisitos-3528w4` antes de fusionar). Railway detecta
+   `mallatex-asistencia/railway.json` → **build por Dockerfile** con healthcheck `/api/health`.
+3. En el proyecto → **New** → **Database** → **Add PostgreSQL**.
+4. En el servicio → **Variables** → agrega:
+   - `STORAGE = postgres`
+   - `DATABASE_URL = ${{Postgres.DATABASE_URL}}` (referencia a la base del paso 3)
+   - `NODE_ENV = production` · `TRUST_PROXY = 1` · `ENABLE_HSTS = true` · `SESSION_TTL_HOURS = 12`
+   - `SEED_DEMO = true` (para probar de inmediato con las cuentas demo)
+   - *(opcional)* `ASPEL_WEBHOOK_SECRET`, y las de integración (`G3_MODE`, `MES_MODE`,
+     `ASPEL_MODE`…) si vas a conectarlas de verdad (ver `docs/integraciones.md`).
+5. Railway despliega y expone la URL en **Settings → Networking → Generate Domain**.
+
+**Vía CLI** (equivalente): `npm i -g @railway/cli` → `railway login` → dentro de
+`mallatex-asistencia/`: `railway init` → `railway add` (PostgreSQL) → define las variables →
+`railway up`.
+
+Cuentas demo y cómo apuntar la app móvil: iguales que en la sección de Render (arriba).
+
+## Otras alternativas
+
 - **Fly.io** (<https://fly.io>): `fly launch` usando el `Dockerfile`; crea Postgres con
   `fly postgres create` y enlázalo (`DATABASE_URL`). URL HTTPS incluida.
 - **VPS propio** (DigitalOcean/Linode/EC2): sigue [`DEPLOY.md`](../DEPLOY.md) con
