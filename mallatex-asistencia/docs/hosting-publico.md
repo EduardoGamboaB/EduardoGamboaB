@@ -16,8 +16,7 @@ El archivo `render.yaml` **ya está en la raíz del repositorio**, listo para au
 
 1. En <https://render.com> → **New +** → **Blueprint** → conecta tu cuenta de GitHub y
    selecciona el repo `eduardogamboab/eduardogamboab`.
-2. Elige la rama **`claude/app-requisitos-3528w4`** (donde vive este trabajo). Si ya
-   fusionaste el PR a tu rama por defecto, selecciónala y quita el campo `branch` del yaml.
+2. Elige la rama **`main`** (donde ya está fusionado este trabajo).
 3. Render lee `render.yaml` y crea **el servicio web + la base PostgreSQL** con las
    variables ya configuradas. Te pedirá el valor de `ASPEL_WEBHOOK_SECRET` (déjalo vacío o
    pon cualquier cadena; sólo se usa si conectas Aspel real). Pulsa **Apply**.
@@ -80,7 +79,7 @@ Resultado: una URL tipo `https://mallatex-asistencia.up.railway.app`.
 1. En <https://railway.app> → **New Project** → **Deploy from GitHub repo** → autoriza y elige
    `eduardogamboab/eduardogamboab`.
 2. En el servicio → **Settings** → **Source**: fija **Root Directory** = `mallatex-asistencia`
-   y **Branch** = `main` (o `claude/app-requisitos-3528w4` antes de fusionar). Railway detecta
+   y **Branch** = `main`. Railway detecta
    `mallatex-asistencia/railway.json` → **build por Dockerfile** con healthcheck `/api/health`.
 3. En el proyecto → **New** → **Database** → **Add PostgreSQL**.
 4. En el servicio → **Variables** → agrega:

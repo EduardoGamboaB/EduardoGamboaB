@@ -4,8 +4,7 @@
 # Despliega la plataforma web + backend (mallatex-asistencia). La app móvil (mallatex-movil)
 # se compila aparte con EAS (ver mallatex-movil/docs/build-nativo-eas.md) y apunta a esta URL.
 #
-# Nota sobre la rama: este trabajo vive en la rama `claude/app-requisitos-3528w4`. Al crear el
-# Blueprint selecciona esa rama (o fusiona el PR a la rama por defecto y quita el campo `branch`).
+# El servicio despliega la rama `main` (donde ya está fusionado este trabajo).
 
 databases:
   - name: mallatex-db
@@ -18,7 +17,7 @@ services:
     name: mallatex-asistencia
     runtime: node
     plan: free
-    branch: claude/app-requisitos-3528w4
+    branch: main
     rootDir: mallatex-asistencia
     buildCommand: npm ci --omit=dev
     startCommand: node server/index.js
