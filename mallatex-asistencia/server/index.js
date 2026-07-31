@@ -31,28 +31,36 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
 // ---------- Arranque de datos ----------
-// Inicializa el backend de datos (obligatorio en modo PostgreSQL).
-try {
+// Inicializa el backend de datos. En PostgreSQL, el candado de ESCRITOR (pg_advisory_lock) se
+// toma aquí; para no bloquear el health check durante un despliegue con solapamiento (la
+// instancia nueva arranca antes de que muera la vieja), en modo pg esta inicialización corre
+// DESPUÉS de escuchar y las rutas de datos responden 503 hasta que todo esté cargado. Así
+// Railway/Render marcan sana la instancia nueva, apagan la vieja (que libera el candado) y la
+// nueva lo adquiere en cuanto queda libre.
+let dataReady = false;
+async function initBackend() {
   const info = await db.init();
   console.log(`Almacenamiento: ${info.mode}`);
-} catch (err) {
-  console.error(`\n  ✖ No se pudo inicializar la base de datos (${db.MODE}): ${err.message}\n`);
-  process.exit(1);
+  // Candado de instancia única (archivo). En PostgreSQL lo hace pg_advisory_lock.
+  if (!db.acquireLock()) {
+    console.error(`\n  ✖ Otra instancia ya usa el directorio de datos (${db.DATA_DIR}).`);
+    process.exit(1);
+  }
+  if (config.backupOnStart) {
+    try { const b = db.backup(config.backupKeep); if (b) console.log('Respaldo de datos:', b); } catch (e) { console.error('No se pudo respaldar:', e.message); }
+  }
+  for (const w of configWarnings()) console.warn('  ⚠ ', w);
+  if (db.all('users').length === 0) {
+    const r = initData();
+    console.log(r.mode === 'demo' ? 'Datos demostrativos cargados.' : 'Inicialización de producción:', r);
+  }
+  dataReady = true;
 }
-// Candado de instancia única (archivo). En PostgreSQL lo hace pg_advisory_lock.
-if (!db.acquireLock()) {
-  console.error(`\n  ✖ Otra instancia ya usa el directorio de datos (${db.DATA_DIR}).`);
-  console.error('    Ejecuta una sola instancia por volumen de datos, o usa un DATA_DIR distinto.\n');
-  process.exit(1);
-}
-if (config.backupOnStart) {
-  try { const b = db.backup(config.backupKeep); if (b) console.log('Respaldo de datos:', b); } catch (e) { console.error('No se pudo respaldar:', e.message); }
-}
-for (const w of configWarnings()) console.warn('  ⚠ ', w);
 
-if (db.all('users').length === 0) {
-  const r = initData();
-  console.log(r.mode === 'demo' ? 'Datos demostrativos cargados.' : 'Inicialización de producción:', r);
+// En modo archivo se inicializa ANTES de escuchar (rápido; evita 503 en arranque local/pruebas).
+if (db.MODE === 'file') {
+  try { await initBackend(); }
+  catch (err) { console.error(`\n  ✖ No se pudo inicializar la base de datos (${db.MODE}): ${err.message}\n`); process.exit(1); }
 }
 
 // ---------- App ----------
@@ -65,9 +73,16 @@ app.use(cors);
 app.use(requestLogger);
 app.use(express.json({ limit: config.jsonLimit }));
 
+// Liveness: siempre responde (permite el relevo del despliegue mientras se toma el candado).
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
-app.get('/api/ready', (_req, res) => {
-  try { db.all('users'); res.json({ ready: true }); } catch { res.status(503).json({ ready: false }); }
+// Readiness: sólo cuando los datos ya están cargados (writer activo).
+app.get('/api/ready', (_req, res) => (dataReady ? res.json({ ready: true }) : res.status(503).json({ ready: false })));
+// Puerta de disponibilidad: hasta que los datos estén cargados, las rutas de datos responden
+// 503 (health/ready pasan por estar registradas antes). Evita el deadlock del candado en pg.
+app.use('/api', (req, res, next) => {
+  if (dataReady) return next();
+  res.set('Retry-After', '5');
+  res.status(503).json({ error: 'El servicio está iniciando; reintenta en unos segundos.' });
 });
 
 // Kiosco: público (la identificación la haría el reconocimiento facial del dispositivo)
@@ -132,8 +147,18 @@ const server = app.listen(config.port, config.host, () => {
   console.log(`\n  Mallatex · Plataforma de Asistencia (NOI) — powered by Evorgyn`);
   console.log(`  Entorno: ${config.nodeEnv} · Datos: ${db.DATA_DIR}`);
   console.log(`  Servidor: http://${config.host}:${config.port}`);
-  console.log(`  Empleados: ${db.all('employees').length} · Checadas: ${db.all('checadas').length}\n`);
+  if (dataReady) console.log(`  Empleados: ${db.all('employees').length} · Checadas: ${db.all('checadas').length}\n`);
+  else console.log('  Escuchando; inicializando datos…\n');
 });
+
+// En modo PostgreSQL la inicialización (incluido el candado de escritor) corre TRAS escuchar,
+// para que el health check pase durante un despliegue con solapamiento y la instancia anterior
+// libere el candado al apagarse. Las rutas de datos responden 503 hasta que termine.
+if (db.MODE !== 'file') {
+  initBackend()
+    .then(() => console.log(`  Datos listos · Empleados: ${db.all('employees').length}\n`))
+    .catch((err) => { console.error(`\n  ✖ No se pudo inicializar la base de datos (${db.MODE}): ${err.message}\n`); process.exit(1); });
+}
 
 let shuttingDown = false;
 function shutdown(signal) {

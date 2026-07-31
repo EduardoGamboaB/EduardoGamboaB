@@ -72,7 +72,7 @@ export async function init() {
   pgDriver = createPgDriver({ connectionString: config.databaseUrl, ssl: config.pgSsl, collections: COLLECTIONS });
   await pgDriver.connect();
   await pgDriver.ensureSchema();
-  const locked = await pgDriver.acquireAdvisoryLock();
+  const locked = await pgDriver.acquireAdvisoryLock({ waitMs: config.pgLockWaitMs });
   if (!locked) throw new Error('Otra instancia ya tiene el bloqueo de escritura de la base de datos (pg_advisory_lock).');
   cache = await pgDriver.loadAll();
   return { mode: 'postgres' };

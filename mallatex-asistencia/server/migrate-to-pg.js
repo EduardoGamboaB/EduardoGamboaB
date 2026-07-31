@@ -34,7 +34,7 @@ const safeUrl = config.databaseUrl.replace(/\/\/[^@]*@/, '//***@');
 const drv = createPgDriver({ connectionString: config.databaseUrl, ssl: config.pgSsl, collections: COLLECTIONS });
 await drv.connect();
 await drv.ensureSchema();
-const locked = await drv.acquireAdvisoryLock();
+const locked = await drv.acquireAdvisoryLock({ waitMs: 0 }); // migración: fallar de inmediato si la app corre
 if (!locked) { console.error('Otra instancia tiene el bloqueo de escritura; detén la app antes de migrar.'); process.exit(1); }
 
 drv.enqueue([{ op: 'replaceAll', data }]);
