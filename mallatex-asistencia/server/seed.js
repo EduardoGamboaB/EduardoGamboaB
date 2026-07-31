@@ -173,6 +173,28 @@ export function seed({ reset = false } = {}) {
   if (byCode['MTX006']) db.update('employees', byCode['MTX006'].id, { workMode: 'campo', allowedSiteIds: [clienteCentro.id] });
   if (byCode['MTX010']) db.update('employees', byCode['MTX010'].id, { workMode: 'hibrido', allowedSiteIds: [clienteCentro.id, obraNorte.id] });
 
+  // ----- CRM de ventas: cartera y objetivos (demo) -----
+  const vGabriela = byCode['MTX006'] ? byCode['MTX006'].id : null;
+  const vKarla = byCode['MTX010'] ? byCode['MTX010'].id : null;
+  const clientes = [
+    ['Invernaderos del Valle', 'cliente', 'cliente', 'Tomate', 20.68, -103.42, vGabriela],
+    ['Agrícola San Isidro', 'cliente', 'cliente', 'Berries', 20.61, -103.35, vGabriela],
+    ['Vivero La Huerta', 'prospecto', 'prospecto', 'Ornamentales', 20.72, -103.30, vGabriela],
+    ['Hortalizas del Bajío', 'cliente', 'negociacion', 'Chile', 20.55, -103.48, vKarla],
+    ['Frutícola El Roble', 'prospecto', 'prospecto', 'Aguacate', 20.78, -103.39, vKarla],
+    ['Semillas y Mallas GDL', 'prospecto', 'prospecto', 'Multicultivo', 20.65, -103.33, vKarla],
+  ];
+  for (const [name, type, stage, cultivo, lat, lng, assignedTo] of clientes) {
+    if (!assignedTo) continue;
+    db.insert('clients', {
+      name, type, stage, cultivo, lat, lng, assignedTo,
+      contactName: 'Contacto ' + name.split(' ')[0], phone: '33-1234-0000', email: '', address: 'Jalisco',
+      notes: '', active: true, createdAt: '2026-07-01T09:00:00.000Z',
+    });
+  }
+  if (vGabriela) db.insert('salesObjectives', { employeeId: vGabriela, period: 'Q3-2026', targetAmount: 850000, achievedAmount: 520000 });
+  if (vKarla) db.insert('salesObjectives', { employeeId: vKarla, period: 'Q3-2026', targetAmount: 900000, achievedAmount: 610000 });
+
   // ----- Algunas incidencias de ejemplo -----
   db.insert('incidents', {
     employeeId: emps[1].id, type: 'vacaciones',

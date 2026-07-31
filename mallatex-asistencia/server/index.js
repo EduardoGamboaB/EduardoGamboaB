@@ -19,7 +19,9 @@ import auditRoutes from './routes/audit.js';
 import kioskRoutes from './routes/kiosk.js';
 import portalRoutes from './routes/portal.js';
 import fieldRoutes from './routes/field.js';
+import salesRoutes from './routes/sales.js';
 import sitesRoutes from './routes/sites.js';
+import crmRoutes from './routes/crm.js';
 import rhRoutes from './routes/rh.js';
 import { requireAuth, adminOnly } from './auth.js';
 
@@ -84,8 +86,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/portal', requireAuth, portalRoutes);
 // Asistencia de campo (app móvil): sesión de empleado, antes de los routers admin.
 app.use('/api/field', requireAuth, fieldRoutes);
+// CRM móvil de ventas (app móvil): sesión de empleado, antes de los routers admin.
+app.use('/api/sales', requireAuth, salesRoutes);
 app.use('/api', requireAuth, adminOnly, catalogRoutes);
 app.use('/api', requireAuth, adminOnly, sitesRoutes);
+app.use('/api', requireAuth, adminOnly, crmRoutes);
 app.use('/api', requireAuth, adminOnly, operationsRoutes);
 app.use('/api', requireAuth, adminOnly, periodRoutes);
 app.use('/api', requireAuth, adminOnly, variablePayRoutes);

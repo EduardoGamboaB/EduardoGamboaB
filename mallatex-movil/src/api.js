@@ -36,4 +36,16 @@ export const api = {
   checkins: () => request('GET', '/api/field/checkins'),
   checkin: (payload) => request('POST', '/api/field/checkin', { body: payload }),
   logout: () => request('POST', '/api/auth/logout').catch(() => {}),
+
+  // ---- CRM de ventas ----
+  myClients: () => request('GET', '/api/sales/my-clients'),
+  client: (id) => request('GET', `/api/sales/clients/${id}`),
+  createProspect: (body) => request('POST', '/api/sales/clients', { body }),
+  activeRoute: () => request('GET', '/api/sales/routes/active'),
+  startRoute: (body) => request('POST', '/api/sales/routes/start', { body }),
+  trackRoute: (id, points) => request('POST', `/api/sales/routes/${id}/track`, { body: { points } }),
+  endRoute: (id) => request('POST', `/api/sales/routes/${id}/end`),
+  visits: () => request('GET', '/api/sales/visits'),
+  createVisit: (body) => request('POST', '/api/sales/visits', { body }),
+  myObjectives: () => request('GET', '/api/sales/objectives/me'),
 };

@@ -10,24 +10,36 @@ import CheckinScreen from './src/screens/CheckinScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ComingSoonScreen from './src/screens/ComingSoonScreen';
+import ClientsScreen from './src/screens/ClientsScreen';
+import VisitScreen from './src/screens/VisitScreen';
+import RouteScreen from './src/screens/RouteScreen';
+import PerformanceScreen from './src/screens/PerformanceScreen';
 
 // Menú extensible: agregar un módulo nuevo = una entrada aquí + su pantalla.
 const MENU = [
-  { key: 'registrar', label: 'Registrar asistencia', icon: '📍', group: 'Asistencia' },
-  { key: 'historial', label: 'Mis registros', icon: '🗒️', group: 'Asistencia' },
-  { key: 'recibos', label: 'Mis recibos', icon: '🧾', group: 'Próximamente', soon: true },
-  { key: 'vacaciones', label: 'Vacaciones', icon: '🌴', group: 'Próximamente', soon: true },
-  { key: 'tickets', label: 'Tickets RH', icon: '🎫', group: 'Próximamente', soon: true },
+  { key: 'ruta', label: 'Ruta de visitas', icon: '🧭', group: 'Ventas' },
+  { key: 'clientes', label: 'Mis clientes', icon: '👥', group: 'Ventas' },
+  { key: 'visita', label: 'Registrar visita', icon: '📋', group: 'Ventas' },
+  { key: 'desempeno', label: 'Mi desempeño', icon: '🎯', group: 'Ventas' },
+  { key: 'asistencia', label: 'Mi asistencia', icon: '📍', group: 'Ventas' },
+  { key: 'inventario', label: 'Inventario', icon: '📦', group: 'Herramientas', soon: true },
+  { key: 'cotizador', label: 'Cotizador', icon: '🧮', group: 'Herramientas', soon: true },
+  { key: 'pedidos', label: 'Pedidos', icon: '🛒', group: 'Herramientas', soon: true },
+  { key: 'bot', label: 'Asistente técnico', icon: '🤖', group: 'Herramientas', soon: true },
+  { key: 'viaticos', label: 'Viáticos', icon: '✈️', group: 'Administración', soon: true },
+  { key: 'gastos', label: 'Gastos', icon: '🧾', group: 'Administración', soon: true },
+  { key: 'facturas', label: 'Facturas', icon: '📑', group: 'Administración', soon: true },
   { key: 'perfil', label: 'Mi perfil', icon: '👤', group: 'Cuenta' },
 ];
-const titleOf = (key) => (MENU.find((m) => m.key === key) || {}).label || 'Mallatex Campo';
+const GROUPS = ['Ventas', 'Herramientas', 'Administración', 'Cuenta'];
+const titleOf = (key) => (MENU.find((m) => m.key === key) || {}).label || 'Mallatex Ventas';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState(false);
   const [locked, setLocked] = useState(false);
   const [profile, setProfile] = useState(null);
-  const [screen, setScreen] = useState('registrar');
+  const [screen, setScreen] = useState('ruta');
   const [menuOpen, setMenuOpen] = useState(false);
   const [queueVersion, setQueueVersion] = useState(0);
   const [bioName, setBioName] = useState('biometría');
@@ -61,7 +73,7 @@ export default function App() {
     if (!q.length) { if (!silent) Alert.alert('Sincronizar', 'No hay registros pendientes.'); return; }
     const remaining = []; let sent = 0;
     for (const item of q) {
-      try { await api.checkin(item); sent++; }
+      try { if (item.kind === 'visit') await api.createVisit(item); else await api.checkin(item); sent++; }
       catch (e) { if (e.offline) remaining.push(item); }
     }
     await saveQueue(remaining); setQueueVersion((v) => v + 1);
@@ -79,7 +91,7 @@ export default function App() {
       ]);
     }
   }
-  async function logout() { await api.logout(); await setToken(null); setAuthed(false); setLocked(false); setProfile(null); setScreen('registrar'); }
+  async function logout() { await api.logout(); await setToken(null); setAuthed(false); setLocked(false); setProfile(null); setScreen('ruta'); }
   function go(key) { setMenuOpen(false); if (key !== screen) setScreen(key); }
 
   if (loading) return <View style={[st.center, { flex: 1, backgroundColor: colors.bg }]}><ActivityIndicator color={colors.red} size="large" /></View>;
@@ -111,12 +123,19 @@ export default function App() {
       <View style={st.subbar}><Text style={st.subbarTxt}>{titleOf(screen)}</Text></View>
 
       <View style={{ flex: 1 }}>
-        {screen === 'registrar' && <CheckinScreen profile={profile} onQueued={() => setQueueVersion((v) => v + 1)} />}
-        {screen === 'historial' && <HistoryScreen queueVersion={queueVersion} onSync={() => flushQueue(false)} />}
+        {screen === 'ruta' && <RouteScreen onGoVisit={() => go('visita')} />}
+        {screen === 'clientes' && <ClientsScreen />}
+        {screen === 'visita' && <VisitScreen />}
+        {screen === 'desempeno' && <PerformanceScreen />}
+        {screen === 'asistencia' && <CheckinScreen profile={profile} onQueued={() => setQueueVersion((v) => v + 1)} />}
         {screen === 'perfil' && <ProfileScreen profile={profile} onLogout={logout} />}
-        {screen === 'recibos' && <ComingSoonScreen title="Mis recibos" icon="🧾" />}
-        {screen === 'vacaciones' && <ComingSoonScreen title="Vacaciones" icon="🌴" />}
-        {screen === 'tickets' && <ComingSoonScreen title="Tickets RH" icon="🎫" />}
+        {screen === 'inventario' && <ComingSoonScreen title="Inventario" icon="📦" />}
+        {screen === 'cotizador' && <ComingSoonScreen title="Cotizador" icon="🧮" />}
+        {screen === 'pedidos' && <ComingSoonScreen title="Pedidos" icon="🛒" />}
+        {screen === 'bot' && <ComingSoonScreen title="Asistente técnico" icon="🤖" />}
+        {screen === 'viaticos' && <ComingSoonScreen title="Viáticos" icon="✈️" />}
+        {screen === 'gastos' && <ComingSoonScreen title="Gastos" icon="🧾" />}
+        {screen === 'facturas' && <ComingSoonScreen title="Facturas" icon="📑" />}
       </View>
 
       {/* Menú lateral (drawer) */}
@@ -129,7 +148,7 @@ export default function App() {
               <Text style={st.drawerSub}>{profile?.employee?.code} · {profile?.employee?.department}</Text>
             </View>
             <ScrollView>
-              {['Asistencia', 'Próximamente', 'Cuenta'].map((group) => (
+              {GROUPS.map((group) => (
                 <View key={group}>
                   <Text style={st.group}>{group}</Text>
                   {MENU.filter((m) => m.group === group).map((m) => (

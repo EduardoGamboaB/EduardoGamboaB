@@ -324,3 +324,44 @@ test('campo: exige ubicación y es sólo para empleados', async () => {
   const asAdmin = await json('POST', '/api/field/checkin', { token: tokens.contador, body: { lat: 20, lng: -103 } });
   assert.equal(asAdmin.status, 403);
 });
+
+test('CRM ventas: cartera, ruta, visita y desempeño del vendedor', async () => {
+  const login = await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } });
+  assert.equal(login.status, 200);
+  const et = login.data.token;
+  const clients = (await json('GET', '/api/sales/my-clients', { token: et })).data;
+  assert.ok(clients.length >= 2, 'el vendedor tiene cartera asignada');
+  // alta de prospecto en campo
+  const prospect = await json('POST', '/api/sales/clients', { token: et, body: { name: 'Prospecto QA', cultivo: 'Tomate' } });
+  assert.equal(prospect.status, 201);
+  assert.ok(prospect.data.assignedTo, 'el prospecto queda asignado al vendedor');
+  // inicia ruta
+  const route = await json('POST', '/api/sales/routes/start', { token: et, body: { lat: 20.68, lng: -103.42 } });
+  assert.equal(route.status, 201);
+  // registra visita con evidencia, estatus y tipo
+  const visit = await json('POST', '/api/sales/visits', { token: et, body: { clientId: clients[0].id, routeId: route.data.id, type: 'seguimiento', status: 'realizada', found: true, lat: 20.68, lng: -103.42, notes: 'QA', photos: ['data:image/png;base64,AAAA'] } });
+  assert.equal(visit.status, 201);
+  assert.equal(visit.data.type, 'seguimiento');
+  // agrega puntos al recorrido
+  const track = await json('POST', `/api/sales/routes/${route.data.id}/track`, { token: et, body: { points: [{ lat: 20.69, lng: -103.43 }, { lat: 20.70, lng: -103.44 }] } });
+  assert.ok(track.data.points >= 3);
+  // desempeño (objetivo del trimestre)
+  const perf = (await json('GET', '/api/sales/objectives/me', { token: et })).data;
+  assert.ok(perf.objective && perf.objective.targetAmount > 0);
+  assert.ok(perf.progressPct > 0 && perf.kpis.cartera >= 2);
+  // finaliza ruta
+  const end = await json('POST', `/api/sales/routes/${route.data.id}/end`, { token: et });
+  assert.equal(end.data.status, 'finalizada');
+});
+
+test('CRM ventas: el gerente asigna cartera; el vendedor no accede a la admin', async () => {
+  const c = await json('POST', '/api/crm/clients', { token: tokens.contador, body: { name: 'Cliente Central QA', type: 'cliente' } });
+  assert.equal(c.status, 201);
+  const emp = (await json('GET', '/api/employees?active=true', { token: tokens.contador })).data.find((e) => e.code === 'MTX010');
+  const assign = await json('POST', '/api/crm/assign', { token: tokens.contador, body: { employeeId: emp.id, clientIds: [c.data.id] } });
+  assert.equal(assign.data.assigned, 1);
+  // seguridad: la administración de CRM es sólo para personal administrativo
+  const vendorToken = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const denied = await json('GET', '/api/crm/clients', { token: vendorToken });
+  assert.equal(denied.status, 403);
+});

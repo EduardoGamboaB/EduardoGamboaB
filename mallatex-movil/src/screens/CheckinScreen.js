@@ -54,7 +54,7 @@ export default function CheckinScreen({ profile, onQueued }) {
         setPhoto(null);
       } catch (e) {
         if (e.offline) {
-          const n = await enqueue({ ...payload, offline: true });
+          const n = await enqueue({ ...payload, kind: 'checkin', offline: true });
           setResult({ ok: true, queued: true, headline: 'Guardado sin conexión', statusLabel: `Se enviará al reconectar (${n} en cola)` });
           setPhoto(null);
           onQueued && onQueued();
