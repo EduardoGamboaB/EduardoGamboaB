@@ -6,7 +6,15 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
-    "ios": "expo start --ios"
+    "ios": "expo start --ios",
+    "doctor": "npx expo-doctor",
+    "build:dev": "eas build --profile development --platform android",
+    "build:preview": "eas build --profile preview --platform android",
+    "build:android": "eas build --profile production --platform android",
+    "build:ios": "eas build --profile production --platform ios",
+    "build:all": "eas build --profile production --platform all",
+    "submit:android": "eas submit --profile production --platform android",
+    "submit:ios": "eas submit --profile production --platform ios"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",

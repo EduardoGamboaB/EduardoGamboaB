@@ -440,3 +440,46 @@ test('Administrativo: solicitud de factura desde pedido y emisión (Aspel)', asy
   const again = await json('POST', `/api/crm/invoices/${inv.data.id}/emit`, { token: tokens.contador, body: {} });
   assert.equal(again.status, 409);
 });
+
+test('Integraciones: estado de conectores (mock por defecto)', async () => {
+  const st = (await json('GET', '/api/crm/integrations/status', { token: tokens.contador })).data;
+  for (const id of ['g3', 'mes', 'aspel']) assert.ok(st.find((s) => s.id === id && s.mode === 'mock'), `conector ${id} en mock`);
+});
+
+test('Integraciones: timbrado Aspel genera UUID con formato CFDI', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const inv = await json('POST', '/api/sales/invoices', { token: et, body: { rfc: 'XAXX010101000', amount: 5000 } });
+  const emit = await json('POST', `/api/crm/invoices/${inv.data.id}/emit`, { token: tokens.contador, body: {} });
+  assert.equal(emit.data.timbreMode, 'mock');
+  assert.match(emit.data.uuid, /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/, 'UUID con formato CFDI');
+});
+
+test('Integraciones: webhook de pago Aspel marca pagada y genera comisión', async () => {
+  const et = (await json('POST', '/api/auth/login', { body: { code: 'MTX006', pin: '1234' } })).data.token;
+  const emp = (await json('GET', '/api/employees?active=true', { token: tokens.contador })).data.find((e) => e.code === 'MTX006');
+  // la comisión se contabiliza en el periodo ABIERTO en que cae el pago
+  const period = (await json('POST', '/api/periods', { token: tokens.contador, body: { name: 'Periodo comisión QA', startDate: '2026-08-01', endDate: '2026-08-15' } })).data;
+  const inv = await json('POST', '/api/sales/invoices', { token: et, body: { rfc: 'XAXX010101000', amount: 100000 } });
+  await json('POST', `/api/crm/invoices/${inv.data.id}/emit`, { token: tokens.contador, body: {} });
+  // Aspel confirma el pago (webhook sin sesión; en pruebas no hay secreto configurado)
+  const pay = await json('POST', '/api/integrations/aspel/payment', { token: null, body: { invoiceId: inv.data.id, amount: 100000, paymentRef: 'PAGO-QA-1' } });
+  assert.equal(pay.status, 200);
+  assert.equal(pay.data.invoice.status, 'pagada');
+  assert.equal(pay.data.commission.status, 'creada');
+  assert.equal(pay.data.commission.importe, 3000, 'comisión = 3% de 100,000');
+  assert.equal(pay.data.commission.periodId, period.id, 'se contabiliza en el periodo abierto');
+  // la comisión aparece como percepción variable del vendedor con origen aspel
+  const entries = (await json('GET', `/api/variable-entries?periodId=${period.id}`, { token: tokens.contador })).data;
+  const entry = entries.find((v) => v.externalId === `aspel-invoice-${inv.data.id}`);
+  assert.ok(entry && entry.employeeId === emp.id && entry.source === 'aspel', 'comisión asignada al vendedor');
+  // idempotente: re-notificar el pago no duplica
+  const again = await json('POST', '/api/integrations/aspel/payment', { token: null, body: { invoiceId: inv.data.id, amount: 100000 } });
+  assert.equal(again.data.commission.status, 'actualizada');
+  const entries2 = (await json('GET', `/api/variable-entries?periodId=${period.id}`, { token: tokens.contador })).data;
+  assert.equal(entries2.filter((v) => v.externalId === `aspel-invoice-${inv.data.id}`).length, 1, 'no duplica la comisión');
+});
+
+test('Integraciones: webhook con factura inexistente responde 404', async () => {
+  const r = await json('POST', '/api/integrations/aspel/payment', { token: null, body: { invoiceId: 999999, amount: 10 } });
+  assert.equal(r.status, 404);
+});

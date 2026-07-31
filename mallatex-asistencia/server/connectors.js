@@ -15,6 +15,7 @@
 
 import * as db from './db.js';
 import { computeVariableImporte } from './noi.js';
+import { integrationMode, externalQuantities } from './integrations.js';
 
 export const SOURCES = {
   manual: { id: 'manual', label: 'Captura manual', external: false, status: 'activo', hint: 'Se captura a mano en la plataforma.' },
@@ -31,25 +32,29 @@ export function sourceLabel(id) {
   return (SOURCES[id] || SOURCES.manual).label;
 }
 
-// Lecturas SIMULADAS para una fuente y periodo. En producción, esta función consultaría
-// el sistema externo (G3 / MES / Aspel) y devolvería las mismas filas.
-function simulatedReadings(source, period, concepts) {
+// Lecturas de una fuente y periodo. En modo 'http' consulta el sistema externo (G3 / MES /
+// Aspel) por CÓDIGO de empleado; en modo 'mock' usa la cantidad simulada determinista. En
+// ambos casos devuelve las mismas filas normalizadas.
+async function readingsFor(source, period, concepts) {
   const rows = [];
   const conceptsOfSource = concepts.filter((c) => (c.source || 'manual') === source && c.enabled !== false);
   if (!conceptsOfSource.length) return rows;
   const employees = db.all('employees', (e) => e.active !== false);
+  const http = integrationMode(source) === 'http';
+  const externalByCode = http ? (await externalQuantities(source, period)) || {} : null;
+  const reference = http ? `${SOURCES[source].label} (API externa)` : `${SOURCES[source].label} (sincronización simulada)`;
   for (const concept of conceptsOfSource) {
     for (const emp of employees) {
       // Sólo empleados del área sugerida del concepto (si se definió)
       if (concept.department && emp.department !== concept.department) continue;
-      const cantidad = simulatedQuantity(source, emp, period);
+      const cantidad = http ? Number(externalByCode[emp.code] || 0) : simulatedQuantity(source, emp, period);
       if (!cantidad) continue;
       rows.push({
         employeeId: emp.id,
         conceptId: concept.id,
         cantidad,
         externalId: `${source}-${period.id}-${emp.id}-${concept.id}`,
-        reference: `${SOURCES[source].label} (sincronización simulada)`,
+        reference,
       });
     }
   }
@@ -67,7 +72,7 @@ function simulatedQuantity(source, emp, period) {
 
 // Sincroniza una fuente externa: hace upsert de las capturas por externalId, de modo
 // que re-sincronizar actualiza en lugar de duplicar. No toca las capturas manuales.
-export function syncSource(source, periodId, actorName) {
+export async function syncSource(source, periodId, actorName) {
   const meta = SOURCES[source];
   if (!meta || !meta.external) throw new Error('Fuente no válida para sincronización');
   const period = db.get('periods', Number(periodId));
@@ -78,7 +83,8 @@ export function syncSource(source, periodId, actorName) {
   if (!concepts.some((c) => (c.source || 'manual') === source && c.enabled !== false)) {
     throw new Error(`No hay conceptos activos con fuente ${meta.label}`);
   }
-  const rows = simulatedReadings(source, period, concepts);
+  const rows = await readingsFor(source, period, concepts);
+  const mode = integrationMode(source);
   const now = new Date().toISOString();
   let created = 0;
   let updated = 0;
@@ -108,5 +114,5 @@ export function syncSource(source, periodId, actorName) {
       created++;
     }
   }
-  return { source, label: meta.label, status: meta.status, created, updated, total: rows.length };
+  return { source, label: meta.label, mode, status: mode === 'http' ? 'conectado' : meta.status, created, updated, total: rows.length };
 }

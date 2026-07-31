@@ -67,6 +67,23 @@ export const config = Object.freeze({
 
   // Operación
   logRequests: bool(env.LOG_REQUESTS, true),
+
+  // Integraciones externas (percepciones variables y facturación).
+  // Cada fuente opera en modo 'mock' (lecturas simuladas, sin credenciales) o 'http'
+  // (consulta real a la API externa). Se activa por-fuente con <FUENTE>_MODE=http + su URL/token.
+  integrations: {
+    g3: { mode: (env.G3_MODE || 'mock').toLowerCase(), baseUrl: env.G3_BASE_URL || '', token: env.G3_TOKEN || '' },
+    mes: { mode: (env.MES_MODE || 'mock').toLowerCase(), baseUrl: env.MES_BASE_URL || '', token: env.MES_TOKEN || '' },
+    aspel: {
+      mode: (env.ASPEL_MODE || 'mock').toLowerCase(),
+      baseUrl: env.ASPEL_BASE_URL || '',
+      token: env.ASPEL_TOKEN || '',
+      cfdiUrl: env.ASPEL_CFDI_URL || '',
+      // Secreto compartido para validar el webhook de pago de facturas de Aspel (CxC).
+      webhookSecret: env.ASPEL_WEBHOOK_SECRET || '',
+    },
+    timeoutMs: num(env.INTEGRATIONS_TIMEOUT_MS, 8000),
+  },
 });
 
 // Advertencias de configuración insegura al arrancar en producción.

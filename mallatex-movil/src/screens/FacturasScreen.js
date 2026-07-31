@@ -4,7 +4,7 @@ import { colors } from '../theme';
 import { api } from '../api';
 
 const money = (n) => '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const STATUS = { solicitada: { l: 'Solicitada', c: colors.warn }, emitida: { l: 'Emitida', c: colors.ok }, cancelada: { l: 'Cancelada', c: colors.red } };
+const STATUS = { solicitada: { l: 'Solicitada', c: colors.warn }, emitida: { l: 'Emitida', c: colors.ok }, pagada: { l: 'Pagada', c: '#2563eb' }, cancelada: { l: 'Cancelada', c: colors.red } };
 const USOS = [['G03', 'G03 · Gastos en general'], ['G01', 'G01 · Adquisición de mercancías'], ['I08', 'I08 · Maquinaria/equipo'], ['P01', 'P01 · Por definir']];
 
 export default function FacturasScreen() {

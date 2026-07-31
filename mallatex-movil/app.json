@@ -3,6 +3,7 @@
     "name": "Mallatex Campo",
     "slug": "mallatex-movil",
     "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "mallatexcampo",
@@ -16,6 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "mx.mallatex.campo",
+      "buildNumber": "1.0.0",
       "infoPlist": {
         "NSCameraUsageDescription": "Se usa la cámara para la selfie de verificación y la evidencia de visitas.",
         "NSLocationWhenInUseUsageDescription": "Se usa tu ubicación al registrar asistencia y visitas, y para validar el sitio (geocerca).",
@@ -26,6 +28,7 @@
     },
     "android": {
       "package": "mx.mallatex.campo",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"

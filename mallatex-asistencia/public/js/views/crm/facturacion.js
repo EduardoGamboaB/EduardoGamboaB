@@ -2,7 +2,7 @@ import { api } from '../../api.js';
 import { h, clear, modal, field, toast, empty, money, fmtDate } from '../../ui.js';
 import { can } from '../../state.js';
 
-const STATUS = { solicitada: ['b-warn', 'Solicitada'], emitida: ['b-ok', 'Emitida'], cancelada: ['b-gray', 'Cancelada'] };
+const STATUS = { solicitada: ['b-warn', 'Solicitada'], emitida: ['b-ok', 'Emitida'], pagada: ['b-ok', 'Pagada'], cancelada: ['b-gray', 'Cancelada'] };
 
 export default async function facturacion(el) {
   clear(el);

@@ -5,6 +5,7 @@ import express from 'express';
 import * as db from '../db.js';
 import { requireRole, ROLES } from '../auth.js';
 import { log } from '../audit.js';
+import { aspelTimbrar, integrationsStatus } from '../integrations.js';
 
 const router = express.Router();
 const WRITE = requireRole(ROLES.ADMIN, ROLES.CONTADOR);
@@ -153,15 +154,22 @@ router.get('/crm/invoices', (req, res) => {
   res.json(items);
 });
 
-router.post('/crm/invoices/:id/emit', WRITE, (req, res) => {
+router.post('/crm/invoices/:id/emit', WRITE, async (req, res) => {
   const i = db.get('invoices', req.params.id);
   if (!i) return res.status(404).json({ error: 'Factura no encontrada' });
-  if (i.status === 'emitida') return res.status(409).json({ error: 'La factura ya fue emitida' });
-  // Punto de integración con Aspel: aquí se timbraría el CFDI y se recibiría el UUID.
-  const uuid = req.body?.uuid || `MTX-${i.id}-${Date.now().toString(36).toUpperCase()}`;
-  const updated = db.update('invoices', i.id, { status: 'emitida', uuid, emittedAt: new Date().toISOString(), emittedBy: req.user?.name || 'Gerente' });
-  log(req, { action: 'emit', entity: 'invoice', entityId: i.id, detail: `Factura ${i.folio} emitida (UUID ${uuid})` });
+  if (i.status === 'emitida' || i.status === 'pagada') return res.status(409).json({ error: 'La factura ya fue emitida' });
+  // Timbrado del CFDI (Aspel): en modo http llama al PAC; en mock genera un UUID determinista.
+  let timbre;
+  try { timbre = await aspelTimbrar(i, { uuidOverride: req.body?.uuid }); }
+  catch (e) { return res.status(502).json({ error: `No se pudo timbrar en Aspel: ${e.message}` }); }
+  const updated = db.update('invoices', i.id, { status: 'emitida', uuid: timbre.uuid, timbreMode: timbre.mode, emittedAt: new Date().toISOString(), emittedBy: req.user?.name || 'Gerente' });
+  log(req, { action: 'emit', entity: 'invoice', entityId: i.id, detail: `Factura ${i.folio} emitida (${timbre.mode}, UUID ${timbre.uuid})` });
   res.json(updated);
+});
+
+// Estado de los conectores externos (G3 / MES / Aspel) para diagnóstico del gerente.
+router.get('/crm/integrations/status', (req, res) => {
+  res.json(integrationsStatus());
 });
 
 router.post('/crm/invoices/:id/cancel', WRITE, (req, res) => {

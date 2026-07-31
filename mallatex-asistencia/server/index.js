@@ -22,6 +22,7 @@ import fieldRoutes from './routes/field.js';
 import salesRoutes from './routes/sales.js';
 import sitesRoutes from './routes/sites.js';
 import crmRoutes from './routes/crm.js';
+import integrationsRoutes from './routes/integrations.js';
 import rhRoutes from './routes/rh.js';
 import { requireAuth, adminOnly } from './auth.js';
 
@@ -88,6 +89,8 @@ app.use('/api/portal', requireAuth, portalRoutes);
 app.use('/api/field', requireAuth, fieldRoutes);
 // CRM móvil de ventas (app móvil): sesión de empleado, antes de los routers admin.
 app.use('/api/sales', requireAuth, salesRoutes);
+// Webhooks de integraciones (Aspel CxC): sin sesión, autenticados por secreto compartido.
+app.use('/api/integrations', integrationsRoutes);
 app.use('/api', requireAuth, adminOnly, catalogRoutes);
 app.use('/api', requireAuth, adminOnly, sitesRoutes);
 app.use('/api', requireAuth, adminOnly, crmRoutes);

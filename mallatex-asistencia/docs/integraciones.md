@@ -87,13 +87,34 @@ mejor guardarlos cifrados en la ficha del dispositivo).
 
 ## 2·3·4. Percepciones variables — contrato del conector
 
-Las tres fuentes externas (G3, MES, Aspel) comparten **un mismo contrato**. El único punto
-a implementar es la lectura real; el resto (cálculo del importe, *upsert*, bitácora,
-exportación a NOI) ya está construido.
+Las tres fuentes externas (G3, MES, Aspel) comparten **un mismo contrato** y un **driver
+conmutable** ya construido:
 
-**Punto de implementación:** `server/connectors.js` → función `simulatedReadings(source, period, concepts)`.
-Sustitúyela por `readings(source, period, concepts)` con la llamada real. Debe devolver un
-arreglo de **lecturas normalizadas**:
+- **`*_MODE=mock`** (por defecto): lecturas deterministas simuladas, sin credenciales.
+- **`*_MODE=http`**: consulta **real** a la API externa (`server/integrations.js` →
+  `externalQuantities`). No cambia la lógica de negocio: se activa por variables de entorno.
+
+**Activación (por fuente):**
+
+```bash
+G3_MODE=http    G3_BASE_URL=https://api.g3/fleet/mileage        G3_TOKEN=...
+MES_MODE=http   MES_BASE_URL=https://mes.mallatex/api/production  MES_TOKEN=...
+ASPEL_MODE=http ASPEL_CFDI_URL=https://.../timbrar               ASPEL_TOKEN=...
+ASPEL_WEBHOOK_SECRET=...        # valida el webhook de pago
+INTEGRATIONS_TIMEOUT_MS=8000
+```
+
+El estado de cada conector se consulta en `GET /api/crm/integrations/status` (gerente).
+
+**Contrato REST esperado (modo http)** — `GET {BASE_URL}?from=YYYY-MM-DD&to=YYYY-MM-DD`:
+
+```jsonc
+{ "items": [ { "employeeCode": "MTX013", "cantidad": 640 } ] }
+// el campo de cantidad puede llamarse cantidad | km | m2 | amount | value
+```
+
+Se mapea por **`employeeCode`** (código del empleado). Internamente, `syncSource` genera la
+**lectura normalizada** para cada empleado/concepto de la fuente:
 
 ```js
 // Contrato de una lectura
@@ -155,28 +176,31 @@ Env sugeridas: `MES_API_URL`, `MES_API_TOKEN`.
   (no al emitirla). El concepto `comision_ventas` es de modo `porcentaje`: `cantidad` = base
   en $, y el importe = base × %.
 - **Mapeo:** vendedor de la factura → empleado (por `code`/`noiKey` o un `aspelVendedorId`).
-- **Momento del evento:** al registrarse el **pago** en Aspel **CxC/SAE**. Dos opciones:
-  1. **Webhook / proceso** que notifica el pago (recomendado): la plataforma expone un
-     endpoint que recibe el folio pagado y acumula la base al periodo vigente.
-  2. **Consulta programada** a la BD/API de Aspel de las facturas pagadas en el rango.
+- **Momento del evento:** al registrarse el **pago** en Aspel **CxC/SAE**.
+
+**Webhook YA CONSTRUIDO** — `POST /api/integrations/aspel/payment`
+(`server/routes/integrations.js`). Sin sesión de usuario; se autentica con el header
+`x-webhook-secret: {ASPEL_WEBHOOK_SECRET}` (obligatorio en producción). Al recibir el pago:
+1. marca la factura como **`pagada`** (`paidAt`, `paymentRef`, `paidAmount`);
+2. genera la **base de comisión** del vendedor como percepción variable del **periodo abierto**
+   (concepto fuente `aspel`), **idempotente** por `externalId = "aspel-invoice-{id}"`.
 
 ```jsonc
-// Ejemplo de payload de "factura pagada" (webhook Aspel → plataforma)
+// Payload aceptado (tolera varios nombres de campo)
 {
-  "folio": "A-10432",
-  "vendedor": "MTX006",
-  "fechaPago": "2026-07-28",
-  "importePagado": 92000.00,
-  "moneda": "MXN"
+  "invoiceId": 12,            // o "folio": "FAC-00012"  o  "uuid": "..."
+  "amount": 92000.00,         // base de comisión (importe pagado)
+  "paidAt": "2026-07-28",
+  "paymentRef": "PAGO-8842"
 }
+// → { ok, invoice:{ status:"pagada" }, commission:{ status:"creada", base, importe, periodId } }
 ```
 
-Mapeo → lectura: `vendedor`→`employeeId`, `importePagado`→`cantidad` (base),
-`externalId = "aspel-{folio}"` (por factura, no por periodo → una factura cuenta una sola
-vez aunque se re-sincronice). El periodo destino se determina por `fechaPago`.
+**Timbrado del CFDI (emisión):** `POST /api/crm/invoices/:id/emit` llama a
+`aspelTimbrar()`; en `ASPEL_MODE=http` hace `POST {ASPEL_CFDI_URL}` y guarda el `uuid` real
+del PAC (en `mock` genera un UUID CFDI determinista). El campo `timbreMode` registra el modo.
 Reglas a definir con el cliente: comisión sobre **cobrado** vs facturado, pagos parciales,
-notas de crédito. Env sugeridas: `ASPEL_API_URL`, `ASPEL_API_TOKEN` o cadena de conexión a
-la BD de Aspel; secreto de verificación del webhook `ASPEL_WEBHOOK_SECRET`.
+notas de crédito.
 
 ---
 
@@ -201,13 +225,16 @@ MTX006|2103|P|Comisión sobre ventas|$ ventas|92000|2760|Ventas del periodo
 
 ---
 
-## Resumen: qué implementar
+## Resumen: estado de cada integración
 
-| Integración | Función a implementar | Devuelve |
-|-------------|-----------------------|----------|
-| Hikvision | `syncDevice()` en `server/checador.js` | Inserta `checadas` + `reprocess()` |
-| G3 / MES / Aspel | `readings(source, period, concepts)` en `server/connectors.js` | Lecturas `{employeeId, conceptId, cantidad, externalId, reference}` |
-| Aspel NOI | Layout en `server/noi.js` | Archivo de interfaz `.txt`/`.csv` |
+| Integración | Estado | Cómo se activa |
+|-------------|--------|----------------|
+| Hikvision (checador) | Driver simulado; `syncDevice()` en `server/checador.js` para la lectura ISAPI real | Sustituir la generación simulada por la consulta al equipo |
+| G3 / MES (percepciones) | **Driver `mock`\|`http` construido** (`server/integrations.js`) | `*_MODE=http` + `*_BASE_URL`/`*_TOKEN` |
+| Aspel — comisión al pago | **Webhook construido** `POST /api/integrations/aspel/payment` | `ASPEL_WEBHOOK_SECRET` |
+| Aspel — timbrado CFDI | **Construido** en la emisión (`aspelTimbrar`) | `ASPEL_MODE=http` + `ASPEL_CFDI_URL`/`ASPEL_TOKEN` |
+| Aspel NOI (nómina) | Layout en `server/noi.js` | Ajustar columnas/separador al del cliente |
 
-Todo lo demás —cálculo, idempotencia, revisión, autorización, cierre y exportación— ya está
-construido y probado.
+Cálculo, idempotencia, revisión, autorización, cierre y exportación ya están construidos y
+probados. Las fuentes externas quedan **listas para producción**: pasan de simulado a real
+sólo con variables de entorno, sin tocar la lógica de negocio.
