@@ -56,15 +56,28 @@ export function createPgDriver({ connectionString, ssl, collections }) {
   }
 
   // Un único escritor por base de datos (evita corrupción con varias réplicas).
-  async function acquireAdvisoryLock() {
+  // En un despliegue con solapamiento (Railway/Render/K8s) la instancia nueva arranca antes
+  // de que muera la vieja; el advisory lock es a nivel de sesión y se libera solo al cerrarse
+  // la conexión de la instancia anterior. Por eso reintentamos con espera acotada en lugar de
+  // fallar de inmediato: así el nuevo contenedor toma el candado en cuanto el viejo se apaga.
+  async function acquireAdvisoryLock({ waitMs = 45000, intervalMs = 2000 } = {}) {
     lockClient = await pool.connect();
-    const r = await lockClient.query('SELECT pg_try_advisory_lock($1) AS ok', [ADVISORY_LOCK_KEY]);
-    if (!r.rows[0].ok) {
-      lockClient.release();
-      lockClient = null;
-      return false;
+    const deadline = Date.now() + Math.max(0, waitMs);
+    let waited = false;
+    for (;;) {
+      const r = await lockClient.query('SELECT pg_try_advisory_lock($1) AS ok', [ADVISORY_LOCK_KEY]);
+      if (r.rows[0].ok) {
+        if (waited) console.log('[db] Candado de escritura adquirido tras esperar a la instancia anterior.');
+        return true;
+      }
+      if (Date.now() >= deadline) {
+        lockClient.release();
+        lockClient = null;
+        return false;
+      }
+      if (!waited) { console.log('[db] Otra instancia aún tiene el candado (despliegue en curso); esperando a que lo libere…'); waited = true; }
+      await new Promise((res) => setTimeout(res, intervalMs));
     }
-    return true;
   }
 
   async function loadAll() {

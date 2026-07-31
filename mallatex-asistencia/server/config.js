@@ -36,6 +36,9 @@ export const config = Object.freeze({
   storage: (env.STORAGE || (env.DATABASE_URL ? 'postgres' : 'file')).toLowerCase(),
   databaseUrl: env.DATABASE_URL || '',
   pgSsl: bool(env.PGSSL, false),
+  // Espera acotada para tomar el candado de escritura (advisory lock) durante despliegues
+  // con solapamiento (la instancia nueva espera a que la vieja libere). 0 = fallar de inmediato.
+  pgLockWaitMs: num(env.PG_LOCK_WAIT_MS, 45000),
   dataDir: env.DATA_DIR ? path.resolve(env.DATA_DIR) : path.join(ROOT, 'data'),
   backupOnStart: bool(env.BACKUP_ON_START, isProd),
   backupKeep: num(env.BACKUP_KEEP, 14),
