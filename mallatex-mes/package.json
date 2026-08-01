@@ -1,0 +1,26 @@
+{
+  "name": "mallatex-mes",
+  "version": "0.6.0",
+  "private": true,
+  "description": "Sistema MES de Tejidos Técnicos Mallatex — refactor modular del prototipo v6",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "lucide-react": "^0.452.0",
+    "next": "14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-next": "14.2.15",
+    "jsdom": "^29.1.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
