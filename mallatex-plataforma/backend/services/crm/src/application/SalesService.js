@@ -10,6 +10,11 @@ import { recommend } from '../domain/Advisor.js';
 
 const EXPENSE_CAT = ['hospedaje', 'alimentos', 'combustible', 'casetas', 'transporte', 'otros'];
 const notFound = (msg) => new DomainError(msg, { code: 'NOT_FOUND', status: 404 });
+const numId = (x, name = 'id') => {
+  const n = Number(x);
+  if (!Number.isFinite(n)) throw new DomainError(` inválido`, { code: 'ID_INVALID', status: 400 });
+  return n;
+};
 
 /**
  * SalesService — casos de uso de la superficie MÓVIL del vendedor. Todas las
@@ -45,7 +50,7 @@ export class SalesService {
 
   /** Verifica que el cliente exista y pertenezca a la cartera del vendedor. */
   async #ownedClient(employeeId, clientId) {
-    const c = await this.clientDAO.findById(Number(clientId));
+    const c = await this.clientDAO.findById(numId(clientId));
     if (!c || c.assignedTo !== employeeId) throw notFound('Cliente no encontrado en tu cartera');
     return c;
   }
@@ -80,7 +85,7 @@ export class SalesService {
   }
 
   async trackRoute(employeeId, routeId, body) {
-    const r = await this.routeDAO.findById(Number(routeId));
+    const r = await this.routeDAO.findById(numId(routeId));
     if (!r || r.employeeId !== employeeId) throw notFound('Ruta no encontrada');
     const pts = Array.isArray(body?.points) ? body.points : body?.lat != null ? [body] : [];
     r.addTrack(pts);
@@ -89,7 +94,7 @@ export class SalesService {
   }
 
   async endRoute(employeeId, routeId) {
-    const r = await this.routeDAO.findById(Number(routeId));
+    const r = await this.routeDAO.findById(numId(routeId));
     if (!r || r.employeeId !== employeeId) throw notFound('Ruta no encontrada');
     r.end();
     const saved = await this.routeDAO.update(r.id, { status: r.status, endedAt: r.endedAt });
@@ -167,7 +172,7 @@ export class SalesService {
     let priced;
     let sourceQuote = null;
     if (b.quoteId) {
-      sourceQuote = await this.quoteDAO.findById(Number(b.quoteId));
+      sourceQuote = await this.quoteDAO.findById(numId(b.quoteId));
       if (!sourceQuote || sourceQuote.employeeId !== employeeId) throw notFound('Cotización no encontrada');
       clientId = sourceQuote.clientId;
       priced = { items: sourceQuote.items, subtotal: sourceQuote.subtotal, iva: sourceQuote.iva, total: sourceQuote.total };
@@ -220,7 +225,7 @@ export class SalesService {
     if (!amount) throw new DomainError('El monto es obligatorio', { code: 'EXPENSE_INVALID' });
     const category = EXPENSE_CAT.includes(b.category) ? b.category : 'otros';
     if (b.requestId) {
-      const vr = await this.expenseRequestDAO.findById(Number(b.requestId));
+      const vr = await this.expenseRequestDAO.findById(numId(b.requestId));
       if (!vr || Number(vr.employeeId) !== employeeId) throw notFound('Viático no encontrado');
     }
     const created = await this.expenseDAO.create({
@@ -252,7 +257,7 @@ export class SalesService {
     let amount = Math.max(0, Number(b.amount) || 0);
     let orderId = null;
     if (b.orderId) {
-      const o = await this.orderDAO.findById(Number(b.orderId));
+      const o = await this.orderDAO.findById(numId(b.orderId));
       if (!o || o.employeeId !== employeeId) throw notFound('Pedido no encontrado');
       orderId = o.id;
       clientId = o.clientId;

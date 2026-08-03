@@ -2,6 +2,11 @@ import { DomainError } from '@mallatex/shared/ddd';
 import { Client } from '../domain/Client.js';
 
 const notFound = (msg) => new DomainError(msg, { code: 'NOT_FOUND', status: 404 });
+const numId = (x, name = 'id') => {
+  const n = Number(x);
+  if (!Number.isFinite(n)) throw new DomainError(` inválido`, { code: 'ID_INVALID', status: 400 });
+  return n;
+};
 const DECISIONS = ['aprobado', 'rechazado'];
 
 /**
@@ -40,7 +45,7 @@ export class CommercialService {
   }
 
   async updateClient(id, body) {
-    const c = await this.clientDAO.findById(Number(id));
+    const c = await this.clientDAO.findById(numId(id));
     if (!c) throw notFound('Cliente no encontrado');
     const b = body || {};
     const patch = {};
@@ -59,11 +64,11 @@ export class CommercialService {
     if (!employeeId || !Array.isArray(clientIds)) {
       throw new DomainError('employeeId y clientIds son obligatorios', { code: 'ASSIGN_INVALID' });
     }
-    const emp = await this.employeeDAO.findById(Number(employeeId));
+    const emp = await this.employeeDAO.findById(numId(employeeId));
     if (!emp) throw notFound('Vendedor no encontrado');
     let assigned = 0;
     for (const id of clientIds) {
-      const c = await this.clientDAO.findById(Number(id));
+      const c = await this.clientDAO.findById(numId(id));
       if (c) {
         c.assignTo(employeeId);
         await this.clientDAO.update(c.id, { assignedTo: c.assignedTo });
@@ -119,7 +124,7 @@ export class CommercialService {
   }
 
   async decideExpenseRequest(id, body, actorName) {
-    const r = await this.expenseRequestDAO.findById(Number(id));
+    const r = await this.expenseRequestDAO.findById(numId(id));
     if (!r) throw notFound('Solicitud no encontrada');
     const decision = DECISIONS.includes(body?.decision) ? body.decision : null;
     if (!decision) throw new DomainError('decision debe ser aprobado o rechazado', { code: 'DECISION_INVALID' });
@@ -137,13 +142,13 @@ export class CommercialService {
   }
 
   async expensePhoto(id) {
-    const e = await this.expenseDAO.findById(Number(id));
+    const e = await this.expenseDAO.findById(numId(id));
     if (!e || !e.photo) throw notFound('Sin evidencia');
     return { photo: e.photo };
   }
 
   async decideExpense(id, body, actorName) {
-    const e = await this.expenseDAO.findById(Number(id));
+    const e = await this.expenseDAO.findById(numId(id));
     if (!e) throw notFound('Gasto no encontrado');
     const decision = DECISIONS.includes(body?.decision) ? body.decision : null;
     if (!decision) throw new DomainError('decision debe ser aprobado o rechazado', { code: 'DECISION_INVALID' });
@@ -166,7 +171,7 @@ export class CommercialService {
 
   /** Emite (timbra) la factura: sella un CFDI mock y la marca como emitida. */
   async emitInvoice(id, body, actorName) {
-    const i = await this.invoiceDAO.findById(Number(id));
+    const i = await this.invoiceDAO.findById(numId(id));
     if (!i) throw notFound('Factura no encontrada');
     if (i.status === 'emitida' || i.status === 'pagada') {
       throw new DomainError('La factura ya fue emitida', { code: 'INVOICE_ALREADY_EMITTED', status: 409 });
@@ -177,7 +182,7 @@ export class CommercialService {
   }
 
   async cancelInvoice(id) {
-    const i = await this.invoiceDAO.findById(Number(id));
+    const i = await this.invoiceDAO.findById(numId(id));
     if (!i) throw notFound('Factura no encontrada');
     return this.invoiceDAO.update(i.id, { status: 'cancelada' });
   }

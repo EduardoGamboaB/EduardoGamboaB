@@ -82,7 +82,8 @@ export class ShopFloorService {
   }
 
   async createMerma(data) {
-    const merma = Merma.create(data);
+    // La fecha es NOT NULL en la base: si no viene, se registra hoy.
+    const merma = Merma.create({ ...data, fecha: data.fecha || new Date() });
     return this.mermaDAO.create(merma);
   }
 

@@ -24,7 +24,8 @@
     "db:rollback": "node database/migrate.js down",
     "db:seed": "node database/seed.js",
     "db:reset": "node database/migrate.js reset && node database/seed.js",
-    "test": "npm --workspaces --if-present run test"
+    "test": "npm --workspaces --if-present run test",
+    "test:e2e": "node backend/e2e.suite.mjs"
   },
   "author": "Mallatex / Evorgyn",
   "license": "UNLICENSED"

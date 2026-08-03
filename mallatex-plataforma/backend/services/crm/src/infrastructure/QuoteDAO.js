@@ -11,6 +11,9 @@ export class QuoteDAO extends BaseDAO {
   toPersistence(entity) {
     const p = entity instanceof Quote ? entity.toPlain() : { ...entity };
     if (p.id == null || !Number.isFinite(Number(p.id))) delete p.id;
+    // Timestamps nulos: se omiten para que aplique el DEFAULT de la base.
+    if (p.createdAt == null) delete p.createdAt;
+    if (p.ts == null) delete p.ts;
     return p;
   }
 }

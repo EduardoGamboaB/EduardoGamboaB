@@ -27,6 +27,10 @@
       (`eas build --profile production`).
 
 ## Operación
+- [ ] `TZ=America/Mexico_City` en el servicio de asistencia (las checadas del
+      checador/kiosco llegan en hora de pared de la planta).
+- [ ] Suite E2E en verde contra el ambiente: `npm run test:e2e`
+      (requiere `GATEWAY_URL` apuntando al gateway y datos seed).
 - [ ] Respaldos automáticos de la base activados.
 - [ ] Logs/őmétricas de cada servicio monitorizados.
 - [ ] Prueba de humo end-to-end: login web, login móvil, checada de campo,

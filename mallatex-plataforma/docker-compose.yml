@@ -46,6 +46,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:-cambia-esto}
       PORT: '3002'
       SERVICE_NAME: attendance
+      # Las checadas llegan en hora de pared de la planta (checador/kiosco):
+      # el motor de asistencia debe correr en la zona horaria de la planta.
+      TZ: America/Mexico_City
     command: npm run start:attendance
     ports: ['3002:3002']
 

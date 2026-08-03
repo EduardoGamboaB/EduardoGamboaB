@@ -13,6 +13,9 @@ export class ClientDAO extends BaseDAO {
     // Agregado nuevo: el id lo asigna la BD (BIGSERIAL); descartamos el UUID
     // que la raíz genera por defecto cuando aún no tiene identidad persistida.
     if (p.id == null || !Number.isFinite(Number(p.id))) delete p.id;
+    // Timestamps nulos: se omiten para que aplique el DEFAULT de la base.
+    if (p.createdAt == null) delete p.createdAt;
+    if (p.ts == null) delete p.ts;
     return p;
   }
 }
