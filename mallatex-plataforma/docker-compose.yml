@@ -1,0 +1,107 @@
+# Stack local completo de la Plataforma Mallatex.
+#   docker compose up --build
+# Levanta PostgreSQL, los 5 microservicios, el gateway y el frontend web.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mallatex
+      POSTGRES_PASSWORD: mallatex
+      POSTGRES_DB: mallatex
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mallatex']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: { context: ., dockerfile: deploy/Dockerfile.backend }
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
+    command: sh -c "node database/migrate.js up && node database/seed.js"
+    restart: 'no'
+
+  identity:
+    build: { context: ., dockerfile: deploy/Dockerfile.backend }
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    environment:
+      DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
+      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      PORT: '3001'
+      SERVICE_NAME: identity
+    command: npm run start:identity
+    ports: ['3001:3001']
+
+  attendance:
+    build: { context: ., dockerfile: deploy/Dockerfile.backend }
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    environment:
+      DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
+      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      PORT: '3002'
+      SERVICE_NAME: attendance
+    command: npm run start:attendance
+    ports: ['3002:3002']
+
+  crm:
+    build: { context: ., dockerfile: deploy/Dockerfile.backend }
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    environment:
+      DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
+      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      PORT: '3003'
+      SERVICE_NAME: crm
+    command: npm run start:crm
+    ports: ['3003:3003']
+
+  mes:
+    build: { context: ., dockerfile: deploy/Dockerfile.backend }
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    environment:
+      DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
+      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      PORT: '3004'
+      SERVICE_NAME: mes
+    command: npm run start:mes
+    ports: ['3004:3004']
+
+  leads:
+    build: { context: ., dockerfile: deploy/Dockerfile.backend }
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    environment:
+      DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
+      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      PORT: '3005'
+      SERVICE_NAME: leads
+    command: npm run start:leads
+    ports: ['3005:3005']
+
+  gateway:
+    build: { context: ., dockerfile: deploy/Dockerfile.backend }
+    depends_on: [identity, attendance, crm, mes, leads]
+    environment:
+      PORT: '3000'
+      SERVICE_NAME: gateway
+      IDENTITY_URL: http://identity:3001
+      ATTENDANCE_URL: http://attendance:3002
+      CRM_URL: http://crm:3003
+      MES_URL: http://mes:3004
+      LEADS_URL: http://leads:3005
+    command: npm run start:gateway
+    ports: ['3000:3000']
+
+  web:
+    build: { context: ./frontend, dockerfile: ../deploy/Dockerfile.frontend }
+    depends_on: [gateway]
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:3000
+    ports: ['3100:3100']
+
+volumes:
+  pgdata:

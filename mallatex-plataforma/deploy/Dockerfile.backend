@@ -1,0 +1,28 @@
+# Imagen única para el backend (gateway + microservicios).
+# El servicio concreto se elige en tiempo de ejecución con el comando
+# (p.ej. `npm run start:identity`). Contexto de build = raíz del monorepo.
+FROM node:20-slim AS base
+ENV NODE_ENV=production
+WORKDIR /app
+
+# Manifiestos primero para aprovechar la caché de capas
+COPY package.json package-lock.json* ./
+COPY backend/shared/package.json ./backend/shared/
+COPY backend/gateway/package.json ./backend/gateway/
+COPY backend/services/identity/package.json ./backend/services/identity/
+COPY backend/services/attendance/package.json ./backend/services/attendance/
+COPY backend/services/crm/package.json ./backend/services/crm/
+COPY backend/services/mes/package.json ./backend/services/mes/
+COPY backend/services/leads/package.json ./backend/services/leads/
+
+RUN npm install --omit=dev --workspaces --include-workspace-root || npm install --omit=dev
+
+# Código
+COPY backend ./backend
+COPY database ./database
+COPY scripts ./scripts
+
+USER node
+EXPOSE 3000 3001 3002 3003 3004 3005
+# Por defecto arranca el gateway; sobreescribir en compose/plataforma.
+CMD ["npm", "run", "start:gateway"]

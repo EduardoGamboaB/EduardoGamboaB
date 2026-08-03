@@ -1,0 +1,126 @@
+# Blueprint de Render para la Plataforma Mallatex.
+# Crea la base de datos, los microservicios, el gateway y el frontend web.
+databases:
+  - name: mallatex-db
+    databaseName: mallatex
+    user: mallatex
+    plan: starter
+
+services:
+  # --- Microservicios (Docker, mismo repo, distinto comando) ---
+  - type: web
+    name: mallatex-identity
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile.backend
+    dockerContext: .
+    dockerCommand: npm run start:identity
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: DATABASE_URL
+        fromDatabase: { name: mallatex-db, property: connectionString }
+      - key: DATABASE_SSL
+        value: 'true'
+      - key: JWT_SECRET
+        generateValue: true
+
+  - type: web
+    name: mallatex-attendance
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile.backend
+    dockerContext: .
+    dockerCommand: npm run start:attendance
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 3002
+      - key: DATABASE_URL
+        fromDatabase: { name: mallatex-db, property: connectionString }
+      - key: DATABASE_SSL
+        value: 'true'
+      - key: JWT_SECRET
+        fromService: { type: web, name: mallatex-identity, envVarKey: JWT_SECRET }
+
+  - type: web
+    name: mallatex-crm
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile.backend
+    dockerContext: .
+    dockerCommand: npm run start:crm
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 3003
+      - key: DATABASE_URL
+        fromDatabase: { name: mallatex-db, property: connectionString }
+      - key: DATABASE_SSL
+        value: 'true'
+      - key: JWT_SECRET
+        fromService: { type: web, name: mallatex-identity, envVarKey: JWT_SECRET }
+
+  - type: web
+    name: mallatex-mes
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile.backend
+    dockerContext: .
+    dockerCommand: npm run start:mes
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 3004
+      - key: DATABASE_URL
+        fromDatabase: { name: mallatex-db, property: connectionString }
+      - key: DATABASE_SSL
+        value: 'true'
+      - key: JWT_SECRET
+        fromService: { type: web, name: mallatex-identity, envVarKey: JWT_SECRET }
+
+  - type: web
+    name: mallatex-leads
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile.backend
+    dockerContext: .
+    dockerCommand: npm run start:leads
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 3005
+      - key: DATABASE_URL
+        fromDatabase: { name: mallatex-db, property: connectionString }
+      - key: DATABASE_SSL
+        value: 'true'
+      - key: JWT_SECRET
+        fromService: { type: web, name: mallatex-identity, envVarKey: JWT_SECRET }
+
+  # --- Gateway (punto de entrada público del API) ---
+  - type: web
+    name: mallatex-gateway
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile.backend
+    dockerContext: .
+    dockerCommand: npm run start:gateway
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: IDENTITY_URL
+        fromService: { type: web, name: mallatex-identity, property: hostport }
+      - key: ATTENDANCE_URL
+        fromService: { type: web, name: mallatex-attendance, property: hostport }
+      - key: CRM_URL
+        fromService: { type: web, name: mallatex-crm, property: hostport }
+      - key: MES_URL
+        fromService: { type: web, name: mallatex-mes, property: hostport }
+      - key: LEADS_URL
+        fromService: { type: web, name: mallatex-leads, property: hostport }
+
+  # --- Frontend web ---
+  - type: web
+    name: mallatex-web
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile.frontend
+    dockerContext: ./frontend
+    envVars:
+      - key: NEXT_PUBLIC_API_BASE
+        fromService: { type: web, name: mallatex-gateway, property: host }

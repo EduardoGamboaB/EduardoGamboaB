@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (build, migrate, seed, test)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: mallatex
+          POSTGRES_PASSWORD: mallatex
+          POSTGRES_DB: mallatex
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U mallatex"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgres://mallatex:mallatex@localhost:5432/mallatex
+      JWT_SECRET: ci-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install (workspaces)
+        run: npm install --workspaces --include-workspace-root
+      - name: Migrate schema
+        run: node database/migrate.js up
+      - name: Seed
+        run: node database/seed.js
+      - name: Test workspaces
+        run: npm test --workspaces --if-present
+
+  frontend:
+    name: Frontend (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: npm install
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE: http://localhost:3000
