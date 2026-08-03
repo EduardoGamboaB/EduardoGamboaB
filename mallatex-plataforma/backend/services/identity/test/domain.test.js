@@ -112,5 +112,5 @@ test('toPublic strips passwordHash; toPlain keeps it', () => {
 });
 
 test('VALID_ROLES catalog is the expected set', () => {
-  assert.deepEqual(VALID_ROLES, ['admin', 'contador', 'nomina', 'comercial', 'produccion', 'direccion']);
+  assert.deepEqual(VALID_ROLES, ['admin', 'contador', 'nomina', 'comercial', 'produccion', 'direccion', 'marketing']);
 });

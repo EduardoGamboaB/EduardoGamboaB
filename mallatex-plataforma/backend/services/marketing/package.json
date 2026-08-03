@@ -1,0 +1,19 @@
+{
+  "name": "@mallatex/service-marketing",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Servicio de marketing — banco de activos, solicitudes de formato, publicaciones, calendario de campañas e inventario de impresos.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
+    "@mallatex/shared": "*",
+    "sequelize": "^6.37.3"
+  }
+}
