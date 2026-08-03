@@ -143,6 +143,7 @@ App móvil / portal (empleados) — código + PIN `1234`:
 | `npm run db:seed` | Siembra catálogos y datos demo |
 | `npm run db:reset` | Recrea el esquema y siembra |
 | `npm test` | Pruebas de todos los workspaces |
+| `npm run test:e2e` | Suite E2E vía gateway (205 aserciones) — ver [`docs/manual-e2e.md`](docs/manual-e2e.md) |
 
 ---
 
