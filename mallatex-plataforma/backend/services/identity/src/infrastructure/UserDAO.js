@@ -10,8 +10,11 @@ export class UserDAO extends BaseDAO {
   }
 
   toPersistence(entity) {
-    if (entity instanceof User) return entity.toPlain();
-    return entity;
+    const plain = entity instanceof User ? entity.toPlain() : { ...entity };
+    // La tabla usa BIGSERIAL: si el id es el UUID que asigna el kernel de dominio
+    // (no numérico), se omite para que la base genere el identificador.
+    if (plain.id != null && !/^\d+$/.test(String(plain.id))) delete plain.id;
+    return plain;
   }
 
   findByEmail(email) {
