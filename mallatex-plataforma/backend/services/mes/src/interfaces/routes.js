@@ -209,6 +209,25 @@ export function buildRoutes({ productionService, shopFloorService, warehouseServ
     asyncHandler(async (req, res) => res.json((await shopFloorService.tabletScan(req.body || {})).toPlain()))
   );
   tablet.post('/alert', asyncHandler(async (req, res) => res.status(201).json((await shopFloorService.tabletAlert(req.body)).toPlain())));
+  // Avance de producción desde piso: endpoint propio (no contamina las alertas).
+  // Con orderId registra terminados sobre el pedido; si no, deja constancia
+  // como aviso informativo de avance en la línea.
+  tablet.post(
+    '/avance',
+    asyncHandler(async (req, res) => {
+      const { orderId, cantidad, lineId, descripcion } = req.body || {};
+      if (orderId) {
+        const order = await productionService.registrarTerminados(orderId, Number(cantidad) || 0);
+        return res.json(order.toPublic());
+      }
+      const aviso = await shopFloorService.tabletAlert({
+        lineId,
+        tipo: 'avance',
+        descripcion: descripcion || `Avance reportado: ${Number(cantidad) || 0} piezas`,
+      });
+      res.status(201).json(aviso.toPlain());
+    })
+  );
   tablet.post('/merma', asyncHandler(async (req, res) => res.status(201).json((await shopFloorService.tabletMerma(req.body)).toPlain())));
   router.use('/api/mes/tablet', tablet);
 
