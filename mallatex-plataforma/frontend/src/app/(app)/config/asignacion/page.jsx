@@ -56,6 +56,8 @@ export default function AsignacionPage() {
   }, [data, surface])
 
   // Recalcula la selección cuando cambia sujeto/superficie o llegan datos.
+  // OJO: aquí NO se borra el mensaje — tras guardar se recargan los datos y
+  // borrarlo aquí haría invisible la confirmación.
   useEffect(() => {
     if (!data?.grants || !subject) return
     const set = new Set(
@@ -64,8 +66,12 @@ export default function AsignacionPage() {
         .map((g) => g.moduleKey)
     )
     setSelected(set)
-    setMsg('')
   }, [data, surface, subject])
+
+  // El mensaje sólo se limpia cuando el usuario cambia de sujeto/superficie.
+  useEffect(() => {
+    setMsg('')
+  }, [surface, subjectKey])
 
   function toggle(key) {
     const next = new Set(selected)
