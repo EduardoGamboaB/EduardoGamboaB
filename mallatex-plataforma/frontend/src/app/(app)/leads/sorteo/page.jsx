@@ -4,16 +4,18 @@ import { useState } from 'react'
 import { Gift, Sparkles } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
-import { Loading, ErrorState, Empty } from '@/components/ui/States'
-import { useData, asList } from '@/lib/useData'
+import { ErrorState } from '@/components/ui/States'
+import { useData } from '@/lib/useData'
 import { post } from '@/lib/api'
 import { brand, fontDisplay } from '@/lib/brand'
 
 // Leads · Sorteo — selecciona un ganador entre los leads elegibles.
 // Consume /api/raffle (GET elegibles, POST sortea).
 export default function SorteoPage() {
-  const { data, loading, error } = useData('/api/raffle')
-  const eligibles = asList(data?.eligibles || data)
+  const { data, loading, error, reload } = useData('/api/raffle/eligible')
+  // El endpoint devuelve un resumen: { total, leadsTotales, ganadores, vigente, correoActivo }
+  const total = Number(data?.total ?? 0)
+  const vigente = data?.vigente !== false
   const [winner, setWinner] = useState(null)
   const [spinning, setSpinning] = useState(false)
   const [msg, setMsg] = useState('')
@@ -23,16 +25,12 @@ export default function SorteoPage() {
     setMsg('')
     setWinner(null)
     try {
+      // El sorteo es del SERVIDOR: persiste el ganador, su folio y el correo.
       const res = await post('/api/raffle/draw', {})
-      setWinner(res.winner || res)
+      setWinner(res.ganador || res.winner || res)
+      reload()
     } catch (e) {
-      // Respaldo local si el endpoint no está disponible.
-      if (eligibles.length) {
-        setWinner(eligibles[Math.floor(Math.random() * eligibles.length)])
-        setMsg('Ganador seleccionado localmente (endpoint no disponible).')
-      } else {
-        setMsg(`No se pudo sortear: ${e.message}`)
-      }
+      setMsg(`No se pudo sortear: ${e.message}`)
     } finally {
       setSpinning(false)
     }
@@ -49,8 +47,14 @@ export default function SorteoPage() {
           <Gift size={44} style={{ color: brand.red, marginBottom: 12 }} />
           <p className="muted" style={{ marginBottom: 4 }}>Participantes elegibles</p>
           <div style={{ ...fontDisplay, fontWeight: 900, fontSize: 40, color: brand.ink }}>
-            {loading ? '…' : eligibles.length}
+            {loading ? '…' : total}
           </div>
+          {!loading && data && (
+            <p className="muted" style={{ fontSize: 12.5 }}>
+              {data.leadsTotales ?? 0} leads del evento · {data.ganadores ?? 0} ganadores previos ·
+              correo {data.correoActivo ? 'activo' : 'no configurado (entrega manual del folio)'}
+            </p>
+          )}
 
           {winner && (
             <div className="card" style={{ margin: '20px auto 0', maxWidth: 420, background: brand.redLight, borderColor: brand.red }}>
@@ -69,11 +73,17 @@ export default function SorteoPage() {
           )}
 
           <div style={{ marginTop: 22 }}>
-            <button className="btn btn-primary" onClick={draw} disabled={spinning || eligibles.length === 0}>
+            <button className="btn btn-primary" onClick={draw} disabled={spinning || total === 0}>
               <Sparkles size={16} /> {spinning ? 'Sorteando…' : 'Realizar sorteo'}
             </button>
           </div>
-          {!loading && eligibles.length === 0 && <Empty title="Sin participantes elegibles" />}
+          {!loading && total === 0 && (
+            <p className="muted" style={{ marginTop: 10, fontSize: 13 }}>
+              {vigente
+                ? 'El sorteo se habilita cuando el evento activo tiene participantes elegibles (captura leads en el módulo de Captura o por el QR del evento).'
+                : 'No hay un evento activo: activa uno en Leads · Eventos para poder sortear.'}
+            </p>
+          )}
         </div>
       </Card>
     </div>

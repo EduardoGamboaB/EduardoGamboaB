@@ -53,7 +53,7 @@ export default function HistoryScreen({ onSync, queueVersion }) {
 
 const st = StyleSheet.create({
   syncBar: { backgroundColor: '#fff7e6', padding: 12, borderBottomWidth: 1, borderBottomColor: colors.lightGray },
-  syncTxt: { color: colors.warn, fontWeight: '600', textAlign: 'center' },
+  syncTxt: { color: '#92400E', fontWeight: '600', textAlign: 'center' },
   card: { flexDirection: 'row', backgroundColor: colors.white, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.lightGray, alignItems: 'center' },
   type: { fontWeight: '700', color: colors.black },
   meta: { color: colors.gray, marginTop: 2, fontSize: 12 },

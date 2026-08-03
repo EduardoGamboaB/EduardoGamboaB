@@ -10,6 +10,7 @@ export function buildRoutes(deps) {
   const {
     employeeService, attendanceService, periodService, variablePayService,
     rhService, fieldService, portalService, scheduleDAO, deviceDAO, siteDAO, employeeDAO,
+    audit,
   } = deps;
 
   const router = Router();
@@ -20,6 +21,15 @@ export function buildRoutes(deps) {
   // ================================================================
   const admin = Router();
   admin.use(requireAuth, adminOnly);
+
+  // ---- Auditoría ---------------------------------------------------
+  admin.get(
+    '/audit',
+    asyncHandler(async (req, res) => {
+      const limit = Math.min(Number(req.query.limit) || 200, 1000);
+      res.json(await audit.findAll({}, { order: [['ts', 'DESC']], limit }));
+    })
+  );
 
   // ---- Empleados ---------------------------------------------------
   admin.get('/employees', asyncHandler(async (req, res) => res.json(await employeeService.list(req.query))));

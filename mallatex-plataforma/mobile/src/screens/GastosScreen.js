@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, TextInput, Alert, ActivityIndicator, Modal, ScrollView, Switch } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, TextInput, Alert, ActivityIndicator, Modal, ScrollView, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors } from '../theme';
 import { api } from '../api';
@@ -84,10 +84,12 @@ function ExpenseModal({ visible, requests, onClose, onDone }) {
   }
 
   async function submit() {
-    if (!Number(amount)) return Alert.alert('Falta el monto', 'Captura el importe del gasto.');
+    if (!amount.trim()) return Alert.alert('Falta el monto', 'Captura el importe del gasto.');
+    const amt = Number(String(amount).replace(',', '.').replace(/[^0-9.]/g, ''));
+    if (!amt) return Alert.alert('Monto inválido', 'Revisa el importe capturado.');
     setBusy(true);
     try {
-      await api.createExpense({ category, merchant, amount: Number(amount), date, hasInvoice, rfc, requestId, photo: photo || undefined });
+      await api.createExpense({ category, merchant, amount: amt, date, hasInvoice, rfc, requestId, photo: photo || undefined });
       onDone();
     } catch (e) { Alert.alert('No se pudo comprobar', e.message); }
     finally { setBusy(false); }
@@ -95,9 +97,9 @@ function ExpenseModal({ visible, requests, onClose, onDone }) {
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={st.sheetWrap}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={st.sheetWrap}>
         <View style={st.sheet}>
-          <View style={st.sheetHead}><Text style={st.sheetTitle}>Comprobar gasto</Text><TouchableOpacity onPress={onClose}><Text style={st.close}>✕</Text></TouchableOpacity></View>
+          <View style={st.sheetHead}><Text style={st.sheetTitle}>Comprobar gasto</Text><TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Cerrar"><Text style={st.close}>✕</Text></TouchableOpacity></View>
           <ScrollView>
             <Text style={st.label}>Categoría</Text>
             <View style={st.chips}>{CATS.map(([v, l, i]) => (
@@ -144,7 +146,7 @@ function ExpenseModal({ visible, requests, onClose, onDone }) {
             </TouchableOpacity>
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

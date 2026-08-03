@@ -62,7 +62,13 @@ export default function ProfileScreen({ profile, onLogout }) {
         </View>
       </View>
 
-      <TouchableOpacity style={st.logout} onPress={onLogout}>
+      <TouchableOpacity
+        style={st.logout}
+        onPress={() => Alert.alert('Cerrar sesión', '¿Salir de tu cuenta?', [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Salir', style: 'destructive', onPress: onLogout },
+        ])}
+      >
         <Text style={st.logoutTxt}>Cerrar sesión</Text>
       </TouchableOpacity>
       <Text style={st.version}>Mallatex Campo · v1.0.0 · powered by Evorgyn</Text>

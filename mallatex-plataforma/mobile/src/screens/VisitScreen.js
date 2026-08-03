@@ -131,7 +131,7 @@ const st = StyleSheet.create({
   muted: { color: colors.gray },
   muted2: { color: colors.gray, fontSize: 12, textAlign: 'center', marginTop: 10 },
   warn: { backgroundColor: '#fff7e6', borderRadius: 10, padding: 12, marginBottom: 4 },
-  warnTxt: { color: colors.warn, fontSize: 12 },
+  warnTxt: { color: '#92400E', fontSize: 12 },
   badge: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   badgeTxt: { color: '#fff', fontSize: 42, fontWeight: '800' },
   h: { fontSize: 20, fontWeight: '800', color: colors.black },

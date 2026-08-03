@@ -12,7 +12,7 @@ export const routeMap = [
       '/api/employees', '/api/schedules', '/api/devices', '/api/sites',
       '/api/checadas', '/api/attendance', '/api/incidents', '/api/overtime',
       '/api/periods', '/api/dashboard', '/api/variable-concepts',
-      '/api/variable-entries', '/api/variable-sync', '/api/rh',
+      '/api/variable-entries', '/api/variable-sync', '/api/rh', '/api/audit',
       '/api/portal', '/api/field', '/api/kiosk',
     ],
     target: config.gateway.attendanceUrl,

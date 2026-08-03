@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, TextInput, Alert, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, TextInput, Alert, ActivityIndicator, Modal, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { colors } from '../theme';
 import { api } from '../api';
 
@@ -66,18 +66,20 @@ function RequestModal({ visible, onClose, onDone }) {
   useEffect(() => { if (visible) { setConcept(''); setDestination(''); setAmount(''); setFromDate(''); setToDate(''); setDescription(''); } }, [visible]);
 
   async function submit() {
-    if (!concept.trim() || !Number(amount)) return Alert.alert('Faltan datos', 'Concepto y monto son obligatorios.');
+    if (!concept.trim() || !amount.trim()) return Alert.alert('Faltan datos', 'Concepto y monto son obligatorios.');
+    const amt = Number(String(amount).replace(',', '.').replace(/[^0-9.]/g, ''));
+    if (!amt) return Alert.alert('Monto inválido', 'Revisa el monto capturado.');
     setBusy(true);
-    try { await api.createExpenseRequest({ concept, destination, amount: Number(amount), fromDate, toDate, description }); onDone(); }
+    try { await api.createExpenseRequest({ concept, destination, amount: amt, fromDate, toDate, description }); onDone(); }
     catch (e) { Alert.alert('No se pudo solicitar', e.message); }
     finally { setBusy(false); }
   }
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={st.sheetWrap}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={st.sheetWrap}>
         <View style={st.sheet}>
-          <View style={st.sheetHead}><Text style={st.sheetTitle}>Solicitar viáticos</Text><TouchableOpacity onPress={onClose}><Text style={st.close}>✕</Text></TouchableOpacity></View>
+          <View style={st.sheetHead}><Text style={st.sheetTitle}>Solicitar viáticos</Text><TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Cerrar"><Text style={st.close}>✕</Text></TouchableOpacity></View>
           <ScrollView>
             <Text style={st.label}>Concepto *</Text>
             <TextInput style={st.input} value={concept} onChangeText={setConcept} placeholder="p. ej. Visita a cliente en Zamora" placeholderTextColor={colors.gray} />
@@ -97,7 +99,7 @@ function RequestModal({ visible, onClose, onDone }) {
             <Text style={st.hint}>El gerente comercial revisará y aprobará tu solicitud.</Text>
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

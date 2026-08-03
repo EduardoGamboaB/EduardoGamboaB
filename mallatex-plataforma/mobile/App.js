@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, Alert, Modal, Pressable, Image, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, Alert, Modal, Pressable, Image, ScrollView, BackHandler } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from './src/theme';
 import { api } from './src/api';
@@ -34,6 +34,7 @@ const MENU = [
   { key: 'visita', label: 'Registrar visita', icon: '📋', group: 'Ventas' },
   { key: 'desempeno', label: 'Mi desempeño', icon: '🎯', group: 'Ventas' },
   { key: 'asistencia', label: 'Mi asistencia', icon: '📍', group: 'Ventas' },
+  { key: 'historial', label: 'Historial', icon: '🗂️', group: 'Ventas' },
   { key: 'inventario', label: 'Inventario', icon: '📦', group: 'Herramientas' },
   { key: 'cotizador', label: 'Cotizador', icon: '🧮', group: 'Herramientas' },
   { key: 'pedidos', label: 'Pedidos', icon: '🛒', group: 'Herramientas' },
@@ -95,7 +96,13 @@ export default function App() {
     if (!q.length) { if (!silent) Alert.alert('Sincronizar', 'No hay registros pendientes.'); return; }
     const remaining = []; let sent = 0;
     for (const item of q) {
-      try { if (item.kind === 'visit') await api.createVisit(item); else await api.checkin(item); sent++; }
+      try {
+        if (item.kind === 'visit') await api.createVisit(item);
+        else if (item.kind === 'merma') await api.mesReportMerma(item.payload ?? item);
+        else if (item.kind === 'mes-alert') await api.mesReportAlert(item.payload ?? item);
+        else await api.checkin(item);
+        sent++;
+      }
       catch (e) { if (e.offline) remaining.push(item); }
     }
     await saveQueue(remaining); setQueueVersion((v) => v + 1);
@@ -103,6 +110,18 @@ export default function App() {
   }, []);
 
   useEffect(() => { if (authed) { flushQueue(true); flushTrackBuffer(); } }, [authed, flushQueue]);
+
+  // Botón "atrás" de Android: cierra el menú lateral, o regresa a la pantalla inicial
+  // del perfil; en la pantalla inicial deja que el sistema cierre la app.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (menuOpen) { setMenuOpen(false); return true; }
+      const home = menu[0]?.key || 'perfil';
+      if (authed && activeScreen !== home) { setScreen(home); return true; }
+      return false;
+    });
+    return () => sub.remove();
+  }, [menuOpen, activeScreen, authed, menu]);
 
   // Si la pantalla actual no está permitida para el perfil, salta a la primera disponible.
   useEffect(() => {
@@ -119,6 +138,12 @@ export default function App() {
     }
   }
   async function logout() { await api.logout(); await setToken(null); setAuthed(false); setLocked(false); setProfile(null); setScreen('ruta'); }
+  function confirmLogout() {
+    Alert.alert('Cerrar sesión', '¿Salir de tu cuenta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Salir', style: 'destructive', onPress: logout },
+    ]);
+  }
   function go(key) { setMenuOpen(false); if (key !== screen) setScreen(key); }
 
   if (loading) return <View style={[st.center, { flex: 1, backgroundColor: colors.bg }]}><ActivityIndicator color={colors.red} size="large" /></View>;
@@ -130,7 +155,7 @@ export default function App() {
       <Text style={st.lockTitle}>Mallatex Campo</Text>
       <Text style={st.lockSub}>Sesión bloqueada</Text>
       <TouchableOpacity style={st.primaryBtn} onPress={unlock}><Text style={st.primaryBtnTxt}>Desbloquear con {bioName}</Text></TouchableOpacity>
-      <TouchableOpacity onPress={logout}><Text style={st.link}>Usar otra cuenta</Text></TouchableOpacity>
+      <TouchableOpacity onPress={logout} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}><Text style={st.link}>Usar otra cuenta</Text></TouchableOpacity>
     </View>
   );
 
@@ -141,9 +166,9 @@ export default function App() {
       <StatusBar style="dark" />
       {/* Header con logo + menú */}
       <View style={st.header}>
-        <TouchableOpacity onPress={() => setMenuOpen(true)} style={st.hamburger}><Text style={st.hamburgerTxt}>☰</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => setMenuOpen(true)} style={st.hamburger} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Abrir menú"><Text style={st.hamburgerTxt}>☰</Text></TouchableOpacity>
         <Image source={require('./assets/logo-word.png')} style={st.headerLogo} resizeMode="contain" />
-        <TouchableOpacity style={st.avatarBtn} onPress={() => go('perfil')}>
+        <TouchableOpacity style={st.avatarBtn} onPress={() => go('perfil')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Ir a mi perfil">
           <Text style={st.avatarTxt}>{(profile?.employee?.name || '?').split(' ').slice(0, 2).map((s) => s[0]).join('').toUpperCase()}</Text>
         </TouchableOpacity>
       </View>
@@ -155,6 +180,7 @@ export default function App() {
         {activeScreen === 'visita' && <VisitScreen />}
         {activeScreen === 'desempeno' && <PerformanceScreen />}
         {activeScreen === 'asistencia' && <CheckinScreen profile={profile} onQueued={() => setQueueVersion((v) => v + 1)} />}
+        {activeScreen === 'historial' && <HistoryScreen queueVersion={queueVersion} onSync={() => flushQueue(false)} />}
         {activeScreen === 'perfil' && <ProfileScreen profile={profile} onLogout={logout} />}
         {activeScreen === 'inventario' && <InventoryScreen />}
         {activeScreen === 'cotizador' && <QuoteScreen />}
@@ -195,7 +221,7 @@ export default function App() {
                 );
               })}
             </ScrollView>
-            <TouchableOpacity style={st.logout} onPress={logout}><Text style={st.logoutTxt}>Cerrar sesión</Text></TouchableOpacity>
+            <TouchableOpacity style={st.logout} onPress={confirmLogout}><Text style={st.logoutTxt}>Cerrar sesión</Text></TouchableOpacity>
             <Text style={st.foot}>v1.0.0 · powered by Evorgyn</Text>
           </Pressable>
         </Pressable>

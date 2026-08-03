@@ -54,12 +54,12 @@ let admin, empCom, empOp, empLinea;
 
   const rc = await post('/api/auth/login', { body: { code: 'MTX002', pin: '1234' } });
   ok('login empleado comercial (MTX002)', rc.status === 200 && rc.json?.employee?.profile === 'comercial');
-  ok('MTX002 recibe 13 módulos móviles', rc.json?.modules?.length === 13, `(${rc.json?.modules?.length})`);
+  ok('MTX002 recibe 14 módulos móviles', rc.json?.modules?.length === 14, `(${rc.json?.modules?.length})`);
   empCom = rc.json?.token;
 
   const ro = await post('/api/auth/login', { body: { code: 'MTX001', pin: '1234' } });
   ok('login empleado operativo (MTX001)', ro.status === 200 && ro.json?.employee?.profile === 'operativo');
-  ok('MTX001 sólo asistencia+perfil', JSON.stringify((ro.json?.modules || []).sort()) === JSON.stringify(['asistencia', 'perfil']));
+  ok('MTX001 sólo asistencia+perfil', JSON.stringify((ro.json?.modules || []).sort()) === JSON.stringify(['asistencia', 'historial', 'perfil']));
   empOp = ro.json?.token;
 
   const rl = await post('/api/auth/login', { body: { code: 'MTX021', pin: '1234' } });
@@ -93,9 +93,9 @@ let newUserId;
 sec('IDENTITY · matriz de acceso');
 {
   const cat = await get('/api/access/catalog?surface=mobile', { token: admin });
-  ok('catálogo móvil (16 módulos)', cat.status === 200 && cat.json?.length === 16, `(${cat.json?.length})`);
+  ok('catálogo móvil (17 módulos)', cat.status === 200 && cat.json?.length === 17, `(${cat.json?.length})`);
   const m = await get('/api/access/matrix', { token: admin });
-  ok('matriz completa (125 grants)', m.status === 200 && m.json?.grants?.length === 125, `(${m.json?.grants?.length})`);
+  ok('matriz completa (127 grants)', m.status === 200 && m.json?.grants?.length === 127, `(${m.json?.grants?.length})`);
   // Conceder inventario al perfil operativo y verificar en login
   const before = (m.json.grants || []).filter((g) => g.subjectType === 'profile' && g.subjectKey === 'operativo' && g.surface === 'mobile').map((g) => g.moduleKey);
   const r1 = await put('/api/access/grants', { token: admin, body: { subjectType: 'profile', subjectKey: 'operativo', surface: 'mobile', moduleKeys: [...before, 'inventario'] } });

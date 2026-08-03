@@ -8,21 +8,29 @@ async function request(method, path, { body, token } = {}) {
   const authToken = token !== undefined ? token : await getToken();
   const headers = { 'Content-Type': 'application/json' };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  // Corte por tiempo: una red colgada se trata igual que estar sin conexión.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
   let res;
   try {
     res = await fetch(base.replace(/\/$/, '') + path, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
     });
   } catch (e) {
     const err = new Error('Sin conexión con el servidor');
     err.offline = true;
     throw err;
-  }
+  } finally { clearTimeout(timer); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data.error || `Error ${res.status}`);
+    const fallback = res.status === 401 ? 'Código o PIN incorrecto'
+      : res.status === 403 ? 'No tienes acceso a esta función'
+      : res.status >= 500 ? 'El servidor no está disponible, intenta más tarde'
+      : `Error ${res.status}`;
+    const err = new Error(data.error || fallback);
     err.status = res.status;
     throw err;
   }

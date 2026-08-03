@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { colors } from '../theme';
 import { api } from '../api';
 
@@ -16,7 +16,8 @@ export default function BotScreen() {
 
   async function ask() {
     setBusy(true);
-    try { setRec(await api.advisor({ objetivo, cultivo, clima, terreno })); } catch {}
+    try { setRec(await api.advisor({ objetivo, cultivo, clima, terreno })); }
+    catch (e) { Alert.alert(e.offline ? 'Sin conexión' : 'No se pudo consultar', 'Intenta de nuevo en un momento.'); }
     setBusy(false);
   }
 

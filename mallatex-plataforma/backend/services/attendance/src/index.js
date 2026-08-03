@@ -61,6 +61,7 @@ async function bootstrap() {
     mountApi: (a) => a.use(buildRoutes({
       employeeService, attendanceService, periodService, variablePayService,
       rhService, fieldService, portalService, scheduleDAO, deviceDAO, siteDAO, employeeDAO,
+      audit,
     })),
   });
   startServer(app, { port: PORT, name: NAME, onClose: closeDb });

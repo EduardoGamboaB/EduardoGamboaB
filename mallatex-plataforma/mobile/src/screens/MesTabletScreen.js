@@ -6,6 +6,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors } from '../theme';
 import { api } from '../api';
+import { enqueue } from '../storage';
 
 // Motivos de alerta con emoji redundante (operadores con baja alfabetización).
 const ALERTS = [
@@ -26,6 +27,7 @@ export default function MesTabletScreen() {
   const [scanOpen, setScanOpen] = useState(false);
   const [lastRoll, setLastRoll] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [activeAlert, setActiveAlert] = useState(null); // tipo de alerta que se está enviando
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,18 +60,38 @@ export default function MesTabletScreen() {
       const r = await api.mesScanRoll({ lineId, code: payload, operators: operators.map((o) => o.code) });
       setLastRoll({ ok: true, code: payload, ...r });
     } catch (e) {
-      setLastRoll({ ok: false, code: payload, offline: e.offline, message: e.message });
+      // El escaneo necesita respuesta viva del servidor: sin conexión no se encola.
+      setLastRoll({ ok: false, code: payload, offline: e.offline, message: e.offline ? 'No se pudo consultar el rollo. Intenta cuando vuelva la señal.' : e.message });
+      if (e.offline) Alert.alert('Sin conexión', 'No se pudo consultar el rollo. Intenta cuando vuelva la señal.');
     } finally { setBusy(false); }
   }
 
-  async function sendAlert(type, label) {
-    setBusy(true);
+  function sendAlert(type, label) {
+    // Los avisos que detienen la línea o llaman a supervisión piden confirmación.
+    if (type === 'paro' || type === 'ayuda') {
+      Alert.alert(label, `¿Enviar el aviso "${label}" a supervisión?`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Enviar', style: 'destructive', onPress: () => doSendAlert(type, label) },
+      ]);
+      return;
+    }
+    doSendAlert(type, label);
+  }
+
+  async function doSendAlert(type, label) {
+    setActiveAlert(type);
+    const payload = { lineId, type, operators: operators.map((o) => o.code) };
     try {
-      await api.mesReportAlert({ lineId, type, operators: operators.map((o) => o.code) });
+      await api.mesReportAlert(payload);
       Alert.alert('Aviso enviado', `${label} reportado en ${line?.name || 'la línea'}.`);
     } catch (e) {
-      Alert.alert(e.offline ? 'Sin conexión' : 'No se envió', e.offline ? 'Se reintentará al reconectar.' : e.message);
-    } finally { setBusy(false); }
+      if (e.offline) {
+        await enqueue({ kind: 'mes-alert', payload });
+        Alert.alert('Sin conexión', 'Se reintentará al reconectar.');
+      } else {
+        Alert.alert('No se envió', e.message);
+      }
+    } finally { setActiveAlert(null); }
   }
 
   if (loading) return <View style={st.center}><ActivityIndicator color={colors.red} size="large" /></View>;
@@ -85,7 +107,7 @@ export default function MesTabletScreen() {
         {lines.map((l) => (
           <TouchableOpacity key={l.id} style={[st.lineChip, lineId === l.id && st.lineChipOn]} onPress={() => setLineId(l.id)}>
             <Text style={[st.lineChipTxt, lineId === l.id && st.lineChipTxtOn]}>{l.name}</Text>
-            {!!l.status && <Text style={[st.lineChipSub, lineId === l.id && { color: '#FBDCDD' }]}>{l.status}</Text>}
+            {!!l.status && <Text style={[st.lineChipSub, lineId === l.id && { color: '#FFFFFF' }]}>{l.status}</Text>}
           </TouchableOpacity>
         ))}
         {lines.length === 0 && <Text style={st.muted}>No hay líneas asignadas.</Text>}
@@ -108,7 +130,7 @@ export default function MesTabletScreen() {
       </View>
       <View style={st.opList}>
         {operators.map((o) => (
-          <TouchableOpacity key={o.code} style={st.opTag} onPress={() => clockOut(o.code)}>
+          <TouchableOpacity key={o.code} style={st.opTag} onPress={() => clockOut(o.code)} accessibilityRole="button" accessibilityLabel={`Quitar al operador ${o.code}`}>
             <Text style={st.opTagTxt}>👷 {o.code}</Text>
             <Text style={st.opTagX}>✕</Text>
           </TouchableOpacity>
@@ -137,21 +159,28 @@ export default function MesTabletScreen() {
         {ALERTS.map(([type, label, icon]) => (
           <TouchableOpacity
             key={type}
-            style={[st.alertBtn, { width: `${100 / alertCols - 2}%` }]}
+            style={[st.alertBtn, { width: `${100 / alertCols - 2}%` }, activeAlert != null && activeAlert !== type && { opacity: 0.5 }]}
             onPress={() => sendAlert(type, label)}
-            disabled={busy}
+            disabled={busy || activeAlert != null}
           >
-            <Text style={st.alertIcon}>{icon}</Text>
-            <Text style={st.alertTxt}>{label}</Text>
+            {activeAlert === type ? (
+              <ActivityIndicator color={colors.red} />
+            ) : (<>
+              <Text style={st.alertIcon}>{icon}</Text>
+              <Text style={st.alertTxt}>{label}</Text>
+            </>)}
           </TouchableOpacity>
         ))}
       </View>
       {busy && <ActivityIndicator color={colors.red} style={{ marginTop: 16 }} />}
 
-      {/* Cámara de escaneo (modal a pantalla completa) */}
-      <Modal visible={scanOpen} animationType="slide" onRequestClose={() => setScanOpen(false)}>
-        <ScanCamera onScanned={onScanned} onClose={() => setScanOpen(false)} />
-      </Modal>
+      {/* Cámara de escaneo (modal a pantalla completa). Se monta solo al abrir para que
+          el candado interno del lector (handled) se reinicie en cada escaneo. */}
+      {scanOpen && (
+        <Modal visible animationType="slide" onRequestClose={() => setScanOpen(false)}>
+          <ScanCamera onScanned={onScanned} onClose={() => setScanOpen(false)} />
+        </Modal>
+      )}
     </ScrollView>
   );
 }

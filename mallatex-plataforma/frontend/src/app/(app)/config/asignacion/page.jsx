@@ -75,6 +75,11 @@ export default function AsignacionPage() {
 
   async function save() {
     if (!subject) return
+    // Evita sobrescribir la matriz con un set vacío si aún no carga el catálogo.
+    if (loading || !data) {
+      setMsg('Espera a que cargue la matriz antes de guardar.')
+      return
+    }
     setSaving(true)
     setMsg('')
     try {
@@ -130,7 +135,7 @@ export default function AsignacionPage() {
       <Card
         title={`Módulos · ${subject?.label || ''}`}
         actions={
-          <button className="btn btn-primary" onClick={save} disabled={saving}>
+          <button className="btn btn-primary" onClick={save} disabled={saving || loading || !data}>
             <Save size={16} /> {saving ? 'Guardando…' : 'Guardar matriz'}
           </button>
         }
@@ -153,7 +158,7 @@ export default function AsignacionPage() {
                           key={m.key}
                           className="row"
                           style={{
-                            gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+                            gap: 10, padding: '12px 14px', minHeight: 44, borderRadius: 8, cursor: 'pointer',
                             border: `1px solid ${on ? 'var(--red)' : 'var(--line)'}`,
                             background: on ? 'var(--red-light)' : '#fff',
                           }}
@@ -162,7 +167,7 @@ export default function AsignacionPage() {
                             type="checkbox"
                             checked={on}
                             onChange={() => toggle(m.key)}
-                            style={{ width: 18, height: 18, minHeight: 18 }}
+                            style={{ width: 20, height: 20, minHeight: 20, accentColor: 'var(--red)' }}
                           />
                           <span style={{ fontWeight: 600, fontSize: 13 }}>{m.label}</span>
                           <span className="mono muted" style={{ marginLeft: 'auto', fontSize: 10 }}>{m.key}</span>

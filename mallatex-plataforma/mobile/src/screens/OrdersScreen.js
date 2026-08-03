@@ -78,7 +78,7 @@ const st = StyleSheet.create({
   meta: { color: colors.gray, fontSize: 12, marginTop: 2 },
   total: { color: colors.red, fontWeight: '800', fontSize: 16, marginTop: 8 },
   tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }, tagTxt: { fontWeight: '700', fontSize: 11 },
-  convert: { marginTop: 8, borderWidth: 1, borderColor: colors.red, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  convert: { marginTop: 8, borderWidth: 1, borderColor: colors.red, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12 },
   convertTxt: { color: colors.red, fontWeight: '700', fontSize: 12 },
   empty: { textAlign: 'center', color: colors.gray, marginTop: 40 },
 });

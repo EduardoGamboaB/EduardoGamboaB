@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, TextInput, Alert, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, TextInput, Alert, ActivityIndicator, Modal, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { colors } from '../theme';
 import { api } from '../api';
 
@@ -65,10 +65,12 @@ function InvoiceModal({ visible, orders, onClose, onDone }) {
 
   async function submit() {
     if (!rfc.trim()) return Alert.alert('Falta el RFC', 'Captura el RFC receptor.');
-    if (!orderId && !Number(amount)) return Alert.alert('Falta el importe', 'Elige un pedido o captura el importe.');
+    const amt = Number(String(amount).replace(',', '.').replace(/[^0-9.]/g, ''));
+    if (!orderId && !amount.trim()) return Alert.alert('Falta el importe', 'Elige un pedido o captura el importe.');
+    if (!orderId && !amt) return Alert.alert('Importe inválido', 'Revisa el importe capturado.');
     setBusy(true);
     try {
-      await api.createInvoice({ orderId: orderId || undefined, rfc, razonSocial, usoCfdi, amount: orderId ? undefined : Number(amount) });
+      await api.createInvoice({ orderId: orderId || undefined, rfc, razonSocial, usoCfdi, amount: orderId ? undefined : amt });
       onDone();
     } catch (e) { Alert.alert('No se pudo solicitar', e.message); }
     finally { setBusy(false); }
@@ -76,9 +78,9 @@ function InvoiceModal({ visible, orders, onClose, onDone }) {
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={st.sheetWrap}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={st.sheetWrap}>
         <View style={st.sheet}>
-          <View style={st.sheetHead}><Text style={st.sheetTitle}>Solicitar factura</Text><TouchableOpacity onPress={onClose}><Text style={st.close}>✕</Text></TouchableOpacity></View>
+          <View style={st.sheetHead}><Text style={st.sheetTitle}>Solicitar factura</Text><TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Cerrar"><Text style={st.close}>✕</Text></TouchableOpacity></View>
           <ScrollView>
             <Text style={st.label}>Pedido a facturar (opcional)</Text>
             <View style={st.chips}>
@@ -108,7 +110,7 @@ function InvoiceModal({ visible, orders, onClose, onDone }) {
             <Text style={st.hint}>La emisión del CFDI se timbra desde administración (integración Aspel).</Text>
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

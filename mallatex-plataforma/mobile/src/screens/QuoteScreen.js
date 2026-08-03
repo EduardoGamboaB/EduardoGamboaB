@@ -86,9 +86,9 @@ export default function QuoteScreen() {
                 <Text style={st.pMeta}>{money(p.price)} / {p.unit} · stock {p.stock.toLocaleString('es-MX')}</Text>
               </View>
               <View style={st.stepper}>
-                <TouchableOpacity style={st.step} onPress={() => setQty(p.id, -10)}><Text style={st.stepTxt}>−</Text></TouchableOpacity>
+                <TouchableOpacity style={st.step} onPress={() => setQty(p.id, -10)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Disminuir cantidad"><Text style={st.stepTxt}>−</Text></TouchableOpacity>
                 <Text style={st.qty}>{qty}</Text>
-                <TouchableOpacity style={st.step} onPress={() => setQty(p.id, +10)}><Text style={st.stepTxt}>＋</Text></TouchableOpacity>
+                <TouchableOpacity style={st.step} onPress={() => setQty(p.id, +10)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Aumentar cantidad"><Text style={st.stepTxt}>＋</Text></TouchableOpacity>
               </View>
             </View>
           );
@@ -120,7 +120,7 @@ const st = StyleSheet.create({
   prod: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.lightGray },
   pName: { fontWeight: '600', color: colors.black }, pMeta: { color: colors.gray, fontSize: 12, marginTop: 2 },
   stepper: { flexDirection: 'row', alignItems: 'center' },
-  step: { width: 34, height: 34, borderRadius: 8, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  step: { width: 34, height: 34, minHeight: 44, borderRadius: 8, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   stepTxt: { fontSize: 20, color: colors.red, fontWeight: '700' },
   qty: { minWidth: 40, textAlign: 'center', fontWeight: '700', color: colors.black },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.lightGray, padding: 14 },

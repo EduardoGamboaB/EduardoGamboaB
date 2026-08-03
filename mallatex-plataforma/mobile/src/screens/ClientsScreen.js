@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { colors } from '../theme';
 import { api } from '../api';
 
@@ -85,7 +85,7 @@ export default function ClientsScreen() {
 
       {/* Alta de prospecto */}
       <Modal visible={!!form} transparent animationType="slide" onRequestClose={() => setForm(null)}>
-        <View style={st.sheetWrap}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={st.sheetWrap}>
           <View style={st.sheet}>
             <Text style={st.sheetTitle}>Nuevo prospecto</Text>
             {form && (<>
@@ -99,7 +99,7 @@ export default function ClientsScreen() {
               </View>
             </>)}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

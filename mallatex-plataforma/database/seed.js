@@ -44,6 +44,7 @@ const WEB_MODULES = [
 const MOBILE_MODULES = [
   ['ruta', 'Ventas', 'Ruta'], ['clientes', 'Ventas', 'Clientes'], ['visita', 'Ventas', 'Visita'],
   ['desempeno', 'Ventas', 'Desempeño'], ['asistencia', 'Ventas', 'Asistencia'],
+  ['historial', 'Ventas', 'Historial'],
   ['inventario', 'Herramientas', 'Inventario'], ['cotizador', 'Herramientas', 'Cotizador'],
   ['pedidos', 'Herramientas', 'Pedidos'], ['bot', 'Herramientas', 'Asesor técnico'],
   ['viaticos', 'Administración', 'Viáticos'], ['gastos', 'Administración', 'Gastos'],
@@ -67,7 +68,7 @@ grant('role', 'comercial', 'web', ['crm-clientes', 'crm-objetivos', 'crm-adminis
 grant('role', 'produccion', 'web', ['mes-tablero', 'mes-produccion', 'mes-almacen', 'mes-operaciones']);
 grant('role', 'direccion', 'web', ['dashboard', 'mes-tablero', 'mes-direccion', 'rh-indicadores', 'audit']);
 grant('profile', 'comercial', 'mobile', MOBILE_MODULES.filter((m) => !m[0].startsWith('mes-')).map((m) => m[0]));
-grant('profile', 'operativo', 'mobile', ['asistencia', 'perfil']);
+grant('profile', 'operativo', 'mobile', ['asistencia', 'historial', 'perfil']);
 grant('profile', 'linea', 'mobile', ['mes-tablet', 'mes-produccion-movil', 'mes-mermas', 'asistencia', 'perfil']);
 grant('profile', 'comercial', 'portal', PORTAL_MODULES.map((m) => m[0]));
 grant('profile', 'operativo', 'portal', PORTAL_MODULES.map((m) => m[0]));

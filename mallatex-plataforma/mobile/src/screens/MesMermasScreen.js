@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, useWindowDimensions } from 'react-native';
 import { colors } from '../theme';
 import { api } from '../api';
+import { enqueue } from '../storage';
 
 // Categorías de merma del MES. Emoji redundante para apoyo a la lectura.
 const CATS = [
@@ -36,16 +37,21 @@ export default function MesMermasScreen() {
   useEffect(() => { load(); }, [load]);
 
   async function submit() {
-    const n = Number(qty);
-    if (!n) return Alert.alert('Cantidad', 'Escribe la cantidad de merma.');
+    if (!qty.trim()) return Alert.alert('Cantidad', 'Escribe la cantidad de merma.');
+    const n = Number(String(qty).replace(',', '.').replace(/[^0-9.]/g, ''));
+    if (!n) return Alert.alert('Cantidad inválida', 'Revisa la cantidad capturada.');
     setBusy(true);
+    const payload = { lineId, categoria: category, qty: n, unit, note };
     try {
-      await api.mesReportMerma({ lineId, categoria: category, qty: n, unit, note });
+      await api.mesReportMerma(payload);
       setResult({ ok: true });
       setQty(''); setNote('');
     } catch (e) {
-      if (e.offline) setResult({ ok: true, offline: true });
-      else Alert.alert('No se registró', e.message);
+      if (e.offline) {
+        await enqueue({ kind: 'merma', payload });
+        setResult({ ok: true, offline: true });
+        setQty(''); setNote('');
+      } else Alert.alert('No se registró', e.message);
     } finally { setBusy(false); }
   }
 
@@ -118,7 +124,7 @@ const st = StyleSheet.create({
   muted: { color: colors.gray, marginTop: 6, textAlign: 'center' },
   label: { color: colors.black, fontWeight: '800', fontSize: 16, marginTop: 20, marginBottom: 10 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  chip: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, borderWidth: 2, borderColor: colors.lightGray, backgroundColor: colors.white },
+  chip: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 20, borderWidth: 2, borderColor: colors.lightGray, backgroundColor: colors.white },
   chipOn: { backgroundColor: colors.red, borderColor: colors.red },
   chipTxt: { color: colors.gray, fontWeight: '700', fontSize: 14 },
   chipTxtOn: { color: '#fff' },

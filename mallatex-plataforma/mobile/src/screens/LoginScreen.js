@@ -16,6 +16,7 @@ export default function LoginScreen({ onLoggedIn }) {
   useEffect(() => { (async () => setServer(await getServerUrl(DEFAULT_SERVER_URL)))(); }, []);
 
   async function submit() {
+    if (!code.trim() || !pin.trim()) { setError('Captura tu código y PIN.'); return; }
     setError(''); setBusy(true);
     try {
       await setServerUrl(server.trim());
@@ -37,11 +38,11 @@ export default function LoginScreen({ onLoggedIn }) {
       <View style={st.card}>
         <Text style={st.title}>Acceso del colaborador</Text>
         <Text style={st.label}>Código</Text>
-        <TextInput style={st.input} value={code} onChangeText={setCode} autoCapitalize="characters" placeholder="MTX013" placeholderTextColor={colors.gray} />
+        <TextInput style={st.input} value={code} onChangeText={setCode} autoCapitalize="characters" autoCorrect={false} spellCheck={false} placeholder="MTX013" placeholderTextColor={colors.gray} />
         <Text style={st.label}>PIN</Text>
         <TextInput style={st.input} value={pin} onChangeText={setPin} secureTextEntry keyboardType="number-pad" placeholder="••••" placeholderTextColor={colors.gray} />
 
-        <TouchableOpacity onPress={() => setShowServer((v) => !v)}>
+        <TouchableOpacity onPress={() => setShowServer((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={st.link}>{showServer ? 'Ocultar' : 'Configurar'} servidor</Text>
         </TouchableOpacity>
         {showServer && (
