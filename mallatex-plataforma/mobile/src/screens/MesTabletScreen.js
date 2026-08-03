@@ -85,7 +85,7 @@ export default function MesTabletScreen() {
         {lines.map((l) => (
           <TouchableOpacity key={l.id} style={[st.lineChip, lineId === l.id && st.lineChipOn]} onPress={() => setLineId(l.id)}>
             <Text style={[st.lineChipTxt, lineId === l.id && st.lineChipTxtOn]}>{l.name}</Text>
-            {!!l.status && <Text style={[st.lineChipSub, lineId === l.id && { color: '#ffe1e1' }]}>{l.status}</Text>}
+            {!!l.status && <Text style={[st.lineChipSub, lineId === l.id && { color: '#FBDCDD' }]}>{l.status}</Text>}
           </TouchableOpacity>
         ))}
         {lines.length === 0 && <Text style={st.muted}>No hay líneas asignadas.</Text>}
@@ -208,7 +208,7 @@ const st = StyleSheet.create({
   opBtn: { backgroundColor: colors.black, borderRadius: 12, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
   opBtnTxt: { color: '#fff', fontWeight: '800', fontSize: 16 },
   opList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  opTag: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fdecec', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 14 },
+  opTag: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF3F3', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 14 },
   opTagTxt: { color: colors.black, fontWeight: '700', fontSize: 15 },
   opTagX: { color: colors.red, fontWeight: '800' },
   // escaneo

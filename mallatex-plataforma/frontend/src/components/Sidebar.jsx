@@ -15,7 +15,8 @@ export function Sidebar({ modules, open, onClose }) {
   return (
     <aside className={`sidebar${open ? ' open' : ''}`} aria-label="Navegación principal">
       <div className="sidebar-brand">
-        <div className="brand-mark">M</div>
+        {/* Símbolo oficial (anillos concéntricos) del manual de marca */}
+        <img src="/logos/mallatex-symbol.png" alt="" className="brand-mark-img" />
         <div className="brand-text">
           <strong>MALLATEX</strong>
           <span>PLATAFORMA</span>

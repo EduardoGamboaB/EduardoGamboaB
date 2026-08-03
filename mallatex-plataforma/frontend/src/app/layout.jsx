@@ -5,6 +5,7 @@ export const metadata = {
   title: 'Mallatex · Plataforma',
   description:
     'Plataforma unificada Mallatex — Asistencia/NOI, CRM, MES y Leads. Protegemos lo que siembras.',
+  icons: { icon: '/favicon.png' },
 }
 
 export const viewport = {

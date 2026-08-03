@@ -105,10 +105,9 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow-lg);
 }
 .login-brand { text-align: center; margin-bottom: 18px; }
-.login-logo-mark {
-  width: 56px; height: 56px; margin: 0 auto 10px; border-radius: 14px;
-  background: var(--red); color: #fff; display: grid; place-items: center;
-  font-family: var(--font-display); font-weight: 900; font-size: 30px;
+/* Logo oficial (wordmark completo) en el login */
+.login-logo-img {
+  display: block; margin: 0 auto 12px; width: min(240px, 70vw); height: auto;
 }
 .login-card h1 { font-size: 24px; text-align: center; }
 .login-sub { color: var(--gray-500); text-align: center; margin: 4px 0 20px; font-size: 13.5px; }
@@ -165,10 +164,8 @@ input:focus, select:focus, textarea:focus {
   display: flex; align-items: center; gap: 11px; padding: 16px 18px;
   border-bottom: 1px solid var(--line-2);
 }
-.brand-mark {
-  width: 34px; height: 34px; border-radius: 9px; background: var(--red); color: #fff;
-  display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 20px;
-}
+/* Símbolo oficial (anillos concéntricos) en la cabecera del menú */
+.brand-mark-img { width: 34px; height: 34px; object-fit: contain; }
 .brand-text strong { display: block; font-size: 15px; color: var(--ink); font-family: var(--font-display); font-weight: 800; letter-spacing: .02em; }
 .brand-text span { font-size: 10px; color: var(--gray-400); font-family: var(--font-mono); letter-spacing: .1em; }
 .brand-close { margin-left: auto; }

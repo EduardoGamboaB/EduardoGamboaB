@@ -42,8 +42,12 @@ export default function LoginPage() {
     <div className="login-screen">
       <form className="login-card" onSubmit={onSubmit}>
         <div className="login-brand">
-          <div className="login-logo-mark">M</div>
-          <h1>Mallatex</h1>
+          {/* Logo oficial Mallatex (wordmark + eslogan) — assets del manual de marca */}
+          <img
+            src="/logos/mallatex-full.png"
+            alt="Mallatex — Protegemos lo que siembras"
+            className="login-logo-img"
+          />
           <p className="login-sub">Plataforma unificada · Asistencia · CRM · MES · Leads</p>
         </div>
 

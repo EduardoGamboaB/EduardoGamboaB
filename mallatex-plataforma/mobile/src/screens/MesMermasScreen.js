@@ -124,7 +124,7 @@ const st = StyleSheet.create({
   chipTxtOn: { color: '#fff' },
   catGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   catBtn: { backgroundColor: colors.white, borderWidth: 2, borderColor: colors.lightGray, borderRadius: 16, paddingVertical: 20, alignItems: 'center', justifyContent: 'center' },
-  catBtnOn: { backgroundColor: '#fdecec', borderColor: colors.red },
+  catBtnOn: { backgroundColor: '#FEF3F3', borderColor: colors.red },
   catIcon: { fontSize: 34 },
   catTxt: { color: colors.black, fontWeight: '800', fontSize: 14, marginTop: 8, textAlign: 'center' },
   catTxtOn: { color: colors.red },
