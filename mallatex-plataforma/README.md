@@ -89,6 +89,10 @@ npm run dev
 cd frontend && npm install && npm run dev   # http://localhost:3000 (Next)
 ```
 
+Kiosko de planta (tablet por línea): `http://<web>/kiosko` — pantalla completa
+para checar entrada/salida y autoservicio RH; la línea (LC1..LE) se configura
+en la propia tablet al primer arranque.
+
 ## Cuentas demo
 
 Contraseña web `mallatex2026`:

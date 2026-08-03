@@ -300,3 +300,269 @@ table.data tr:hover td { background: var(--red-light); }
   .topbar { padding: 0 24px; }
   .view { padding: 26px 28px 80px; }
 }
+
+/* ==========================================================================
+   Kiosko de planta
+   Tablet fija por línea (LC1..LC4, LK, LP, LE), pantalla completa.
+   Operadores con guantes y alfabetización variable: targets táctiles >=64px,
+   emoji + texto redundantes, alto contraste, tipografía 20-64px.
+   Funciona en 768x1024 (vertical), 1280x800 (horizontal) y teléfonos 390px.
+   ========================================================================== */
+.kiosk {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: var(--ink);
+  font-size: 20px;
+  overflow-x: hidden;
+}
+.kiosk button { cursor: pointer; touch-action: manipulation; }
+
+/* ---- Pantallas centradas (config / home / checar / login) ---- */
+.kiosk-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 28px 20px 36px;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.kiosk-logo { width: min(280px, 62vw); height: auto; }
+.kiosk-title {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 5.4vw, 44px);
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.08;
+}
+.kiosk-sub { font-size: clamp(19px, 2.8vw, 24px); color: var(--gray); text-align: center; margin: 0; max-width: 620px; }
+
+/* ---- Config de línea ---- */
+.kiosk-lines-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+.kiosk-line-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 150px; padding: 16px 12px;
+  background: #fff; border: 3px solid var(--line); border-radius: 18px;
+  transition: .12s;
+}
+.kiosk-line-card:active, .kiosk-line-card:hover { border-color: var(--red); background: var(--red-light); }
+.kiosk-line-emoji { font-size: 44px; line-height: 1; }
+.kiosk-line-code { font-family: var(--font-display); font-weight: 900; font-size: 30px; color: var(--red); letter-spacing: .04em; }
+.kiosk-line-name { font-size: 17px; color: var(--gray); text-align: center; }
+
+/* ---- Home ---- */
+.kiosk-home-head { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.kiosk-line-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(19px, 2.6vw, 24px);
+  background: var(--red-light); color: var(--red-dark);
+  border: 2px solid var(--red-soft); border-radius: 999px; padding: 8px 20px;
+}
+.kiosk-clock-wrap { text-align: center; }
+.kiosk-clock {
+  font-family: var(--font-display);
+  font-size: clamp(64px, 14vw, 128px);
+  font-weight: 900; line-height: 1; letter-spacing: .01em;
+  font-variant-numeric: tabular-nums;
+}
+.kiosk-clock-ss { font-size: .42em; font-weight: 700; color: var(--gray-400); }
+.kiosk-date { font-size: clamp(20px, 3vw, 28px); color: var(--gray); text-transform: capitalize; margin-top: 6px; }
+
+.kiosk-actions { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; }
+@media (min-width: 700px) { .kiosk-actions { grid-template-columns: 1fr 1fr; } }
+
+/* Botones GIGANTES (acciones primarias, ~120px de alto) */
+.kiosk-btn-giant {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  min-height: 124px; width: 100%; padding: 18px 20px;
+  border-radius: 20px; border: none;
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(22px, 3.4vw, 30px); letter-spacing: .03em; line-height: 1.1;
+  text-align: center; transition: transform .08s, background .12s;
+}
+.kiosk-btn-giant:active { transform: scale(.97); }
+.kiosk-btn-giant:disabled { opacity: .5; }
+.kiosk-giant-emoji { font-size: 42px; line-height: 1; }
+.kiosk-btn-red { background: var(--red); color: #fff; }
+.kiosk-btn-red:hover { background: var(--red-hover); }
+.kiosk-btn-dark { background: var(--ink); color: #fff; }
+.kiosk-btn-dark:hover { background: var(--ink-700); }
+
+/* Botones grandes normales (>=64px) */
+.kiosk .kiosk-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 64px; padding: 14px 26px;
+  border-radius: 14px; border: 2px solid var(--line); background: #fff; color: var(--ink);
+  font-weight: 700; font-size: 20px; transition: .12s;
+}
+.kiosk .kiosk-btn:hover { border-color: var(--gray-400); background: var(--line-2); }
+.kiosk .kiosk-btn:disabled { opacity: .5; cursor: not-allowed; }
+.kiosk .kiosk-btn.kiosk-btn-red { background: var(--red); border-color: var(--red); color: #fff; }
+.kiosk .kiosk-btn.kiosk-btn-red:hover { background: var(--red-hover); }
+.kiosk .kiosk-btn.kiosk-btn-sm { min-height: 56px; font-size: 17px; padding: 10px 18px; }
+.kiosk-btn-wide { width: 100%; max-width: 520px; }
+.kiosk-btn-row { display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center; }
+@media (min-width: 700px) { .kiosk-btn-row { flex-direction: row; justify-content: center; } }
+
+.kiosk-change-line {
+  background: none; border: none; color: var(--gray-500);
+  font-size: 17px; min-height: 48px; padding: 8px 16px; text-decoration: underline;
+}
+
+/* ---- Checar: captura de código ---- */
+.kiosk-check-form { display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 560px; }
+.kiosk-code-input {
+  width: 100%; min-height: 88px; padding: 14px 18px;
+  font-family: var(--font-mono); font-size: 32px; font-weight: 700;
+  text-align: center; letter-spacing: .12em; text-transform: uppercase;
+  border: 3px solid var(--line); border-radius: 16px; color: var(--ink);
+}
+.kiosk-code-input::placeholder { color: var(--gray-400); letter-spacing: .12em; }
+.kiosk-code-input:focus { border-color: var(--red); box-shadow: 0 0 0 4px rgba(237, 50, 55, .16); }
+.kiosk-code-input[type="password"] { text-transform: none; }
+.kiosk-label { display: flex; flex-direction: column; gap: 8px; font-size: 19px; font-weight: 700; color: var(--ink-700); width: 100%; }
+.kiosk-inline-error { color: var(--err); font-size: 19px; font-weight: 600; text-align: center; margin: 0; }
+.kiosk-error-box { display: flex; flex-direction: column; align-items: center; gap: 14px; color: var(--err); font-size: 20px; text-align: center; }
+
+/* ---- Resultado de checada (pantalla completa por tono) ---- */
+.kiosk-result { justify-content: center; text-align: center; gap: 14px; }
+.kiosk-result-ok { background: #F0FDF4; }
+.kiosk-result-warn { background: #FFFBEB; }
+.kiosk-result-info { background: #EFF6FF; }
+.kiosk-result-bad { background: #FDECED; }
+.kiosk-result-icon { font-size: clamp(80px, 14vw, 120px); line-height: 1; }
+.kiosk-result-headline { font-family: var(--font-display); font-size: clamp(34px, 6vw, 54px); font-weight: 900; line-height: 1.05; }
+.kiosk-result-emp { font-size: clamp(20px, 3vw, 26px); color: var(--ink-700); margin: 0; }
+.kiosk-result-time {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(56px, 12vw, 96px); line-height: 1; font-variant-numeric: tabular-nums;
+}
+.kiosk-result-date { font-size: clamp(18px, 2.6vw, 23px); color: var(--gray); text-transform: capitalize; margin: 0; }
+.kiosk-result-detail { font-size: clamp(18px, 2.6vw, 22px); color: var(--gray); margin: 0; max-width: 620px; }
+
+/* ---- Chips de tono (emoji + texto) ---- */
+.kiosk-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-display); font-weight: 800; font-size: 18px;
+  letter-spacing: .03em; padding: 8px 18px; border-radius: 999px; white-space: nowrap;
+}
+.kiosk-chip-ok { background: #DCFCE7; color: var(--ok); }
+.kiosk-chip-warn { background: #FEF3C7; color: var(--warn); }
+.kiosk-chip-bad { background: #FBDCDD; color: var(--err); }
+.kiosk-chip-info { background: #DBEAFE; color: #1D4ED8; }
+.kiosk-chip-muted { background: var(--line-2); color: var(--gray); }
+.kiosk-chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ---- Autoservicio RH ---- */
+.kiosk-rh { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; }
+.kiosk-rh-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 18px; background: var(--ink); color: #fff;
+}
+.kiosk-rh-who { display: flex; align-items: center; gap: 10px; font-size: 20px; min-width: 0; }
+.kiosk-rh-who b { font-family: var(--font-display); font-size: 22px; }
+.kiosk-rh-who small { color: var(--gray-400); font-size: 16px; }
+.kiosk-rh-emoji { font-size: 30px; }
+.kiosk-exit-btn { flex-shrink: 0; font-family: var(--font-display); letter-spacing: .05em; }
+
+.kiosk-tabs {
+  display: flex; gap: 8px; padding: 12px 14px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  background: var(--paper); border-bottom: 2px solid var(--line);
+}
+.kiosk-tab {
+  flex: 1 0 auto; min-height: 64px; padding: 10px 20px;
+  border-radius: 14px; border: 2px solid var(--line); background: #fff;
+  font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--ink-700);
+  white-space: nowrap; transition: .12s;
+}
+.kiosk-tab.active { background: var(--red); border-color: var(--red); color: #fff; }
+.kiosk-rh-panel { flex: 1; padding: 18px 16px 96px; width: 100%; max-width: 900px; margin: 0 auto; }
+.kiosk-panel-body { display: flex; flex-direction: column; gap: 14px; }
+.kiosk-panel-hint { font-size: 18px; color: var(--gray); margin: 0; }
+.kiosk-empty { font-size: 20px; color: var(--gray-500); text-align: center; padding: 26px 0; }
+.kiosk-loading { text-align: center; color: var(--gray-500); font-size: 19px; padding: 30px 0; }
+.kiosk-loading .spinner {
+  width: 34px; height: 34px; margin: 0 auto 12px; border-radius: 50%;
+  border: 4px solid var(--line); border-top-color: var(--red); animation: spin .8s linear infinite;
+}
+
+.kiosk-me-card {
+  background: var(--red-light); border: 2px solid var(--red-soft); border-radius: 16px;
+  padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+}
+.kiosk-me-name { font-family: var(--font-display); font-weight: 800; font-size: 26px; }
+.kiosk-me-meta { font-size: 18px; color: var(--ink-700); }
+
+/* Listas grandes (renglones >=64px) */
+.kiosk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.kiosk-list-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  min-height: 68px; padding: 12px 16px;
+  background: #fff; border: 2px solid var(--line); border-radius: 14px; font-size: 20px;
+}
+.kiosk-list-item-tall { align-items: flex-start; }
+.kiosk-list-btn { width: 100%; text-align: left; transition: .12s; }
+.kiosk-list-btn:hover, .kiosk-list-btn:active { border-color: var(--red); background: var(--red-light); }
+.kiosk-list-main { display: flex; flex-direction: column; gap: 3px; font-weight: 600; min-width: 0; }
+.kiosk-list-sub { font-size: 16px; color: var(--gray-500); font-weight: 400; }
+.kiosk-list-side { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.kiosk-money { font-family: var(--font-mono); font-size: 22px; color: var(--ok); }
+
+/* Formularios grandes */
+.kiosk-form-card {
+  background: #fff; border: 2px solid var(--line); border-radius: 16px;
+  padding: 18px; display: flex; flex-direction: column; gap: 14px;
+}
+.kiosk-form-card h3 { font-size: 26px; }
+.kiosk-form-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 640px) { .kiosk-form-grid { grid-template-columns: 1fr 1fr; } }
+.kiosk .kiosk-select, .kiosk .kiosk-textarea {
+  min-height: 64px; font-size: 20px; padding: 14px 16px;
+  border: 2px solid var(--line); border-radius: 12px;
+}
+.kiosk .kiosk-textarea { min-height: 110px; resize: vertical; }
+
+/* Recibo (percepciones/deducciones/neto) */
+.kiosk-slip-h { font-size: 21px; margin-top: 4px; }
+.kiosk-slip-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.kiosk-slip-list li {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 10px 4px; border-bottom: 1px solid var(--line-2); font-size: 19px;
+}
+.kiosk-slip-list b { font-family: var(--font-mono); white-space: nowrap; }
+.kiosk-slip-total { font-weight: 700; background: var(--paper); border-radius: 8px; }
+.kiosk-slip-neto {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  background: #F0FDF4; border: 2px solid #BBF7D0; border-radius: 14px;
+  padding: 16px 18px; font-family: var(--font-display); font-weight: 900; font-size: 24px; color: var(--ok);
+}
+.kiosk-slip-neto b { font-family: var(--font-mono); font-size: 28px; }
+
+/* Hilo de ticket */
+.kiosk-thread { display: flex; flex-direction: column; gap: 10px; }
+.kiosk-msg { max-width: 92%; border-radius: 14px; padding: 12px 14px; font-size: 19px; }
+.kiosk-msg-mine { align-self: flex-end; background: var(--red-light); border: 1px solid var(--red-soft); }
+.kiosk-msg-rh { align-self: flex-start; background: var(--paper); border: 1px solid var(--line); }
+.kiosk-msg-by { font-size: 15px; color: var(--gray-500); margin-bottom: 4px; }
+.kiosk-msg-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.kiosk-reply-form { display: flex; flex-direction: column; gap: 12px; }
+
+/* Aviso de autologout por inactividad (<20 s) */
+.kiosk-timeout-chip {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+  z-index: 90; max-width: calc(100vw - 24px);
+  background: var(--ink); color: #fff; font-size: 18px; font-weight: 700;
+  padding: 14px 22px; border-radius: 999px; box-shadow: var(--shadow-lg);
+  text-align: center; white-space: normal;
+}
