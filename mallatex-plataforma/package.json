@@ -1,0 +1,31 @@
+{
+  "name": "mallatex-plataforma",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma Mallatex unificada — Asistencia/NOI, CRM, MES y Captura de Leads (Anaberries). Backend DDD + microservicios, web responsiva mobile-first, app móvil única y esquema relacional con DAO.",
+  "type": "module",
+  "workspaces": [
+    "backend/shared",
+    "backend/gateway",
+    "backend/services/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "start:gateway": "npm --workspace @mallatex/gateway run start",
+    "start:identity": "npm --workspace @mallatex/service-identity run start",
+    "start:attendance": "npm --workspace @mallatex/service-attendance run start",
+    "start:crm": "npm --workspace @mallatex/service-crm run start",
+    "start:mes": "npm --workspace @mallatex/service-mes run start",
+    "start:leads": "npm --workspace @mallatex/service-leads run start",
+    "db:migrate": "node database/migrate.js up",
+    "db:rollback": "node database/migrate.js down",
+    "db:seed": "node database/seed.js",
+    "db:reset": "node database/migrate.js reset && node database/seed.js",
+    "test": "npm --workspaces --if-present run test"
+  },
+  "author": "Mallatex / Evorgyn",
+  "license": "UNLICENSED"
+}

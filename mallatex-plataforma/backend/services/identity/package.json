@@ -1,0 +1,17 @@
+{
+  "name": "@mallatex/service-identity",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Servicio de identidad y acceso (auth, usuarios, roles, matriz de módulos).",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@mallatex/shared": "*",
+    "sequelize": "^6.37.3"
+  }
+}
