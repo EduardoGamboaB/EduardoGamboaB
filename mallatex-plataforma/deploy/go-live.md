@@ -15,6 +15,9 @@
 - [ ] `CORS_ORIGINS` restringido a los dominios reales.
 - [ ] `TRUST_PROXY=true` detrás de balanceador; TLS terminado en el borde.
 - [ ] `ASPEL_WEBHOOK_SECRET` configurado para el webhook de pagos.
+- [ ] Rate limit de login revisado (`LOGIN_RATE_MAX`/`LOGIN_RATE_WINDOW_MIN`).
+- [ ] Revocación de sesión activa (migración `0001_identity_revoked_tokens`
+      aplicada; propagación entre servicios `REVOCATION_REFRESH_MS`, 30 s por defecto).
 
 ## Integraciones
 - [ ] G3 / MES / Aspel en modo `http` con `*_BASE_URL` y `*_TOKEN` reales

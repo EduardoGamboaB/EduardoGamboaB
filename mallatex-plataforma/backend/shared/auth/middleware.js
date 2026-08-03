@@ -1,4 +1,5 @@
 import { verifyToken } from './jwt.js';
+import { isRevoked } from './revocation.js';
 
 function extractToken(req) {
   const h = req.headers.authorization || '';
@@ -12,7 +13,8 @@ export function attachAuth(req, _res, next) {
   const token = extractToken(req);
   if (token) {
     try {
-      req.auth = verifyToken(token);
+      const claims = verifyToken(token);
+      req.auth = isRevoked(claims.jti) ? null : claims;
     } catch {
       req.auth = null;
     }
@@ -20,12 +22,16 @@ export function attachAuth(req, _res, next) {
   next();
 }
 
-/** Exige sesión válida. */
+/** Exige sesión válida y no revocada. */
 export function requireAuth(req, res, next) {
   const token = extractToken(req);
   if (!token) return res.status(401).json({ error: 'No autenticado' });
   try {
-    req.auth = verifyToken(token);
+    const claims = verifyToken(token);
+    if (isRevoked(claims.jti)) {
+      return res.status(401).json({ error: 'Sesión cerrada', code: 'SESSION_REVOKED' });
+    }
+    req.auth = claims;
     return next();
   } catch {
     return res.status(401).json({ error: 'Sesión inválida o expirada' });

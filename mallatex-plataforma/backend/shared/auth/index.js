@@ -9,3 +9,4 @@ export {
   requireCommercialProfile,
 } from './middleware.js';
 export { hashSecret, verifySecret } from './password.js';
+export { isRevoked, revokeToken, purgeExpired, refreshRevocationsNow } from './revocation.js';

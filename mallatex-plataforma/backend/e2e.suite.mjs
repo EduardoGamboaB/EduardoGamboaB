@@ -519,6 +519,49 @@ sec('LEADS · sorteo y dashboard');
 }
 
 // =====================================================================
+// 6. DEUDA TÉCNICA — sesiones, rate limit y paginación
+// =====================================================================
+sec('SEGURIDAD · revocación de sesión (logout server-side)');
+{
+  const login = await post('/api/auth/login', { body: { code: 'MTX002', pin: '1234' } });
+  const tok = login.json?.token;
+  const meBefore = await get('/api/auth/me', { token: tok });
+  ok('sesión válida antes del logout', meBefore.status === 200);
+  const out = await post('/api/auth/logout', { token: tok });
+  ok('logout revoca el token', out.status === 200 && out.json?.revoked === true, JSON.stringify(out.json));
+  const meAfter = await get('/api/auth/me', { token: tok });
+  ok('token revocado rechazado de inmediato → 401', meAfter.status === 401, `(${meAfter.status})`);
+}
+
+sec('SEGURIDAD · rate limit de login (intentos fallidos)');
+{
+  let last = null;
+  for (let i = 0; i < 12; i++) {
+    last = await post('/api/auth/login', { body: { email: 'atacante@mallatex.mx', password: 'fuerza-bruta' } });
+    if (last.status === 429) break;
+  }
+  ok('fuerza bruta bloqueada con 429', last?.status === 429, `(${last?.status})`);
+  ok('respuesta incluye Retry-After', !!last?.headers?.get('retry-after'));
+  const adminOk = await post('/api/auth/login', { body: { email: 'admin@mallatex.mx', password: 'mallatex2026' } });
+  ok('otras cuentas no se ven afectadas', adminOk.status === 200);
+}
+
+sec('API · paginación retro-compatible');
+{
+  const plain = await get('/api/leads', { token: admin });
+  ok('sin ?page el shape sigue siendo arreglo', plain.status === 200 && Array.isArray(plain.json));
+  const paged = await get('/api/leads?page=1&pageSize=2', { token: admin });
+  ok('con ?page responde {items,total,page}', paged.status === 200 && Array.isArray(paged.json?.items) && typeof paged.json?.total === 'number', JSON.stringify(paged.json).slice(0, 80));
+  ok('pageSize respetado', (paged.json?.items?.length ?? 99) <= 2, `(${paged.json?.items?.length})`);
+  const pagedChecadas = await get('/api/checadas?page=1&pageSize=3', { token: admin });
+  ok('paginación en checadas', pagedChecadas.status === 200 && Array.isArray(pagedChecadas.json?.items));
+  const pagedOrders = await get('/api/mes/orders?page=1&pageSize=1', { token: admin });
+  ok('paginación en órdenes MES', pagedOrders.status === 200 && Array.isArray(pagedOrders.json?.items) && pagedOrders.json.items.length === 1, JSON.stringify(pagedOrders.json).slice(0, 80));
+  const pagedClients = await get('/api/crm/clients?page=1&pageSize=1', { token: admin });
+  ok('paginación en clientes CRM', pagedClients.status === 200 && Array.isArray(pagedClients.json?.items));
+}
+
+// =====================================================================
 console.log(`\n========================================`);
 console.log(`RESULTADO: ${pass} OK · ${fail} FALLAS`);
 if (failures.length) {

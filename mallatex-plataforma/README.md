@@ -122,7 +122,8 @@ App móvil / portal (empleados) — código + PIN `1234`:
 | Comando | Descripción |
 |---|---|
 | `npm run dev` | Gateway + microservicios en desarrollo |
-| `npm run db:migrate` / `db:rollback` | Aplica / revierte el esquema |
+| `npm run db:migrate` / `db:rollback` | Aplica migraciones versionadas / elimina esquemas |
+| `node database/migrate.js status` | Estado de migraciones (aplicadas vs pendientes) |
 | `npm run db:seed` | Siembra catálogos y datos demo |
 | `npm run db:reset` | Recrea el esquema y siembra |
 | `npm test` | Pruebas de todos los workspaces |
