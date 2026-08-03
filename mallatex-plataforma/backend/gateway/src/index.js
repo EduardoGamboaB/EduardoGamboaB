@@ -24,14 +24,17 @@ app.get('/api/gateway/routes', (_req, res) =>
   res.json(routeMap.map((r) => ({ name: r.name, target: r.target, prefixes: r.prefixes })))
 );
 
-// Un proxy por microservicio; se monta en todos sus prefijos.
-// IMPORTANTE: no parseamos el body en el gateway para reenviar el stream intacto.
+// Un proxy por microservicio, montado a nivel raíz con `pathFilter` para
+// PRESERVAR la ruta completa (/api/...). No parseamos el body: el stream se
+// reenvía intacto al servicio destino.
 for (const { prefixes, target, name } of routeMap) {
+  const matches = (pathname) => prefixes.some((p) => pathname === p || pathname.startsWith(p + '/'));
   const proxy = createProxyMiddleware({
     target,
     changeOrigin: true,
     xfwd: true,
     proxyTimeout: 30000,
+    pathFilter: (pathname) => matches(pathname),
     on: {
       error(err, _req, res) {
         // eslint-disable-next-line no-console
@@ -43,7 +46,7 @@ for (const { prefixes, target, name } of routeMap) {
       },
     },
   });
-  for (const p of prefixes) app.use(p, proxy);
+  app.use(proxy);
 }
 
 app.get('/', (_req, res) =>
