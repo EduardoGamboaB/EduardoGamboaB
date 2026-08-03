@@ -1,0 +1,25 @@
+{
+  "name": "mallatex-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend web unificado de la plataforma Mallatex (Asistencia/NOI, CRM, MES y Leads). Mobile-first, menú dirigido por la matriz de acceso del backend.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "lucide-react": "^0.452.0",
+    "next": "14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-next": "14.2.15"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
