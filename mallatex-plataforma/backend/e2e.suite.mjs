@@ -521,6 +521,36 @@ sec('LEADS · sorteo y dashboard');
 // =====================================================================
 // 6. DEUDA TÉCNICA — sesiones, rate limit y paginación
 // =====================================================================
+sec('KIOSCO DE PLANTA · checador por línea y autoservicio');
+{
+  const lines = await get('/api/mes/kiosk/lines');
+  ok('catálogo público de líneas para kioscos (7)', lines.status === 200 && lines.json?.length === 7, `(${lines.json?.length})`);
+  ok('el catálogo no expone datos sensibles', lines.status === 200 && !JSON.stringify(lines.json).match(/operador|salario|pin/i));
+
+  const kc = await post('/api/kiosk/checkin', { body: { code: 'MTX021', kiosk: { line: 'LC1', label: 'Kiosko LC1' } } });
+  ok('checada de kiosco con línea trazada', (kc.status === 200 || kc.status === 201) && !!kc.json?.headline, JSON.stringify(kc.json).slice(0, 80));
+  ok('respuesta amigable para el operador (saludo + hora + estado)', !!kc.json?.time && !!kc.json?.detail);
+  const kcBad = await post('/api/kiosk/checkin', { body: { code: 'MTX999', kiosk: { line: 'LC1' } } });
+  ok('código desconocido → 404 amigable', kcBad.status === 404);
+
+  // Autoservicio RH desde el kiosco: portal completo con sesión de empleado
+  const klogin = await post('/api/auth/login', { body: { code: 'MTX021', pin: '1234' } });
+  const ktok = klogin.json?.token;
+  const kme = await get('/api/portal/me', { token: ktok });
+  ok('kiosco RH: perfil del operador', kme.status === 200 && kme.json?.employee?.code === 'MTX021');
+  const katt = await get('/api/portal/me/attendance', { token: ktok });
+  ok('kiosco RH: mi asistencia', katt.status === 200);
+  const kreq = await post('/api/portal/me/requests', { token: ktok, body: { type: 'permiso_goce', startDate: '2026-08-25', endDate: '2026-08-25', reason: 'Trámite personal' } });
+  ok('kiosco RH: solicitar permiso', kreq.status === 201, JSON.stringify(kreq.json).slice(0, 60));
+  const kslips = await get('/api/portal/me/payslips', { token: ktok });
+  ok('kiosco RH: mis recibos', kslips.status === 200);
+  // La revocación es inmediata en identity; en los demás servicios se propaga
+  // en ≤30 s (caché de denylist). El kiosco además borra el token localmente.
+  const kout = await post('/api/auth/logout', { token: ktok });
+  const kafter = await get('/api/auth/me', { token: ktok });
+  ok('salir del kiosco revoca la sesión (identity inmediato) → 401', kout.status === 200 && kafter.status === 401, `(${kafter.status})`);
+}
+
 sec('SEGURIDAD · revocación de sesión (logout server-side)');
 {
   const login = await post('/api/auth/login', { body: { code: 'MTX002', pin: '1234' } });

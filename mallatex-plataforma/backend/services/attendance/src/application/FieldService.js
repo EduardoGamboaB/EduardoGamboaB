@@ -170,9 +170,14 @@ export class FieldService {
     const type = await this.#resolveType(emp.id, today);
     const device = (emp.deviceId ? await this.deviceDAO.findById(emp.deviceId) : null) || (await this.deviceDAO.findAll({}, { limit: 1 }))[0] || null;
 
+    // Trazabilidad del kiosco de línea (LC1..LE): la tablet envía body.kiosk.
+    const kiosk = body.kiosk && typeof body.kiosk === 'object'
+      ? { linea: body.kiosk.line || body.kiosk.linea || null, etiqueta: body.kiosk.label || null }
+      : null;
     await this.checadaDAO.create({
-      employeeId: emp.id, deviceId: device ? device.id : null, timestamp: ts, type, method: 'facial',
-      raw: { origen: `HIK:${device?.serial || 'KIOSK'}:${emp.checadorUserId || emp.id}` },
+      employeeId: emp.id, deviceId: device ? device.id : null, timestamp: ts, type,
+      method: matchDistance != null ? 'facial' : 'manual',
+      raw: { origen: `KIOSKO:${kiosk?.linea || device?.serial || 'PLANTA'}:${emp.checadorUserId || emp.id}`, ...(kiosk ? { kiosko: kiosk } : {}) },
       faceMatchDistance: matchDistance, faceVerified: matchDistance != null ? true : null,
     });
 

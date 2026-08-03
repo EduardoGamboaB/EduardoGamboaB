@@ -178,6 +178,19 @@ export function buildRoutes({ productionService, shopFloorService, warehouseServ
   );
   router.use('/api/mes/cobranza', cobranza);
 
+  // ---- Catálogo público para kioscos de planta ---------------------
+  // Sólo código/nombre/tipo de las líneas activas: permite que un kiosco
+  // recién instalado se configure sin sesión (datos no sensibles).
+  const kiosk = Router();
+  kiosk.get(
+    '/lines',
+    asyncHandler(async (_req, res) => {
+      const lines = await shopFloorService.lines();
+      res.json(lines.filter((l) => l.active !== false).map((l) => ({ code: l.code, name: l.name, type: l.type })));
+    })
+  );
+  router.use('/api/mes/kiosk', kiosk);
+
   // ---- Tablet de línea (móvil, perfil 'linea') ---------------------
   const tablet = Router();
   tablet.use(requireAuth, requireEmployee, requireLinea);
