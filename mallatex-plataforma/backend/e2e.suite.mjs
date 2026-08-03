@@ -548,8 +548,9 @@ sec('SEGURIDAD · rate limit de login (intentos fallidos)');
 
 sec('API · paginación retro-compatible');
 {
+  // El shape histórico de /api/leads es { total, items }; sin ?page se preserva.
   const plain = await get('/api/leads', { token: admin });
-  ok('sin ?page el shape sigue siendo arreglo', plain.status === 200 && Array.isArray(plain.json));
+  ok('sin ?page se preserva el shape histórico', plain.status === 200 && (Array.isArray(plain.json) || Array.isArray(plain.json?.items)));
   const paged = await get('/api/leads?page=1&pageSize=2', { token: admin });
   ok('con ?page responde {items,total,page}', paged.status === 200 && Array.isArray(paged.json?.items) && typeof paged.json?.total === 'number', JSON.stringify(paged.json).slice(0, 80));
   ok('pageSize respetado', (paged.json?.items?.length ?? 99) <= 2, `(${paged.json?.items?.length})`);

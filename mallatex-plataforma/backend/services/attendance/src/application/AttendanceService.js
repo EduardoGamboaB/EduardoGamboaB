@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { DomainError } from '@mallatex/shared/ddd';
+import { PLAIN_LIMIT, wantsPage, pageOpts, mapItems } from '@mallatex/shared/http';
 import { computeDay, overtimeCandidate, eachDate, dateOf, defaultSettings, STATUS } from '../domain/AttendanceRules.js';
 
 const MANUAL_STATUSES = [
@@ -108,9 +109,24 @@ export class AttendanceService {
   }
 
   // ------------------------------------------------------------------
+  //  Auditoría
+  // ------------------------------------------------------------------
+  /**
+   * Bitácora de auditoría. Sin ?page conserva el modo histórico (?limit=N,
+   * default 200, máximo 1000); con ?page responde paginado.
+   */
+  async listAudit(query = {}) {
+    const order = [['ts', 'DESC']];
+    if (wantsPage(query)) return this.audit.paginate({}, { ...pageOpts(query), order });
+    const limit = Math.min(Number(query.limit) || 200, 1000);
+    return this.audit.findAll({}, { order, limit });
+  }
+
+  // ------------------------------------------------------------------
   //  Checadas
   // ------------------------------------------------------------------
-  async listChecadas({ employeeId, date, start, end } = {}) {
+  async listChecadas(query = {}) {
+    const { employeeId, date, start, end } = query;
     const where = {};
     if (employeeId) where.employeeId = Number(employeeId);
     if (date) where.timestamp = { [Op.gte]: `${date}T00:00:00.000`, [Op.lte]: `${date}T23:59:59.999` };
@@ -119,7 +135,11 @@ export class AttendanceService {
       if (start) where.timestamp[Op.gte] = `${start}T00:00:00.000`;
       if (end) where.timestamp[Op.lte] = `${end}T23:59:59.999`;
     }
-    return this.checadaDAO.findAll(where, { order: [['ts', 'ASC']] });
+    const order = [['ts', 'ASC']];
+    // Modo paginado (?page): { items, total, page, pageSize, pages }.
+    if (wantsPage(query)) return this.checadaDAO.paginate(where, { ...pageOpts(query), order });
+    // Modo lista plana: misma forma de siempre, con tope duro de filas.
+    return this.checadaDAO.findAll(where, { order, limit: PLAIN_LIMIT });
   }
 
   async createChecada(body, userName) {
@@ -145,7 +165,8 @@ export class AttendanceService {
   // ------------------------------------------------------------------
   //  Asistencia (revisión)
   // ------------------------------------------------------------------
-  async listAttendance({ start, end, employeeId, department, status } = {}) {
+  async listAttendance(query = {}) {
+    const { start, end, employeeId, department, status } = query;
     const where = {};
     if (start || end) {
       where.date = {};
@@ -154,12 +175,28 @@ export class AttendanceService {
     }
     if (employeeId) where.employeeId = Number(employeeId);
     if (status) where.status = status;
-    const rows = await this.attendanceDayDAO.findAll(where, { order: [['date', 'DESC']] });
+    const order = [['date', 'DESC']];
     const empById = await this.#employeesById();
-    let enriched = rows.map((a) => {
+    const enrich = (a) => {
       const e = empById[a.employeeId] || {};
       return { ...a, employeeName: e.name, employeeCode: e.code, department: e.department };
-    });
+    };
+    // Modo paginado (?page): el filtro por departamento se traslada a ids de
+    // empleados para que el total/las páginas se calculen en SQL.
+    if (wantsPage(query)) {
+      if (department) {
+        const ids = Object.values(empById)
+          .filter((e) => e.department === department)
+          .map((e) => e.id);
+        const allowed = where.employeeId != null ? ids.filter((id) => id === where.employeeId) : ids;
+        where.employeeId = { [Op.in]: allowed };
+      }
+      const result = await this.attendanceDayDAO.paginate(where, { ...pageOpts(query), order });
+      return mapItems(result, enrich);
+    }
+    // Modo lista plana: misma forma de siempre, con tope duro de filas.
+    const rows = await this.attendanceDayDAO.findAll(where, { order, limit: PLAIN_LIMIT });
+    let enriched = rows.map(enrich);
     if (department) enriched = enriched.filter((a) => a.department === department);
     return enriched;
   }
@@ -186,13 +223,21 @@ export class AttendanceService {
   // ------------------------------------------------------------------
   //  Incidencias
   // ------------------------------------------------------------------
-  async listIncidents({ status, employeeId } = {}) {
+  async listIncidents(query = {}) {
+    const { status, employeeId } = query;
     const where = {};
     if (status) where.status = status;
     if (employeeId) where.employeeId = Number(employeeId);
-    const rows = await this.incidentDAO.findAll(where, { order: [['start_date', 'DESC']] });
+    const order = [['start_date', 'DESC']];
     const empById = await this.#employeesById();
-    return rows.map((i) => ({ ...i, employeeName: empById[i.employeeId]?.name }));
+    const enrich = (i) => ({ ...i, employeeName: empById[i.employeeId]?.name });
+    // Modo paginado (?page): { items, total, page, pageSize, pages }.
+    if (wantsPage(query)) {
+      return mapItems(await this.incidentDAO.paginate(where, { ...pageOpts(query), order }), enrich);
+    }
+    // Modo lista plana: misma forma de siempre, con tope duro de filas.
+    const rows = await this.incidentDAO.findAll(where, { order, limit: PLAIN_LIMIT });
+    return rows.map(enrich);
   }
 
   async createIncident(body, userName) {

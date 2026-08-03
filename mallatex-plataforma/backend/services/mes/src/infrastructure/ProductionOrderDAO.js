@@ -1,4 +1,5 @@
 import { BaseDAO } from '@mallatex/shared/persistence';
+import { PLAIN_LIMIT } from '@mallatex/shared/http';
 import { ProductionOrder } from '../domain/ProductionOrder.js';
 
 /** DAO de pedidos de producción: mapea filas ORM <-> agregado ProductionOrder. */
@@ -20,12 +21,22 @@ export class ProductionOrderDAO extends BaseDAO {
     return this.findOne({ code: String(code) });
   }
 
-  /** Listado con filtros opcionales por estado y línea. */
-  list({ estado, lineId } = {}) {
+  /** Filtros de listado -> cláusula where. */
+  #whereDe({ estado, lineId } = {}) {
     const where = {};
     if (estado) where.estado = estado;
     if (lineId) where.lineId = lineId;
-    return this.findAll(where, { order: [['created_at', 'DESC']] });
+    return where;
+  }
+
+  /** Listado con filtros opcionales por estado y línea (tope duro de filas). */
+  list(filters = {}) {
+    return this.findAll(this.#whereDe(filters), { order: [['created_at', 'DESC']], limit: PLAIN_LIMIT });
+  }
+
+  /** Versión paginada del listado (mismos filtros). */
+  listPage(filters = {}, opts = {}) {
+    return this.paginate(this.#whereDe(filters), { order: [['created_at', 'DESC']], ...opts });
   }
 }
 

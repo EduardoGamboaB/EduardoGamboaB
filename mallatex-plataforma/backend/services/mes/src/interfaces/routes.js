@@ -25,13 +25,8 @@ export function buildRoutes({ productionService, shopFloorService, warehouseServ
   // ---- Pedidos de producción (MT-PC-003) ---------------------------
   const orders = Router();
   orders.use(requireAuth, requireModule('mes-produccion'));
-  orders.get(
-    '/',
-    asyncHandler(async (req, res) => {
-      const list = await productionService.list({ estado: req.query.estado, lineId: req.query.line });
-      res.json(list.map((o) => o.toPublic()));
-    })
-  );
+  // Sin ?page: arreglo plano (con tope); con ?page: { items, total, ... }.
+  orders.get('/', asyncHandler(async (req, res) => res.json(await productionService.list(req.query))));
   orders.post(
     '/',
     asyncHandler(async (req, res) => {
@@ -93,13 +88,8 @@ export function buildRoutes({ productionService, shopFloorService, warehouseServ
       res.json(roll.toPlain());
     })
   );
-  rolls.get(
-    '/',
-    asyncHandler(async (req, res) => {
-      const list = await shopFloorService.rolls({ estado: req.query.estado, orderId: req.query.order });
-      res.json(list.map((r) => r.toPlain()));
-    })
-  );
+  // Sin ?page: arreglo plano (con tope); con ?page: { items, total, ... }.
+  rolls.get('/', asyncHandler(async (req, res) => res.json(await shopFloorService.rolls(req.query))));
   rolls.post('/', asyncHandler(async (req, res) => res.status(201).json((await shopFloorService.createRoll(req.body)).toPlain())));
   rolls.put('/:id', asyncHandler(async (req, res) => res.json((await shopFloorService.updateRoll(req.params.id, req.body)).toPlain())));
   router.use('/api/mes/rolls', rolls);
@@ -107,13 +97,8 @@ export function buildRoutes({ productionService, shopFloorService, warehouseServ
   // ---- Avisos de piso ----------------------------------------------
   const avisos = Router();
   avisos.use(requireAuth, requireModule('mes-produccion'));
-  avisos.get(
-    '/',
-    asyncHandler(async (req, res) => {
-      const list = await shopFloorService.avisos({ estado: req.query.estado, lineId: req.query.line });
-      res.json(list.map((a) => a.toPlain()));
-    })
-  );
+  // Sin ?page: arreglo plano (con tope); con ?page: { items, total, ... }.
+  avisos.get('/', asyncHandler(async (req, res) => res.json(await shopFloorService.avisos(req.query))));
   avisos.post('/', asyncHandler(async (req, res) => res.status(201).json((await shopFloorService.createAviso(req.body)).toPlain())));
   avisos.put('/:id', asyncHandler(async (req, res) => res.json((await shopFloorService.updateAviso(req.params.id, req.body)).toPlain())));
   router.use('/api/mes/avisos', avisos);
@@ -121,23 +106,16 @@ export function buildRoutes({ productionService, shopFloorService, warehouseServ
   // ---- Mermas (por categoría) --------------------------------------
   const mermas = Router();
   mermas.use(requireAuth, requireModule('mes-produccion'));
-  mermas.get(
-    '/',
-    asyncHandler(async (req, res) => {
-      const list = await shopFloorService.mermas({ categoria: req.query.categoria, lineId: req.query.line });
-      res.json(list.map((m) => m.toPlain()));
-    })
-  );
+  // Sin ?page: arreglo plano (con tope); con ?page: { items, total, ... }.
+  mermas.get('/', asyncHandler(async (req, res) => res.json(await shopFloorService.mermas(req.query))));
   mermas.post('/', asyncHandler(async (req, res) => res.status(201).json((await shopFloorService.createMerma(req.body)).toPlain())));
   router.use('/api/mes/mermas', mermas);
 
   // ---- Productividad por turno -------------------------------------
   const productividad = Router();
   productividad.use(requireAuth, requireModule('mes-produccion'));
-  productividad.get(
-    '/',
-    asyncHandler(async (req, res) => res.json(await shopFloorService.productividad({ lineId: req.query.line, turno: req.query.turno })))
-  );
+  // Sin ?page: arreglo plano (con tope); con ?page: { items, total, ... }.
+  productividad.get('/', asyncHandler(async (req, res) => res.json(await shopFloorService.productividad(req.query))));
   productividad.post('/', asyncHandler(async (req, res) => res.status(201).json(await shopFloorService.createProductividad(req.body))));
   router.use('/api/mes/productividad', productividad);
 

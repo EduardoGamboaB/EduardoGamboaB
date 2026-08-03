@@ -1,4 +1,5 @@
 import { DomainError } from '@mallatex/shared/ddd';
+import { wantsPage, pageOpts, mapItems } from '@mallatex/shared/http';
 import { Roll } from '../domain/Roll.js';
 import { Aviso } from '../domain/Aviso.js';
 import { Merma } from '../domain/Merma.js';
@@ -45,8 +46,14 @@ export class ShopFloorService {
   }
 
   // ---- Rollos -------------------------------------------------------
-  rolls(filters) {
-    return this.rollDAO.list(filters);
+  /** Listado de rollos (?estado, ?order): lista plana o paginado (?page). */
+  async rolls(query = {}) {
+    const filters = { estado: query.estado, orderId: query.order };
+    if (wantsPage(query)) {
+      return mapItems(await this.rollDAO.listPage(filters, pageOpts(query)), (r) => r.toPlain());
+    }
+    const list = await this.rollDAO.list(filters);
+    return list.map((r) => r.toPlain());
   }
 
   scanRoll(code) {
@@ -63,8 +70,14 @@ export class ShopFloorService {
   }
 
   // ---- Avisos -------------------------------------------------------
-  avisos(filters) {
-    return this.avisoDAO.list(filters);
+  /** Listado de avisos (?estado, ?line): lista plana o paginado (?page). */
+  async avisos(query = {}) {
+    const filters = { estado: query.estado, lineId: query.line };
+    if (wantsPage(query)) {
+      return mapItems(await this.avisoDAO.listPage(filters, pageOpts(query)), (a) => a.toPlain());
+    }
+    const list = await this.avisoDAO.list(filters);
+    return list.map((a) => a.toPlain());
   }
 
   async createAviso(data) {
@@ -77,8 +90,14 @@ export class ShopFloorService {
   }
 
   // ---- Mermas -------------------------------------------------------
-  mermas(filters) {
-    return this.mermaDAO.list(filters);
+  /** Listado de mermas (?categoria, ?line): lista plana o paginado (?page). */
+  async mermas(query = {}) {
+    const filters = { categoria: query.categoria, lineId: query.line };
+    if (wantsPage(query)) {
+      return mapItems(await this.mermaDAO.listPage(filters, pageOpts(query)), (m) => m.toPlain());
+    }
+    const list = await this.mermaDAO.list(filters);
+    return list.map((m) => m.toPlain());
   }
 
   async createMerma(data) {
@@ -88,7 +107,10 @@ export class ShopFloorService {
   }
 
   // ---- Productividad ------------------------------------------------
-  productividad(filters) {
+  /** Listado de productividad (?line, ?turno): lista plana o paginado (?page). */
+  productividad(query = {}) {
+    const filters = { lineId: query.line, turno: query.turno };
+    if (wantsPage(query)) return this.productividadDAO.listPage(filters, pageOpts(query));
     return this.productividadDAO.list(filters);
   }
 

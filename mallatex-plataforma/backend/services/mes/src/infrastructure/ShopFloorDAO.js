@@ -1,4 +1,5 @@
 import { BaseDAO } from '@mallatex/shared/persistence';
+import { PLAIN_LIMIT } from '@mallatex/shared/http';
 import { Roll } from '../domain/Roll.js';
 import { Aviso } from '../domain/Aviso.js';
 import { Merma } from '../domain/Merma.js';
@@ -20,11 +21,21 @@ export class RollDAO extends BaseDAO {
     return this.findOne({ code: String(code) });
   }
 
-  list({ estado, orderId } = {}) {
+  /** Filtros de listado -> cláusula where. */
+  #whereDe({ estado, orderId } = {}) {
     const where = {};
     if (estado) where.estado = estado;
     if (orderId) where.orderId = orderId;
-    return this.findAll(where, { order: [['code', 'ASC']] });
+    return where;
+  }
+
+  list(filters = {}) {
+    return this.findAll(this.#whereDe(filters), { order: [['code', 'ASC']], limit: PLAIN_LIMIT });
+  }
+
+  /** Versión paginada del listado (mismos filtros). */
+  listPage(filters = {}, opts = {}) {
+    return this.paginate(this.#whereDe(filters), { order: [['code', 'ASC']], ...opts });
   }
 }
 
@@ -41,11 +52,21 @@ export class AvisoDAO extends BaseDAO {
     return rest;
   }
 
-  list({ estado, lineId } = {}) {
+  /** Filtros de listado -> cláusula where. */
+  #whereDe({ estado, lineId } = {}) {
     const where = {};
     if (estado) where.estado = estado;
     if (lineId) where.lineId = lineId;
-    return this.findAll(where, { order: [['ts', 'DESC']] });
+    return where;
+  }
+
+  list(filters = {}) {
+    return this.findAll(this.#whereDe(filters), { order: [['ts', 'DESC']], limit: PLAIN_LIMIT });
+  }
+
+  /** Versión paginada del listado (mismos filtros). */
+  listPage(filters = {}, opts = {}) {
+    return this.paginate(this.#whereDe(filters), { order: [['ts', 'DESC']], ...opts });
   }
 }
 
@@ -62,21 +83,41 @@ export class MermaDAO extends BaseDAO {
     return rest;
   }
 
-  list({ categoria, lineId, orderId } = {}) {
+  /** Filtros de listado -> cláusula where. */
+  #whereDe({ categoria, lineId, orderId } = {}) {
     const where = {};
     if (categoria) where.categoria = categoria;
     if (lineId) where.lineId = lineId;
     if (orderId) where.orderId = orderId;
-    return this.findAll(where, { order: [['fecha', 'DESC']] });
+    return where;
+  }
+
+  list(filters = {}) {
+    return this.findAll(this.#whereDe(filters), { order: [['fecha', 'DESC']], limit: PLAIN_LIMIT });
+  }
+
+  /** Versión paginada del listado (mismos filtros). */
+  listPage(filters = {}, opts = {}) {
+    return this.paginate(this.#whereDe(filters), { order: [['fecha', 'DESC']], ...opts });
   }
 }
 
 /** DAO de productividad por turno. */
 export class ProductividadDAO extends BaseDAO {
-  list({ lineId, turno } = {}) {
+  /** Filtros de listado -> cláusula where. */
+  #whereDe({ lineId, turno } = {}) {
     const where = {};
     if (lineId) where.lineId = lineId;
     if (turno) where.turno = turno;
-    return this.findAll(where, { order: [['fecha', 'DESC']] });
+    return where;
+  }
+
+  list(filters = {}) {
+    return this.findAll(this.#whereDe(filters), { order: [['fecha', 'DESC']], limit: PLAIN_LIMIT });
+  }
+
+  /** Versión paginada del listado (mismos filtros). */
+  listPage(filters = {}, opts = {}) {
+    return this.paginate(this.#whereDe(filters), { order: [['fecha', 'DESC']], ...opts });
   }
 }

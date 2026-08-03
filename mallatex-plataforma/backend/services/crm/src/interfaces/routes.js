@@ -79,7 +79,7 @@ export function buildRoutes({ salesService, commercialService, productService, i
   crm.get('/clients', asyncHandler(async (req, res) => res.json(await commercialService.listClients(req.query))));
   crm.post('/clients', asyncHandler(async (req, res) => res.status(201).json(await commercialService.createClient(req.body))));
   crm.put('/clients/:id', asyncHandler(async (req, res) => res.json(await commercialService.updateClient(req.params.id, req.body))));
-  crm.get('/clients/:id/visits', asyncHandler(async (req, res) => res.json(await commercialService.clientVisits(req.params.id))));
+  crm.get('/clients/:id/visits', asyncHandler(async (req, res) => res.json(await commercialService.clientVisits(req.params.id, req.query))));
 
   crm.post('/assign', asyncHandler(async (req, res) => res.json(await commercialService.assign(req.body))));
 

@@ -1,4 +1,5 @@
 import { DomainError } from '@mallatex/shared/ddd';
+import { PLAIN_LIMIT, wantsPage, pageOpts, mapItems, paginateArray } from '@mallatex/shared/http';
 import { Lead, normEmail, normPhone } from '../domain/Lead.js';
 import { generarFolioUnico } from '../domain/folio.js';
 import { INTERESES, FUENTES } from '../domain/catalogos.js';
@@ -84,18 +85,31 @@ export class LeadService {
   }
 
   /** Listado con búsqueda y filtros (opcionalmente por evento). */
-  async listar({ q, interes, fuente, event } = {}) {
+  async listar(query = {}) {
+    const { q, interes, fuente, event } = query;
     const where = {};
     if (event) where.eventId = event;
     if (interes) where.interes = interes;
     if (fuente) where.fuente = fuente;
-    let items = await this.leadDAO.findAll(where, { order: [['created_at', 'DESC']] });
-    if (q) {
-      const needle = String(q).toLowerCase();
-      items = items.filter((l) =>
-        [l.nombre, l.empresa, l.email, l.telefono, l.cargo].join(' ').toLowerCase().includes(needle)
-      );
+    const order = [['created_at', 'DESC']];
+    const needle = q ? String(q).toLowerCase() : '';
+    const coincide = (l) =>
+      [l.nombre, l.empresa, l.email, l.telefono, l.cargo].join(' ').toLowerCase().includes(needle);
+
+    // Modo paginado (?page): { items, total, page, pageSize, pages }.
+    if (wantsPage(query)) {
+      if (q) {
+        // La búsqueda libre se evalúa en memoria: se filtra el conjunto
+        // completo y se pagina el resultado para que el total sea correcto.
+        const todos = await this.leadDAO.findAll(where, { order });
+        return mapItems(paginateArray(todos.filter(coincide), pageOpts(query)), (l) => l.toPlain());
+      }
+      return mapItems(await this.leadDAO.paginate(where, { ...pageOpts(query), order }), (l) => l.toPlain());
     }
+
+    // Modo lista plana: misma forma de siempre, con tope duro de filas.
+    let items = await this.leadDAO.findAll(where, { order, limit: PLAIN_LIMIT });
+    if (q) items = items.filter(coincide);
     return { total: items.length, items: items.map((l) => l.toPlain()) };
   }
 

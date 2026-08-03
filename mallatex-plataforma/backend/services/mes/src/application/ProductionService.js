@@ -1,4 +1,5 @@
 import { DomainError } from '@mallatex/shared/ddd';
+import { wantsPage, pageOpts, mapItems } from '@mallatex/shared/http';
 import { eventBus } from '@mallatex/shared';
 import { ProductionOrder } from '../domain/ProductionOrder.js';
 
@@ -24,8 +25,18 @@ export class ProductionService {
     return saved;
   }
 
-  list(filters) {
-    return this.orderDAO.list(filters);
+  /**
+   * Listado de pedidos (?estado, ?line). Sin ?page devuelve el arreglo de
+   * siempre (con tope duro); con ?page responde paginado con el mismo shape
+   * de item (toPublic).
+   */
+  async list(query = {}) {
+    const filters = { estado: query.estado, lineId: query.line };
+    if (wantsPage(query)) {
+      return mapItems(await this.orderDAO.listPage(filters, pageOpts(query)), (o) => o.toPublic());
+    }
+    const list = await this.orderDAO.list(filters);
+    return list.map((o) => o.toPublic());
   }
 
   async getById(id) {

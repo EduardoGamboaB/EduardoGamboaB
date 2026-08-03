@@ -1,4 +1,5 @@
 import { DomainError } from '@mallatex/shared/ddd';
+import { PLAIN_LIMIT, wantsPage, pageOpts, mapItems } from '@mallatex/shared/http';
 import { Client } from '../domain/Client.js';
 
 const notFound = (msg) => new DomainError(msg, { code: 'NOT_FOUND', status: 404 });
@@ -33,9 +34,16 @@ export class CommercialService {
     if (query.active === 'true') where.active = true;
     if (query.assignedTo) where.assignedTo = Number(query.assignedTo);
     if (query.type) where.type = query.type;
-    const clients = await this.clientDAO.findAll(where, { order: [['name', 'ASC']] });
+    const order = [['name', 'ASC']];
     const names = await this.#employeeNameMap();
-    return clients.map((c) => ({ ...c.toPlain(), assignedToName: names[c.assignedTo] || null }));
+    const plano = (c) => ({ ...c.toPlain(), assignedToName: names[c.assignedTo] || null });
+    // Modo paginado (?page): { items, total, page, pageSize, pages }.
+    if (wantsPage(query)) {
+      return mapItems(await this.clientDAO.paginate(where, { ...pageOpts(query), order }), plano);
+    }
+    // Modo lista plana: misma forma de siempre, con tope duro de filas.
+    const clients = await this.clientDAO.findAll(where, { order, limit: PLAIN_LIMIT });
+    return clients.map(plano);
   }
 
   async createClient(body) {
@@ -78,12 +86,20 @@ export class CommercialService {
     return { ok: true, assigned };
   }
 
-  async clientVisits(id) {
-    const visits = await this.visitDAO.findAll({ clientId: Number(id) }, { order: [['ts', 'DESC']] });
-    return visits.map((v) => {
+  async clientVisits(id, query = {}) {
+    const where = { clientId: Number(id) };
+    const order = [['ts', 'DESC']];
+    const plano = (v) => {
       const p = v.toPlain();
       return { ...p, photos: undefined, photoCount: (p.photos || []).length };
-    });
+    };
+    // Modo paginado (?page): { items, total, page, pageSize, pages }.
+    if (wantsPage(query)) {
+      return mapItems(await this.visitDAO.paginate(where, { ...pageOpts(query), order }), plano);
+    }
+    // Modo lista plana: misma forma de siempre, con tope duro de filas.
+    const visits = await this.visitDAO.findAll(where, { order, limit: PLAIN_LIMIT });
+    return visits.map(plano);
   }
 
   // ---- Objetivos ----------------------------------------------------
@@ -118,9 +134,16 @@ export class CommercialService {
   async listExpenseRequests(query = {}) {
     const where = {};
     if (query.status) where.status = query.status;
-    const items = await this.expenseRequestDAO.findAll(where, { order: [['createdAt', 'DESC']] });
+    const order = [['createdAt', 'DESC']];
     const names = await this.#employeeNameMap();
-    return items.map((r) => ({ ...r, employeeName: names[r.employeeId] || `#${r.employeeId}` }));
+    const plano = (r) => ({ ...r, employeeName: names[r.employeeId] || `#${r.employeeId}` });
+    // Modo paginado (?page): { items, total, page, pageSize, pages }.
+    if (wantsPage(query)) {
+      return mapItems(await this.expenseRequestDAO.paginate(where, { ...pageOpts(query), order }), plano);
+    }
+    // Modo lista plana: misma forma de siempre, con tope duro de filas.
+    const items = await this.expenseRequestDAO.findAll(where, { order, limit: PLAIN_LIMIT });
+    return items.map(plano);
   }
 
   async decideExpenseRequest(id, body, actorName) {
@@ -136,9 +159,16 @@ export class CommercialService {
     const where = {};
     if (query.status) where.status = query.status;
     if (query.employeeId) where.employeeId = Number(query.employeeId);
-    const items = await this.expenseDAO.findAll(where, { order: [['createdAt', 'DESC']] });
+    const order = [['createdAt', 'DESC']];
     const names = await this.#employeeNameMap();
-    return items.map((e) => ({ ...e, employeeName: names[e.employeeId] || `#${e.employeeId}`, photo: undefined, hasPhoto: !!e.photo }));
+    const plano = (e) => ({ ...e, employeeName: names[e.employeeId] || `#${e.employeeId}`, photo: undefined, hasPhoto: !!e.photo });
+    // Modo paginado (?page): { items, total, page, pageSize, pages }.
+    if (wantsPage(query)) {
+      return mapItems(await this.expenseDAO.paginate(where, { ...pageOpts(query), order }), plano);
+    }
+    // Modo lista plana: misma forma de siempre, con tope duro de filas.
+    const items = await this.expenseDAO.findAll(where, { order, limit: PLAIN_LIMIT });
+    return items.map(plano);
   }
 
   async expensePhoto(id) {
@@ -160,13 +190,20 @@ export class CommercialService {
   async listInvoices(query = {}) {
     const where = {};
     if (query.status) where.status = query.status;
-    const items = await this.invoiceDAO.findAll(where, { order: [['createdAt', 'DESC']] });
+    const order = [['createdAt', 'DESC']];
     const [empNames, cliNames] = await Promise.all([this.#employeeNameMap(), this.#clientNameMap()]);
-    return items.map((i) => ({
+    const plano = (i) => ({
       ...i,
       employeeName: empNames[i.employeeId] || (i.employeeId ? `#${i.employeeId}` : '—'),
       clientName: cliNames[i.clientId] || i.razonSocial || '—',
-    }));
+    });
+    // Modo paginado (?page): { items, total, page, pageSize, pages }.
+    if (wantsPage(query)) {
+      return mapItems(await this.invoiceDAO.paginate(where, { ...pageOpts(query), order }), plano);
+    }
+    // Modo lista plana: misma forma de siempre, con tope duro de filas.
+    const items = await this.invoiceDAO.findAll(where, { order, limit: PLAIN_LIMIT });
+    return items.map(plano);
   }
 
   /** Emite (timbra) la factura: sella un CFDI mock y la marca como emitida. */
