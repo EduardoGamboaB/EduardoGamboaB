@@ -260,6 +260,11 @@ sec('ATTENDANCE · portal del empleado');
 
 sec('ATTENDANCE · asistencia de campo (geocerca) y kiosco');
 {
+  // El perfil de campo debe incluir los módulos efectivos (la app arma su menú con esto)
+  const fme = await get('/api/field/me', { token: empCom });
+  ok('field/me incluye módulos del perfil', fme.status === 200 && Array.isArray(fme.json?.modules) && fme.json.modules.length === 15 && fme.json?.profile === 'comercial', `(${fme.json?.modules?.length})`);
+}
+{
   const me = await get('/api/field/me', { token: empCom });
   ok('field /me con sitios', me.status === 200 && Array.isArray(me.json?.sites));
   const sites = await get('/api/field/sites', { token: empCom });

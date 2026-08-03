@@ -215,7 +215,13 @@ export function buildRoutes(deps) {
   // ================================================================
   const field = Router();
   field.use(requireAuth, requireEmployee);
-  field.get('/me', asyncHandler(async (req, res) => res.json(await fieldService.fieldMe(empId(req)))));
+  // El perfil de campo incluye los módulos efectivos del JWT: la app arma su
+  // menú con esta lista (misma matriz de acceso que resolvió el login).
+  field.get('/me', asyncHandler(async (req, res) => res.json({
+    ...(await fieldService.fieldMe(empId(req))),
+    profile: req.auth.profile || null,
+    modules: req.auth.modules || [],
+  })));
   field.get('/sites', asyncHandler(async (req, res) => res.json(await fieldService.fieldSites(empId(req)))));
   field.get('/checkins', asyncHandler(async (req, res) => res.json(await fieldService.fieldCheckins(empId(req)))));
   field.post('/checkin', asyncHandler(async (req, res) => res.status(201).json(await fieldService.fieldCheckin(empId(req), req.body))));
