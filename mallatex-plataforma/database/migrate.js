@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SCHEMAS = ['leads', 'mes', 'crm', 'attendance', 'identity'];
+const SCHEMAS = ['marketing', 'leads', 'mes', 'crm', 'attendance', 'identity'];
 const BASELINE = '0000_baseline';
 
 async function client() {

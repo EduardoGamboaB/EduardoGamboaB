@@ -46,7 +46,7 @@ let admin, empCom, empOp, empLinea;
 {
   const r = await post('/api/auth/login', { body: { email: 'admin@mallatex.mx', password: 'mallatex2026' } });
   ok('login admin devuelve token', r.status === 200 && !!r.json?.token);
-  ok('admin recibe 35 módulos web', r.json?.modules?.length === 35, `(${r.json?.modules?.length})`);
+  ok('admin recibe 40 módulos web', r.json?.modules?.length === 40, `(${r.json?.modules?.length})`);
   admin = r.json?.token;
 
   const bad = await post('/api/auth/login', { body: { email: 'admin@mallatex.mx', password: 'incorrecta' } });
@@ -54,7 +54,7 @@ let admin, empCom, empOp, empLinea;
 
   const rc = await post('/api/auth/login', { body: { code: 'MTX002', pin: '1234' } });
   ok('login empleado comercial (MTX002)', rc.status === 200 && rc.json?.employee?.profile === 'comercial');
-  ok('MTX002 recibe 14 módulos móviles', rc.json?.modules?.length === 14, `(${rc.json?.modules?.length})`);
+  ok('MTX002 recibe 15 módulos móviles', rc.json?.modules?.length === 15, `(${rc.json?.modules?.length})`);
   empCom = rc.json?.token;
 
   const ro = await post('/api/auth/login', { body: { code: 'MTX001', pin: '1234' } });
@@ -78,7 +78,7 @@ sec('IDENTITY · usuarios (CRUD)');
 let newUserId;
 {
   const list = await get('/api/users', { token: admin });
-  ok('listar usuarios (4 sembrados)', list.status === 200 && list.json?.length === 4, `(${list.json?.length})`);
+  ok('listar usuarios (5 sembrados)', list.status === 200 && list.json?.length === 5, `(${list.json?.length})`);
   const c = await post('/api/users', { token: admin, body: { name: 'E2E User', email: 'e2e@mallatex.mx', role: 'nomina', password: 'secreto1' } });
   ok('crear usuario', c.status === 201 && c.json?.email === 'e2e@mallatex.mx');
   newUserId = c.json?.id;
@@ -93,9 +93,9 @@ let newUserId;
 sec('IDENTITY · matriz de acceso');
 {
   const cat = await get('/api/access/catalog?surface=mobile', { token: admin });
-  ok('catálogo móvil (17 módulos)', cat.status === 200 && cat.json?.length === 17, `(${cat.json?.length})`);
+  ok('catálogo móvil (18 módulos)', cat.status === 200 && cat.json?.length === 18, `(${cat.json?.length})`);
   const m = await get('/api/access/matrix', { token: admin });
-  ok('matriz completa (127 grants)', m.status === 200 && m.json?.grants?.length === 127, `(${m.json?.grants?.length})`);
+  ok('matriz completa (146 grants)', m.status === 200 && m.json?.grants?.length === 146, `(${m.json?.grants?.length})`);
   // Conceder inventario al perfil operativo y verificar en login
   const before = (m.json.grants || []).filter((g) => g.subjectType === 'profile' && g.subjectKey === 'operativo' && g.surface === 'mobile').map((g) => g.moduleKey);
   const r1 = await put('/api/access/grants', { token: admin, body: { subjectType: 'profile', subjectKey: 'operativo', surface: 'mobile', moduleKeys: [...before, 'inventario'] } });
@@ -549,6 +549,109 @@ sec('KIOSCO DE PLANTA · checador por línea y autoservicio');
   const kout = await post('/api/auth/logout', { token: ktok });
   const kafter = await get('/api/auth/me', { token: ktok });
   ok('salir del kiosco revoca la sesión (identity inmediato) → 401', kout.status === 200 && kafter.status === 401, `(${kafter.status})`);
+}
+
+// =====================================================================
+// 7. MARKETING
+// =====================================================================
+sec('MARKETING · banco de materiales (assets)');
+let mkt, assetId;
+{
+  const r = await post('/api/auth/login', { body: { email: 'marketing@mallatex.mx', password: 'mallatex2026' } });
+  ok('login usuario marketing con sus 5 módulos', r.status === 200 && (r.json?.modules || []).filter((m) => m.startsWith('mkt-')).length === 5, `(${(r.json?.modules || []).join(',')})`);
+  mkt = r.json?.token;
+
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  const c = await post('/api/mkt/assets', { token: mkt, body: { tipo: 'imagen', titulo: 'Logo E2E', categoria: 'logos', file: png } });
+  ok('subir imagen al banco (storage db)', c.status === 201 && c.json?.storage === 'db', JSON.stringify(c.json).slice(0, 100));
+  assetId = c.json?.id;
+
+  const list = await get('/api/mkt/assets?tipo=imagen', { token: mkt });
+  ok('listar banco filtrado por tipo', list.status === 200 && (list.json || []).some((a) => a.id === assetId));
+  const file = await get(`/api/mkt/assets/${assetId}/file`, { token: mkt });
+  ok('descargar archivo del asset', file.status === 200 && String(file.headers.get('content-type')).includes('image/png'), `(${file.status})`);
+
+  const empList = await get('/api/mkt/assets', { token: empCom });
+  ok('vendedor (empleado) consulta el banco', empList.status === 200);
+
+  const vid = 'data:video/mp4;base64,' + Buffer.from('e2e-video-bytes').toString('base64');
+  const cv = await post('/api/mkt/assets', { token: mkt, body: { tipo: 'video', titulo: 'Video E2E', file: vid } });
+  ok('video sin S3 queda en BD pendiente de sincronizar', cv.status === 201 && cv.json?.storage === 'db' && cv.json?.pendingSync === true, JSON.stringify(cv.json).slice(0, 100));
+
+  const st = await get('/api/mkt/assets/s3-status', { token: mkt });
+  ok('estatus S3: no configurado, con pendientes', st.status === 200 && st.json?.configured === false && st.json?.pendingCount >= 1, JSON.stringify(st.json));
+  const sync = await post('/api/mkt/assets/sync-s3', { token: mkt });
+  ok('sync-s3 sin configurar → 409 S3_OFF', sync.status === 409 && sync.json?.code === 'S3_OFF', `(${sync.status})`);
+}
+
+sec('MARKETING · solicitudes de formatos');
+{
+  const c = await post('/api/mkt/format-requests', { token: empCom, body: { titulo: 'Ficha técnica malla sombra', descripcion: 'Para cliente E2E' } });
+  ok('vendedor crea solicitud con folio FMT-', c.status === 201 && /^FMT-/.test(c.json?.folio || ''), JSON.stringify(c.json).slice(0, 100));
+  const fmtId = c.json?.id;
+  const mine = await get('/api/mkt/format-requests/mine', { token: empCom });
+  ok('vendedor ve sus solicitudes', mine.status === 200 && (mine.json || []).some((f) => f.id === fmtId));
+  const msg = await post(`/api/mkt/format-requests/${fmtId}/message`, { token: empCom, body: { message: '¿Para cuándo estaría?' } });
+  ok('vendedor agrega mensaje al hilo', msg.status === 200 || msg.status === 201, `(${msg.status})`);
+  const listMkt = await get('/api/mkt/format-requests?estado=solicitado', { token: mkt });
+  ok('marketing ve solicitudes pendientes', listMkt.status === 200 && (listMkt.json || []).some((f) => f.id === fmtId));
+  const bad = await post(`/api/mkt/format-requests/${fmtId}/estado`, { token: mkt, body: { estado: 'entregado' } });
+  ok('entregar sin entregable → rechazado', bad.status >= 400 && bad.status < 500, `(${bad.status})`);
+  const t1 = await post(`/api/mkt/format-requests/${fmtId}/estado`, { token: mkt, body: { estado: 'en_diseno' } });
+  ok('pasar a en_diseno', t1.status === 200 && t1.json?.estado === 'en_diseno', `(${t1.status})`);
+  const t2 = await post(`/api/mkt/format-requests/${fmtId}/estado`, { token: mkt, body: { estado: 'entregado', entregableAssetId: assetId } });
+  ok('entregar con entregable', t2.status === 200 && t2.json?.estado === 'entregado', `(${t2.status})`);
+}
+
+sec('MARKETING · publicaciones y difusión al equipo');
+{
+  const before = await get('/api/mkt/posts/unseen-count', { token: empCom });
+  ok('contador de no vistas del vendedor', before.status === 200 && typeof before.json?.count === 'number', JSON.stringify(before.json));
+  const c = await post('/api/mkt/posts', { token: mkt, body: { titulo: 'Campaña E2E', copyTexto: 'Comparte en tus redes', red: 'facebook', assetId } });
+  ok('marketing publica edición', c.status === 201, JSON.stringify(c.json).slice(0, 80));
+  const after = await get('/api/mkt/posts/unseen-count', { token: empCom });
+  ok('nueva publicación incrementa no vistas', after.status === 200 && after.json?.count === (before.json?.count ?? 0) + 1, `(${before.json?.count}→${after.json?.count})`);
+  const feed = await get('/api/mkt/posts', { token: empCom });
+  ok('vendedor ve el feed de publicaciones', feed.status === 200 && (feed.json || []).length >= 1);
+  const seen = await post('/api/mkt/posts/seen', { token: empCom, body: { all: true } });
+  ok('marcar todas como vistas', seen.status === 200, `(${seen.status})`);
+  const zero = await get('/api/mkt/posts/unseen-count', { token: empCom });
+  ok('contador vuelve a cero', zero.status === 200 && zero.json?.count === 0, `(${zero.json?.count})`);
+}
+
+sec('MARKETING · calendario de campañas');
+{
+  const c = await post('/api/mkt/campaigns', { token: mkt, body: { nombre: 'Campaña E2E', color: '#ED3237', canal: 'facebook', fechaInicio: today, fechaFin: today, productos: ['malla sombra'] } });
+  ok('crear campaña', c.status === 201, JSON.stringify(c.json).slice(0, 80));
+  const campId = c.json?.id;
+  const list = await get(`/api/mkt/campaigns?year=${today.slice(0, 4)}`, { token: mkt });
+  const mia = (list.json || []).find((x) => x.id === campId);
+  ok('campaña vigente hoy (computado)', list.status === 200 && mia?.vigente === true, JSON.stringify(mia).slice(0, 80));
+  const badRange = await post('/api/mkt/campaigns', { token: mkt, body: { nombre: 'Mal rango', fechaInicio: '2026-12-31', fechaFin: '2026-01-01' } });
+  ok('rango de fechas inválido rechazado', badRange.status >= 400 && badRange.status < 500, `(${badRange.status})`);
+  const close = await post(`/api/mkt/campaigns/${campId}/cerrar`, { token: mkt });
+  ok('cerrar campaña', close.status === 200 && (close.json?.estado === 'cerrada' || close.json?.vigente === false), `(${close.status})`);
+}
+
+sec('MARKETING · inventario de impresos');
+{
+  const c = await post('/api/mkt/print-items', { token: mkt, body: { nombre: 'Tríptico E2E', categoria: 'folletos', unidad: 'pieza', minimo: 10 } });
+  ok('crear artículo impreso', c.status === 201, JSON.stringify(c.json).slice(0, 80));
+  const itemId = c.json?.id;
+  const inMove = await post('/api/mkt/print-movements', { token: mkt, body: { itemId, tipo: 'entrada', cantidad: 20, notas: 'Imprenta E2E' } });
+  ok('registrar entrada de 20', inMove.status === 201 || inMove.status === 200, `(${inMove.status})`);
+  const outEmp = await post('/api/mkt/print-movements', { token: empCom, body: { itemId, tipo: 'salida', cantidad: 5 } });
+  ok('vendedor registra salida de 5', outEmp.status === 201 || outEmp.status === 200, `(${outEmp.status})`);
+  const badTipo = await post('/api/mkt/print-movements', { token: empCom, body: { itemId, tipo: 'entrada', cantidad: 5 } });
+  ok('vendedor no puede registrar entradas', badTipo.status === 403 || badTipo.status === 400, `(${badTipo.status})`);
+  const list = await get('/api/mkt/print-items', { token: mkt });
+  const item = (list.json || []).find((x) => x.id === itemId);
+  ok('existencia calculada (15)', list.status === 200 && item?.existencia === 15, `(${item?.existencia})`);
+  ok('sin alerta de bajo mínimo (15 > 10)', item?.bajoMinimo === false);
+  const overdraw = await post('/api/mkt/print-movements', { token: mkt, body: { itemId, tipo: 'salida', cantidad: 999 } });
+  ok('salida mayor a existencia → 409 STOCK_INSUFICIENTE', overdraw.status === 409 && overdraw.json?.code === 'STOCK_INSUFICIENTE', `(${overdraw.status})`);
+  const movs = await get(`/api/mkt/print-items/${itemId}/movements`, { token: mkt });
+  ok('historial de movimientos del artículo', movs.status === 200 && (movs.json || []).length >= 2, `(${movs.json?.length})`);
 }
 
 sec('SEGURIDAD · revocación de sesión (logout server-side)');

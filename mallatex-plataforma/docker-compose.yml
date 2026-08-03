@@ -85,9 +85,21 @@ services:
     command: npm run start:leads
     ports: ['3005:3005']
 
+  marketing:
+    build: { context: ., dockerfile: deploy/Dockerfile.backend }
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    environment:
+      DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
+      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      PORT: '3006'
+      SERVICE_NAME: marketing
+      JSON_LIMIT: 60mb
+    command: npm run start:marketing
+    ports: ['3006:3006']
+
   gateway:
     build: { context: ., dockerfile: deploy/Dockerfile.backend }
-    depends_on: [identity, attendance, crm, mes, leads]
+    depends_on: [identity, attendance, crm, mes, leads, marketing]
     environment:
       PORT: '3000'
       SERVICE_NAME: gateway
@@ -96,6 +108,7 @@ services:
       CRM_URL: http://crm:3003
       MES_URL: http://mes:3004
       LEADS_URL: http://leads:3005
+      MARKETING_URL: http://marketing:3006
     command: npm run start:gateway
     ports: ['3000:3000']
 

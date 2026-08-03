@@ -5,7 +5,7 @@
 - [ ] `node database/migrate.js up` aplicado sobre la base de producción.
 - [ ] `node database/seed.js` **sólo** para catálogos/matriz de acceso; revisar
       antes de sembrar datos demo (usuarios/empleados de ejemplo).
-- [ ] Los 5 microservicios + gateway desplegados y con healthcheck en verde
+- [ ] Los 6 microservicios + gateway desplegados y con healthcheck en verde
       (`/api/health`).
 - [ ] Gateway con las `*_URL` internas correctas.
 

@@ -21,4 +21,5 @@ export const routeMap = [
   { prefixes: ['/api/crm', '/api/sales', '/api/products', '/api/integrations'], target: config.gateway.crmUrl, name: 'crm' },
   { prefixes: ['/api/mes'], target: config.gateway.mesUrl, name: 'mes' },
   { prefixes: ['/api/events', '/api/leads', '/api/raffle', '/api/stats'], target: config.gateway.leadsUrl, name: 'leads' },
+  { prefixes: ['/api/mkt'], target: config.gateway.marketingUrl, name: 'marketing' },
 ];

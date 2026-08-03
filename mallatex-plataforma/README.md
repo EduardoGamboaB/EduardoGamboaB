@@ -9,6 +9,7 @@ proyecto todo lo desarrollado previamente por separado:
 | **MES** (Manufacturing Execution System, 6 perfiles operativos) | contexto `mes` + consola web + módulos móviles de línea |
 | **Captura de leads — Anaberries** (eventos, sorteo, dashboard) | contexto `leads` |
 | **CRM móvil de ventas** | contexto `crm` + app móvil |
+| **Marketing** (banco de materiales, formatos, publicaciones, calendario de campañas, impresos) | contexto `marketing` + consola web + módulo móvil «Material de venta» |
 
 Todo queda organizado en un **monorepo** separado por **frontend**, **backend**,
 **móvil** y **scripts de datos**, con backend en **DDD + microservicios**,
@@ -29,11 +30,12 @@ mallatex-plataforma/
 │       ├── attendance/          # Asistencia, checadas, NOI, RH, portal, campo
 │       ├── crm/                 # Clientes, rutas, visitas, cotizaciones, facturación
 │       ├── mes/                 # Órdenes de producción, líneas, rollos, mermas
-│       └── leads/               # Captura Anaberries, sorteo, dashboard
+│       ├── leads/               # Captura Anaberries, sorteo, dashboard
+│       └── marketing/           # Banco de materiales, formatos, campañas, impresos
 ├── frontend/                    # Web unificada Next.js (responsiva, mobile-first)
 ├── mobile/                      # App única Expo/React Native (campo + ventas + MES)
 ├── database/                    # Esquema relacional, migraciones y seeds (DAO)
-│   ├── schema.sql               # DDL normalizado (identity/attendance/crm/mes/leads)
+│   ├── schema.sql               # DDL normalizado (identity/attendance/crm/mes/leads/marketing)
 │   ├── migrate.js  seed.js      # Runners de migración y sembrado
 ├── deploy/                      # Dockerfiles, blueprints y guías de despliegue
 ├── docker-compose.yml           # Stack local completo (db + servicios + web)
@@ -52,7 +54,7 @@ mallatex-plataforma/
 - **Persistencia relacional con DAO.** Sequelize mapea los modelos al esquema
   relacional PostgreSQL (un esquema por contexto). Los repositorios heredan de
   `BaseDAO` y traducen filas ORM ↔ entidades de dominio.
-- **Microservicios tras un gateway.** El `gateway` unifica los cinco servicios
+- **Microservicios tras un gateway.** El `gateway` unifica los seis servicios
   bajo un único origen `/api/*`, de modo que web y móvil consumen una sola URL.
 - **Acceso unificado.** La **matriz de acceso** (rol/perfil → módulos por
   superficie web/portal/móvil) vive en `identity` y es la única fuente de
@@ -82,7 +84,7 @@ npm install --workspaces --include-workspace-root
 # Base de datos (PostgreSQL en marcha) + esquema + datos demo
 npm run db:reset
 
-# Arranca gateway + 5 microservicios
+# Arranca gateway + 6 microservicios
 npm run dev
 
 # Frontend (otra terminal)
@@ -92,6 +94,15 @@ cd frontend && npm install && npm run dev   # http://localhost:3000 (Next)
 Kiosko de planta (tablet por línea): `http://<web>/kiosko` — pantalla completa
 para checar entrada/salida y autoservicio RH; la línea (LC1..LE) se configura
 en la propia tablet al primer arranque.
+
+### Videos del banco de marketing (S3 opcional)
+
+Sin configurar nada, los videos quedan en la base de datos marcados
+«pendiente de sincronizar». Para moverlos a un bucket S3/R2: definir en `.env`
+`S3_MODE=s3`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`,
+`S3_SECRET_ACCESS_KEY` (y `S3_ENDPOINT` si es R2/compatible), reiniciar el
+servicio `marketing` y pulsar **«Sincronizar a S3»** en *Marketing → Banco*
+(o `POST /api/mkt/assets/sync-s3`).
 
 ## Cuentas demo
 
@@ -103,13 +114,14 @@ Contraseña web `mallatex2026`:
 | `contabilidad@mallatex.mx` | contador |
 | `nomina@mallatex.mx` | nómina |
 | `comercial@mallatex.mx` | gerente comercial |
+| `marketing@mallatex.mx` | marketing |
 
 App móvil / portal (empleados) — código + PIN `1234`:
 
 | Código | Perfil | Ve en móvil |
 |---|---|---|
 | `MTX001` | operativo | Asistencia + Perfil |
-| `MTX002` | comercial | CRM completo |
+| `MTX002` | comercial | CRM completo + Material de venta |
 | `MTX021` | linea | Módulos MES (tablet, producción, mermas) |
 
 ## Despliegue a producción

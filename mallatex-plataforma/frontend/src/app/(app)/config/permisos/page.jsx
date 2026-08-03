@@ -15,6 +15,7 @@ const SUBJECTS = {
     { type: 'role', key: 'contador', label: 'Contador' },
     { type: 'role', key: 'nomina', label: 'Nómina' },
     { type: 'role', key: 'comercial', label: 'Comercial' },
+    { type: 'role', key: 'marketing', label: 'Marketing' },
     { type: 'role', key: 'produccion', label: 'Producción' },
     { type: 'role', key: 'direccion', label: 'Dirección' },
   ],

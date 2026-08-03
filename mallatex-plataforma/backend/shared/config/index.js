@@ -40,6 +40,7 @@ export const config = Object.freeze({
     crmUrl: env.CRM_URL || 'http://localhost:3003',
     mesUrl: env.MES_URL || 'http://localhost:3004',
     leadsUrl: env.LEADS_URL || 'http://localhost:3005',
+    marketingUrl: env.MARKETING_URL || 'http://localhost:3006',
   }),
 
   http: Object.freeze({

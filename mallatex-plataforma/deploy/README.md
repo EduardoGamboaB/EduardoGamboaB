@@ -4,7 +4,7 @@
 
 - `deploy/Dockerfile.backend` — imagen única del backend. El servicio se elige
   con el comando de arranque:
-  `npm run start:gateway | start:identity | start:attendance | start:crm | start:mes | start:leads`.
+  `npm run start:gateway | start:identity | start:attendance | start:crm | start:mes | start:leads | start:marketing`.
 - `deploy/Dockerfile.frontend` — build de producción del frontend Next.js
   (contexto `./frontend`).
 
@@ -16,11 +16,11 @@ docker compose up --build
 ```
 
 Levanta PostgreSQL, ejecuta migraciones + seed (servicio `migrate`), y arranca
-los 5 microservicios, el gateway (`:3000`) y la web (`:3100`).
+los 6 microservicios, el gateway (`:3000`) y la web (`:3100`).
 
 ## Render (blueprint)
 
-`render.yaml` en la raíz define la base de datos, los 5 microservicios, el
+`render.yaml` en la raíz define la base de datos, los 6 microservicios, el
 gateway y la web. Conectar el repo en Render → *New Blueprint*. El `JWT_SECRET`
 se genera en `identity` y se comparte al resto.
 
@@ -42,8 +42,9 @@ un servicio Railway apuntando al mismo repo y fijar `startCommand`
 | `DATABASE_URL` | Cadena PostgreSQL (todos los servicios) |
 | `DATABASE_SSL=true` | TLS a la base gestionada |
 | `JWT_SECRET` | Firma de tokens (igual en todos los servicios) |
-| `IDENTITY_URL … LEADS_URL` | Ruteo interno del gateway |
+| `IDENTITY_URL … MARKETING_URL` | Ruteo interno del gateway |
 | `NEXT_PUBLIC_API_BASE` | URL pública del gateway (frontend) |
 | `TRUST_PROXY=true` | Detrás de balanceador |
+| `S3_MODE`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT` | S3/R2 opcional para videos del banco de marketing (`S3_MODE=s3` + `POST /api/mkt/assets/sync-s3` migra los pendientes) |
 
 Ver checklist completo en [`go-live.md`](go-live.md).

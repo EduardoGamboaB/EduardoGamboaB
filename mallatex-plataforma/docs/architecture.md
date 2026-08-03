@@ -9,13 +9,13 @@ cuatro proyectos previos de Mallatex en un sistema coherente.
 ```
             ┌───────────────┐        ┌───────────────┐
    Web ───▶ │               │        │  PostgreSQL   │
-            │  API Gateway  │        │  (5 esquemas) │
+            │  API Gateway  │        │  (6 esquemas) │
  Móvil ───▶ │  :3000        │        └───────▲───────┘
             └──────┬────────┘                │  DAO (Sequelize)
                    │  reverse proxy /api/*    │
-   ┌───────────────┼───────────────┬─────────┼───────────────┐
-   ▼               ▼               ▼          ▼               ▼
-identity:3001  attendance:3002  crm:3003   mes:3004      leads:3005
+   ┌───────────────┼───────────────┬─────────┼───────────────┬───────────────┐
+   ▼               ▼               ▼          ▼               ▼               ▼
+identity:3001  attendance:3002  crm:3003   mes:3004      leads:3005   marketing:3006
 ```
 
 ## 2. Diseño dirigido por el dominio (DDD)
@@ -59,6 +59,9 @@ normalizado en `database/schema.sql`, con un esquema PostgreSQL por contexto:
   `production_suborders`, `rolls`, `avisos`, `mermas`, `recepciones`,
   `egresos`, `productos_terminados`, `productividad`, `locations`.
 - `leads` — `events`, `leads`, `draws`, `blobs`.
+- `marketing` — `campaigns`, `assets` (banco de materiales; blob en BD o clave
+  S3), `format_requests`, `posts` + `post_views`, `print_items` +
+  `print_movements`.
 
 Las claves foráneas cruzan contextos sólo por id (p.ej. `crm.clients.assigned_to`
 → `attendance.employees.id`); no hay acoplamiento de código entre servicios.
@@ -73,7 +76,8 @@ autorizan sin reconsultar la matriz.
   `mobile` (app de campo/ventas/MES).
 - **Matriz base:** `access_grant(subject_type, subject_key, surface, module_key)`
   otorga módulos por **rol** (usuarios: admin, contador, nomina, comercial,
-  produccion, direccion) o **perfil** (empleados: comercial, operativo, linea).
+  produccion, direccion, marketing) o **perfil** (empleados: comercial,
+  operativo, linea).
 - **Overrides por sujeto:** `extra_modules` / `revoked_modules` (y sus variantes
   de portal) conceden o revocan módulos puntuales.
 - **Resolución:** `AccessPolicy.effectiveModules()` = base ∪ extra − revocados
@@ -94,13 +98,27 @@ geocerca, cola offline, biometría), CRM de ventas y los nuevos módulos MES de
 línea (`mes-tablet`, `mes-produccion-movil`, `mes-mermas`). Un mismo login por
 código + PIN contra el gateway.
 
-## 7. Integraciones
+## 7. Contexto marketing y almacenamiento S3
+
+El servicio `marketing` cubre banco de materiales (imágenes/videos/documentos),
+solicitudes de formatos con folio `FMT-`, publicaciones difundidas al equipo
+móvil (con contador de no vistas), calendario de campañas e inventario de
+artículos impresos con stock calculado por movimientos.
+
+Los archivos se guardan como blob en PostgreSQL, salvo los **videos**, que se
+suben a un bucket **S3/R2** cuando está configurado (`S3_MODE=s3` + credenciales
+en `.env`). Sin S3, los videos ≤ `MKT_VIDEO_DB_MAX_MB` quedan en BD marcados
+`pending_sync`; al configurar el bucket, `POST /api/mkt/assets/sync-s3` migra
+todos los pendientes (la descarga usa URLs prefirmadas de 15 min). El SDK de AWS
+se importa de forma diferida: el servicio arranca sin él cuando `S3_MODE=off`.
+
+## 8. Integraciones
 
 Contratos `mock|http` por fuente (G3 → kilometraje, MES → costura m², Aspel →
 timbrado CFDI y webhook de pagos que genera la comisión de ventas). Cada captura
 variable registra su `source` para trazabilidad.
 
-## 8. Despliegue
+## 9. Despliegue
 
 Imagen de backend única parametrizada por comando (`start:<servicio>`);
 frontend Next.js en imagen propia. Blueprints para Render y Railway, stack local

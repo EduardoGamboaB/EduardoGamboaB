@@ -14,6 +14,7 @@ COPY backend/services/attendance/package.json ./backend/services/attendance/
 COPY backend/services/crm/package.json ./backend/services/crm/
 COPY backend/services/mes/package.json ./backend/services/mes/
 COPY backend/services/leads/package.json ./backend/services/leads/
+COPY backend/services/marketing/package.json ./backend/services/marketing/
 
 RUN npm install --omit=dev --workspaces --include-workspace-root || npm install --omit=dev
 
@@ -23,6 +24,6 @@ COPY database ./database
 COPY scripts ./scripts
 
 USER node
-EXPOSE 3000 3001 3002 3003 3004 3005
+EXPOSE 3000 3001 3002 3003 3004 3005 3006
 # Por defecto arranca el gateway; sobreescribir en compose/plataforma.
 CMD ["npm", "run", "start:gateway"]

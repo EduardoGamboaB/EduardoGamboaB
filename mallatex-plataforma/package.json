@@ -20,6 +20,7 @@
     "start:crm": "npm --workspace @mallatex/service-crm run start",
     "start:mes": "npm --workspace @mallatex/service-mes run start",
     "start:leads": "npm --workspace @mallatex/service-leads run start",
+    "start:marketing": "npm --workspace @mallatex/service-marketing run start",
     "db:migrate": "node database/migrate.js up",
     "db:rollback": "node database/migrate.js down",
     "db:seed": "node database/seed.js",

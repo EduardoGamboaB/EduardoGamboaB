@@ -12,6 +12,7 @@ const services = [
   { name: 'crm', ws: '@mallatex/service-crm', port: 3003, color: '\x1b[33m' },
   { name: 'mes', ws: '@mallatex/service-mes', port: 3004, color: '\x1b[35m' },
   { name: 'leads', ws: '@mallatex/service-leads', port: 3005, color: '\x1b[34m' },
+  { name: 'marketing', ws: '@mallatex/service-marketing', port: 3006, color: '\x1b[95m' },
   { name: 'gateway', ws: '@mallatex/gateway', port: 3000, color: '\x1b[31m' },
 ];
 const RESET = '\x1b[0m';

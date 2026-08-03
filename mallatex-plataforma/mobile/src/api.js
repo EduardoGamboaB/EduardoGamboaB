@@ -71,6 +71,30 @@ export const api = {
   invoices: () => request('GET', '/api/sales/invoices'),
   createInvoice: (body) => request('POST', '/api/sales/invoices', { body }),
 
+  // ---- Marketing / Material de venta ----
+  // Banco de material, publicaciones sugeridas, solicitudes de formato e impresos.
+  mktAssets: (params = {}) => {
+    const qs = Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
+    return request('GET', '/api/mkt/assets' + (qs ? `?${qs}` : ''));
+  },
+  // URL absoluta del binario de un asset (para descargarlo con encabezado Bearer);
+  // resuelve la URL del servidor configurada, por eso es async.
+  mktAssetFileUrl: async (id) => {
+    const base = await getServerUrl(DEFAULT_SERVER_URL);
+    return base.replace(/\/$/, '') + `/api/mkt/assets/${id}/file`;
+  },
+  mktPosts: () => request('GET', '/api/mkt/posts'),
+  mktUnseenCount: () => request('GET', '/api/mkt/posts/unseen-count'),
+  mktMarkSeen: () => request('POST', '/api/mkt/posts/seen', { body: { all: true } }),
+  mktCreateFormatRequest: (body) => request('POST', '/api/mkt/format-requests', { body }),
+  mktMyFormatRequests: () => request('GET', '/api/mkt/format-requests/mine'),
+  mktFormatMessage: (id, body) => request('POST', `/api/mkt/format-requests/${id}/message`, { body }),
+  mktPrintItems: () => request('GET', '/api/mkt/print-items'),
+  mktPrintOut: (body) => request('POST', '/api/mkt/print-movements', { body }),
+
   // ---- MES móvil (planta / líneas de producción) ----
   // Solo visibles para colaboradores con perfil "línea" (el backend define profile.modules).
   mesTabletLines: () => request('GET', '/api/mes/tablet/lines'),

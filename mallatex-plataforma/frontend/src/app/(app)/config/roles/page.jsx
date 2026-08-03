@@ -14,6 +14,7 @@ const WEB_ROLES = [
   { key: 'contador', label: 'Contador', desc: 'Contabilidad y finanzas: facturación, cuentas por cobrar/pagar y reportes contables de la operación.' },
   { key: 'nomina', label: 'Nómina', desc: 'Gestión de personal: empleados, horarios, asistencia, incidencias y cálculo de nómina.' },
   { key: 'comercial', label: 'Comercial', desc: 'Área de ventas: clientes, prospectos, cotizaciones, pedidos y seguimiento comercial (CRM).' },
+  { key: 'marketing', label: 'Marketing', desc: 'Banco de imágenes, formatos, publicaciones, calendario de campañas e inventario de impresos.' },
   { key: 'produccion', label: 'Producción', desc: 'Planta y manufactura: órdenes de producción, tableros MES, inventarios y control de línea.' },
   { key: 'direccion', label: 'Dirección', desc: 'Vista directiva: indicadores, tableros y reportes ejecutivos de todas las áreas, en modo consulta.' },
 ]

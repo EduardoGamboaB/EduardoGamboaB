@@ -1,6 +1,6 @@
 import { AggregateRoot, DomainEvent, DomainError } from '@mallatex/shared/ddd';
 
-const VALID_ROLES = ['admin', 'contador', 'nomina', 'comercial', 'produccion', 'direccion'];
+const VALID_ROLES = ['admin', 'contador', 'nomina', 'comercial', 'produccion', 'direccion', 'marketing'];
 
 /**
  * User — raíz de agregado del contexto identity. Encapsula las invariantes de

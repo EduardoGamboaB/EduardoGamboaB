@@ -32,6 +32,9 @@ const WEB_MODULES = [
   ['mes-tablero', 'MES', 'Tablero de producción'], ['mes-produccion', 'MES', 'Jefe de producción'],
   ['mes-almacen', 'MES', 'Almacén'], ['mes-operaciones', 'MES', 'Operaciones'],
   ['mes-cobranza', 'MES', 'Cobranza'], ['mes-direccion', 'MES', 'Dirección'],
+  ['mkt-banco', 'Marketing', 'Banco de imágenes'], ['mkt-formatos', 'Marketing', 'Formatos'],
+  ['mkt-publicaciones', 'Marketing', 'Publicaciones'], ['mkt-calendario', 'Marketing', 'Calendario de campañas'],
+  ['mkt-impresos', 'Marketing', 'Inventario de impresos'],
   ['leads-captura', 'Leads', 'Captura'], ['leads-sorteo', 'Leads', 'Sorteo'],
   ['leads-dashboard', 'Leads', 'Dashboard leads'], ['leads-eventos', 'Leads', 'Eventos'],
   ['employees', 'Catálogos', 'Empleados'], ['schedules', 'Catálogos', 'Horarios'],
@@ -45,6 +48,7 @@ const MOBILE_MODULES = [
   ['ruta', 'Ventas', 'Ruta'], ['clientes', 'Ventas', 'Clientes'], ['visita', 'Ventas', 'Visita'],
   ['desempeno', 'Ventas', 'Desempeño'], ['asistencia', 'Ventas', 'Asistencia'],
   ['historial', 'Ventas', 'Historial'],
+  ['material', 'Herramientas', 'Material de venta'],
   ['inventario', 'Herramientas', 'Inventario'], ['cotizador', 'Herramientas', 'Cotizador'],
   ['pedidos', 'Herramientas', 'Pedidos'], ['bot', 'Herramientas', 'Asesor técnico'],
   ['viaticos', 'Administración', 'Viáticos'], ['gastos', 'Administración', 'Gastos'],
@@ -64,9 +68,10 @@ const grant = (t, k, surface, mods) => mods.forEach((m) => GRANTS.push([t, k, su
 grant('role', 'admin', 'web', webKeys);
 grant('role', 'contador', 'web', webKeys.filter((k) => !['users', 'roles', 'modulos', 'permisos', 'asignacion'].includes(k)));
 grant('role', 'nomina', 'web', ['dashboard', 'attendance', 'incidents', 'overtime', 'periods', 'variablepay', 'rh-recibos', 'rh-vacaciones', 'rh-tickets', 'rh-indicadores', 'employees', 'schedules', 'checador', 'audit']);
-grant('role', 'comercial', 'web', ['crm-clientes', 'crm-objetivos', 'crm-administrativo', 'crm-facturacion', 'products']);
+grant('role', 'comercial', 'web', ['crm-clientes', 'crm-objetivos', 'crm-administrativo', 'crm-facturacion', 'products', 'mkt-banco', 'mkt-publicaciones', 'mkt-calendario']);
 grant('role', 'produccion', 'web', ['mes-tablero', 'mes-produccion', 'mes-almacen', 'mes-operaciones']);
 grant('role', 'direccion', 'web', ['dashboard', 'mes-tablero', 'mes-direccion', 'rh-indicadores', 'audit']);
+grant('role', 'marketing', 'web', ['mkt-banco', 'mkt-formatos', 'mkt-publicaciones', 'mkt-calendario', 'mkt-impresos']);
 grant('profile', 'comercial', 'mobile', MOBILE_MODULES.filter((m) => !m[0].startsWith('mes-')).map((m) => m[0]));
 grant('profile', 'operativo', 'mobile', ['asistencia', 'historial', 'perfil']);
 grant('profile', 'linea', 'mobile', ['mes-tablet', 'mes-produccion-movil', 'mes-mermas', 'asistencia', 'perfil']);
@@ -110,6 +115,7 @@ async function main() {
       ['Contabilidad', 'contabilidad@mallatex.mx', 'contador', 'Contador general'],
       ['Nómina', 'nomina@mallatex.mx', 'nomina', 'Responsable de nómina'],
       ['Gerente Comercial', 'comercial@mallatex.mx', 'comercial', 'Gerente comercial'],
+      ['Marketing', 'marketing@mallatex.mx', 'marketing', 'Coordinación de marketing'],
     ];
     for (const [name, email, role, position] of users) {
       await c.query(
@@ -194,6 +200,25 @@ async function main() {
       ON CONFLICT DO NOTHING`);
     await c.query(`INSERT INTO leads.leads(event_id,folio,nombre,empresa,estado,email,telefono,interes,consentimiento,fuente,metodo_captura) VALUES
       (1,'ANB-1A2B3C','María Fernández','Agro MF','Jalisco','maria@agromf.mx','3311122233','malla_sombra',true,'Stand','manual')
+      ON CONFLICT DO NOTHING`);
+
+    // Marketing: campaña vigente, publicación e inventario de impresos demo
+    await c.query(`INSERT INTO marketing.campaigns(nombre,descripcion,color,canal,fecha_inicio,fecha_fin,productos,estado,created_by) VALUES
+      ('Antigranizo temporada alta','Empuje de malla antigranizo previo a tormentas','#ED3237','mixto','2026-07-01','2026-10-31','["MA-90"]','vigente','Marketing'),
+      ('Sombra primavera','Malla sombra para hortaliza','#B45309','redes','2027-02-01','2027-05-31','["MS-35"]','planeada','Marketing')
+      ON CONFLICT DO NOTHING`);
+    await c.query(`INSERT INTO marketing.posts(titulo,copy_texto,red,campaign_id,publicado_por) VALUES
+      ('Protege tu cosecha del granizo','La malla antigranizo Mallatex resiste hasta... #ProtegemosLoQueSiembras','whatsapp',1,'Marketing')
+      ON CONFLICT DO NOTHING`);
+    await c.query(`INSERT INTO marketing.print_items(nombre,categoria,unidad,minimo,notas) VALUES
+      ('Muestrario de mallas 2026','muestrario','pieza',5,'Carpeta física con muestras de tejido'),
+      ('Tarjetas de presentación','tarjeta','caja',3,'Cajas de 100 tarjetas'),
+      ('Carpeta corporativa','carpeta','pieza',20,NULL)
+      ON CONFLICT DO NOTHING`);
+    await c.query(`INSERT INTO marketing.print_movements(item_id,tipo,cantidad,persona,motivo,created_by) VALUES
+      (1,'entrada',12,'Imprenta GDL','Producción inicial','Marketing'),
+      (2,'entrada',10,'Imprenta GDL','Reimpresión','Marketing'),
+      (1,'salida',2,'Ana López','Gira Bajío','Marketing')
       ON CONFLICT DO NOTHING`);
 
     await c.query('COMMIT');

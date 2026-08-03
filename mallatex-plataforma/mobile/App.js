@@ -21,6 +21,7 @@ import BotScreen from './src/screens/BotScreen';
 import ViaticosScreen from './src/screens/ViaticosScreen';
 import GastosScreen from './src/screens/GastosScreen';
 import FacturasScreen from './src/screens/FacturasScreen';
+import MaterialScreen from './src/screens/MaterialScreen';
 import MesTabletScreen from './src/screens/MesTabletScreen';
 import MesProduccionScreen from './src/screens/MesProduccionScreen';
 import MesMermasScreen from './src/screens/MesMermasScreen';
@@ -35,6 +36,7 @@ const MENU = [
   { key: 'desempeno', label: 'Mi desempeño', icon: '🎯', group: 'Ventas' },
   { key: 'asistencia', label: 'Mi asistencia', icon: '📍', group: 'Ventas' },
   { key: 'historial', label: 'Historial', icon: '🗂️', group: 'Ventas' },
+  { key: 'material', label: 'Material de venta', icon: '🎨', group: 'Herramientas' },
   { key: 'inventario', label: 'Inventario', icon: '📦', group: 'Herramientas' },
   { key: 'cotizador', label: 'Cotizador', icon: '🧮', group: 'Herramientas' },
   { key: 'pedidos', label: 'Pedidos', icon: '🛒', group: 'Herramientas' },
@@ -63,16 +65,22 @@ export default function App() {
   const [bioName, setBioName] = useState('biometría');
   const [unlockFailed, setUnlockFailed] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [mktUnseen, setMktUnseen] = useState(0); // publicaciones de marketing sin ver (badge del menú)
 
   const modules = profile?.modules || null;
   const menu = allowedMenu(modules);
   // Pantalla efectiva: nunca renderiza un módulo no permitido para el perfil.
   const activeScreen = modules && !modules.includes(screen) ? (menu[0]?.key || 'perfil') : screen;
 
-  const loadProfile = useCallback(async () => {
-    try { const me = await api.me(); setProfile(me); setAuthed(true); setSessionExpired(false); return true; }
-    catch (e) { if (e.status === 401) { await setToken(null); setAuthed(false); setSessionExpired(true); } return false; }
+  // Conteo de publicaciones nuevas de "Material de venta"; falla en silencio (es solo el badge).
+  const refreshMktUnseen = useCallback(() => {
+    api.mktUnseenCount().then((r) => setMktUnseen(r?.count || 0)).catch(() => {});
   }, []);
+
+  const loadProfile = useCallback(async () => {
+    try { const me = await api.me(); setProfile(me); setAuthed(true); setSessionExpired(false); refreshMktUnseen(); return true; }
+    catch (e) { if (e.status === 401) { await setToken(null); setAuthed(false); setSessionExpired(true); } return false; }
+  }, [refreshMktUnseen]);
 
   const unlock = useCallback(async () => {
     const ok = await biometricAuthenticate(`Desbloquea Mallatex Campo con ${bioName}`);
@@ -172,7 +180,7 @@ export default function App() {
       <StatusBar style="dark" />
       {/* Header con logo + menú */}
       <View style={st.header}>
-        <TouchableOpacity onPress={() => setMenuOpen(true)} style={st.hamburger} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Abrir menú"><Text style={st.hamburgerTxt}>☰</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => { refreshMktUnseen(); setMenuOpen(true); }} style={st.hamburger} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Abrir menú"><Text style={st.hamburgerTxt}>☰</Text></TouchableOpacity>
         <Image source={require('./assets/logo-word.png')} style={st.headerLogo} resizeMode="contain" />
         <TouchableOpacity style={st.avatarBtn} onPress={() => go('perfil')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Ir a mi perfil">
           <Text style={st.avatarTxt}>{(profile?.employee?.name || '?').split(' ').slice(0, 2).map((s) => s[0]).join('').toUpperCase()}</Text>
@@ -188,6 +196,7 @@ export default function App() {
         {activeScreen === 'asistencia' && <CheckinScreen profile={profile} onQueued={() => setQueueVersion((v) => v + 1)} />}
         {activeScreen === 'historial' && <HistoryScreen queueVersion={queueVersion} onSync={() => flushQueue(false)} />}
         {activeScreen === 'perfil' && <ProfileScreen profile={profile} onLogout={logout} />}
+        {activeScreen === 'material' && <MaterialScreen onSeen={() => setMktUnseen(0)} />}
         {activeScreen === 'inventario' && <InventoryScreen />}
         {activeScreen === 'cotizador' && <QuoteScreen />}
         {activeScreen === 'pedidos' && <OrdersScreen />}
@@ -225,6 +234,12 @@ export default function App() {
                       <TouchableOpacity key={m.key} style={[st.item, activeScreen === m.key && st.itemOn]} onPress={() => go(m.key)}>
                         <Text style={st.itemIcon}>{m.icon}</Text>
                         <Text style={[st.itemLabel, activeScreen === m.key && st.itemLabelOn]}>{m.label}</Text>
+                        {m.key === 'material' && mktUnseen > 0 && (
+                          <View style={st.newWrap} accessibilityLabel={`${mktUnseen} publicaciones nuevas`}>
+                            <View style={st.newDot} />
+                            <View style={st.newChip}><Text style={st.newChipTxt}>{mktUnseen > 99 ? '99+' : mktUnseen}</Text></View>
+                          </View>
+                        )}
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -265,6 +280,11 @@ const st = StyleSheet.create({
   itemIcon: { fontSize: 18, width: 30 },
   itemLabel: { fontSize: 15, color: colors.black, fontWeight: '600' },
   itemLabelOn: { color: colors.red },
+  // badge de contenido nuevo (Material de venta)
+  newWrap: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 5 },
+  newDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.red },
+  newChip: { backgroundColor: colors.red, borderRadius: 10, minWidth: 20, height: 20, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
+  newChipTxt: { color: '#fff', fontSize: 11, fontWeight: '800' },
   logout: { margin: 16, borderWidth: 1, borderColor: colors.red, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
   logoutTxt: { color: colors.red, fontWeight: '700' },
   foot: { textAlign: 'center', color: colors.gray, fontSize: 12, marginBottom: 18 },
