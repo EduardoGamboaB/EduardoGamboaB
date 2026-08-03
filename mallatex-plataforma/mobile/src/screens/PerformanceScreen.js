@@ -79,7 +79,7 @@ const st = StyleSheet.create({
   kpis: { flexDirection: 'row', gap: 10 },
   kpi: { flex: 1, backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.lightGray, padding: 14, alignItems: 'center' },
   kpiN: { fontSize: 24, fontWeight: '800', color: colors.red },
-  kpiL: { color: colors.gray, fontSize: 11, textAlign: 'center', marginTop: 4 },
+  kpiL: { color: colors.gray, fontSize: 12, textAlign: 'center', marginTop: 4 },
   card2: { backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.lightGray, paddingHorizontal: 14 },
   hrow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.bg },
   hp: { color: colors.black, fontWeight: '600' },

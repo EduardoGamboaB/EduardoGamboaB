@@ -96,15 +96,16 @@ function AdvanceModal({ order, onClose, onDone }) {
 
   async function submit() {
     const n = Number(qty);
-    if (!n) return Alert.alert('Cantidad', 'Escribe cuántas piezas se produjeron.');
+    if (!n) return Alert.alert('Falta la cantidad', 'Escribe cuántas piezas se produjeron.');
     setBusy(true);
-    const payload = { type: 'avance', lineId: order.lineId, orderId: order.id, qty: n };
+    const payload = { lineId: order.lineId, orderId: order.id, cantidad: n, descripcion: `Avance de ${order.folio || order.id}${order.product ? ' · ' + order.product : ''}` };
     try {
-      await api.mesReportAlert(payload);
+      await api.mesReportAvance(payload);
+      Alert.alert('Avance registrado', `${n.toLocaleString('es-MX')} piezas en ${order.folio || order.id}.`);
       onDone();
     } catch (e) {
       if (e.offline) {
-        await enqueue({ kind: 'mes-alert', payload });
+        await enqueue({ kind: 'mes-avance', payload });
         Alert.alert('Sin conexión', 'Se reintentará al reconectar.');
         onDone();
       } else {

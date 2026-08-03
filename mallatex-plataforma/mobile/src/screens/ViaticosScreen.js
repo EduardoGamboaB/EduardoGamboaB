@@ -14,23 +14,28 @@ const STATUS = {
 export default function ViaticosScreen() {
   const [items, setItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [open, setOpen] = useState(false);
 
   const load = useCallback(async () => {
     setRefreshing(true);
-    try { setItems(await api.expenseRequests()); } catch {}
-    setRefreshing(false);
+    try { setItems(await api.expenseRequests()); setLoadError(false); } catch { setLoadError(true); }
+    setRefreshing(false); setFirstLoad(false);
   }, []);
   useEffect(() => { load(); }, [load]);
 
   return (
     <View style={{ flex: 1 }}>
+      {loadError && <View style={st.errBanner}><Text style={st.errBannerTxt}>Sin conexión · desliza para reintentar</Text></View>}
       <FlatList
         data={items}
         keyExtractor={(it) => String(it.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
         contentContainerStyle={{ padding: 14, paddingBottom: 90 }}
-        ListEmptyComponent={<Text style={st.empty}>Aún no has solicitado viáticos. Usa el botón “＋ Solicitar”.</Text>}
+        ListEmptyComponent={firstLoad
+          ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.red} />
+          : (loadError ? null : <Text style={st.empty}>Aún no has solicitado viáticos. Usa el botón “＋ Solicitar”.</Text>)}
         renderItem={({ item }) => {
           const s = STATUS[item.status] || {};
           return (
@@ -69,8 +74,16 @@ function RequestModal({ visible, onClose, onDone }) {
     if (!concept.trim() || !amount.trim()) return Alert.alert('Faltan datos', 'Concepto y monto son obligatorios.');
     const amt = Number(String(amount).replace(',', '.').replace(/[^0-9.]/g, ''));
     if (!amt) return Alert.alert('Monto inválido', 'Revisa el monto capturado.');
+    const validDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(new Date(v).getTime());
+    for (const v of [fromDate, toDate]) {
+      if (v.trim() && !validDate(v.trim())) return Alert.alert('Fecha inválida (formato AAAA-MM-DD)', 'Revisa las fechas capturadas.');
+    }
     setBusy(true);
-    try { await api.createExpenseRequest({ concept, destination, amount: amt, fromDate, toDate, description }); onDone(); }
+    try {
+      const r = await api.createExpenseRequest({ concept, destination, amount: amt, fromDate, toDate, description });
+      Alert.alert('Solicitud enviada', 'Folio ' + (r.folio || '—'));
+      onDone();
+    }
     catch (e) { Alert.alert('No se pudo solicitar', e.message); }
     finally { setBusy(false); }
   }
@@ -88,8 +101,8 @@ function RequestModal({ visible, onClose, onDone }) {
             <Text style={st.label}>Monto solicitado *</Text>
             <TextInput style={st.input} value={amount} onChangeText={setAmount} keyboardType="numeric" placeholder="0.00" placeholderTextColor={colors.gray} />
             <View style={st.row2}>
-              <View style={{ flex: 1 }}><Text style={st.label}>Desde</Text><TextInput style={st.input} value={fromDate} onChangeText={setFromDate} placeholder="AAAA-MM-DD" placeholderTextColor={colors.gray} /></View>
-              <View style={{ flex: 1 }}><Text style={st.label}>Hasta</Text><TextInput style={st.input} value={toDate} onChangeText={setToDate} placeholder="AAAA-MM-DD" placeholderTextColor={colors.gray} /></View>
+              <View style={{ flex: 1 }}><Text style={st.label}>Desde</Text><TextInput style={st.input} value={fromDate} onChangeText={setFromDate} autoCorrect={false} placeholder="AAAA-MM-DD" placeholderTextColor={colors.gray} /></View>
+              <View style={{ flex: 1 }}><Text style={st.label}>Hasta</Text><TextInput style={st.input} value={toDate} onChangeText={setToDate} autoCorrect={false} placeholder="AAAA-MM-DD" placeholderTextColor={colors.gray} /></View>
             </View>
             <Text style={st.label}>Detalle</Text>
             <TextInput style={[st.input, { minHeight: 70, textAlignVertical: 'top' }]} value={description} onChangeText={setDescription} multiline placeholder="Desglose estimado…" placeholderTextColor={colors.gray} />
@@ -112,8 +125,10 @@ const st = StyleSheet.create({
   meta: { color: colors.gray, fontSize: 12, marginTop: 2 },
   amount: { color: colors.red, fontWeight: '800', fontSize: 16, marginTop: 8 },
   note: { color: colors.gray, fontStyle: 'italic', fontSize: 12, marginTop: 6 },
-  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }, tagTxt: { fontWeight: '700', fontSize: 11 },
+  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }, tagTxt: { fontWeight: '700', fontSize: 12 },
   empty: { textAlign: 'center', color: colors.gray, marginTop: 40, paddingHorizontal: 20 },
+  errBanner: { backgroundColor: '#fff7e6', paddingVertical: 10, paddingHorizontal: 14 },
+  errBannerTxt: { color: '#92400E', textAlign: 'center', fontSize: 12, fontWeight: '600' },
   fab: { position: 'absolute', right: 18, bottom: 22, backgroundColor: colors.red, borderRadius: 26, paddingHorizontal: 20, paddingVertical: 14, elevation: 4, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 } },
   fabTxt: { color: '#fff', fontWeight: '800' },
   sheetWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },

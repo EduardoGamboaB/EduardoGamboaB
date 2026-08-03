@@ -11,24 +11,31 @@ export default function FacturasScreen() {
   const [items, setItems] = useState([]);
   const [orders, setOrders] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [open, setOpen] = useState(false);
 
   const load = useCallback(async () => {
     setRefreshing(true);
-    try { setItems(await api.invoices()); } catch {}
-    try { setOrders(await api.orders()); } catch {}
-    setRefreshing(false);
+    let err = false;
+    try { setItems(await api.invoices()); } catch { err = true; }
+    try { setOrders(await api.orders()); } catch { err = true; }
+    setLoadError(err);
+    setRefreshing(false); setFirstLoad(false);
   }, []);
   useEffect(() => { load(); }, [load]);
 
   return (
     <View style={{ flex: 1 }}>
+      {loadError && <View style={st.errBanner}><Text style={st.errBannerTxt}>Sin conexión · desliza para reintentar</Text></View>}
       <FlatList
         data={items}
         keyExtractor={(it) => String(it.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
         contentContainerStyle={{ padding: 14, paddingBottom: 90 }}
-        ListEmptyComponent={<Text style={st.empty}>Aún no has solicitado facturas. Genera una desde un pedido con “＋ Solicitar factura”.</Text>}
+        ListEmptyComponent={firstLoad
+          ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.red} />
+          : (loadError ? null : <Text style={st.empty}>Aún no has solicitado facturas. Genera una desde un pedido con “＋ Solicitar factura”.</Text>)}
         renderItem={({ item }) => {
           const s = STATUS[item.status] || {};
           return (
@@ -65,12 +72,14 @@ function InvoiceModal({ visible, orders, onClose, onDone }) {
 
   async function submit() {
     if (!rfc.trim()) return Alert.alert('Falta el RFC', 'Captura el RFC receptor.');
+    if (!/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc.trim().toUpperCase())) return Alert.alert('RFC inválido', 'Revisa el RFC receptor.');
     const amt = Number(String(amount).replace(',', '.').replace(/[^0-9.]/g, ''));
     if (!orderId && !amount.trim()) return Alert.alert('Falta el importe', 'Elige un pedido o captura el importe.');
     if (!orderId && !amt) return Alert.alert('Importe inválido', 'Revisa el importe capturado.');
     setBusy(true);
     try {
-      await api.createInvoice({ orderId: orderId || undefined, rfc, razonSocial, usoCfdi, amount: orderId ? undefined : amt });
+      const r = await api.createInvoice({ orderId: orderId || undefined, rfc, razonSocial, usoCfdi, amount: orderId ? undefined : amt });
+      Alert.alert('Solicitud enviada', 'Folio ' + (r.folio || '—'));
       onDone();
     } catch (e) { Alert.alert('No se pudo solicitar', e.message); }
     finally { setBusy(false); }
@@ -92,7 +101,7 @@ function InvoiceModal({ visible, orders, onClose, onDone }) {
             {selectedOrder && <Text style={st.pick}>{selectedOrder.clientName} · {money(selectedOrder.total)}</Text>}
 
             <Text style={st.label}>RFC receptor *</Text>
-            <TextInput style={st.input} value={rfc} onChangeText={setRfc} autoCapitalize="characters" placeholder="XAXX010101000" placeholderTextColor={colors.gray} />
+            <TextInput style={st.input} value={rfc} onChangeText={setRfc} maxLength={13} autoCapitalize="characters" autoCorrect={false} placeholder="XAXX010101000" placeholderTextColor={colors.gray} />
             <Text style={st.label}>Razón social</Text>
             <TextInput style={st.input} value={razonSocial} onChangeText={setRazonSocial} placeholder="Nombre / empresa" placeholderTextColor={colors.gray} />
             <Text style={st.label}>Uso de CFDI</Text>
@@ -122,9 +131,11 @@ const st = StyleSheet.create({
   client: { color: colors.black, marginTop: 6, fontWeight: '600' },
   meta: { color: colors.gray, fontSize: 12, marginTop: 2 },
   amount: { color: colors.red, fontWeight: '800', fontSize: 16, marginTop: 8 },
-  uuid: { color: colors.gray, fontSize: 10, marginTop: 6 },
-  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }, tagTxt: { fontWeight: '700', fontSize: 11 },
+  uuid: { color: colors.gray, fontSize: 12, marginTop: 6 },
+  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }, tagTxt: { fontWeight: '700', fontSize: 12 },
   empty: { textAlign: 'center', color: colors.gray, marginTop: 40, paddingHorizontal: 20 },
+  errBanner: { backgroundColor: '#fff7e6', paddingVertical: 10, paddingHorizontal: 14 },
+  errBannerTxt: { color: '#92400E', textAlign: 'center', fontSize: 12, fontWeight: '600' },
   fab: { position: 'absolute', right: 18, bottom: 22, backgroundColor: colors.red, borderRadius: 26, paddingHorizontal: 20, paddingVertical: 14, elevation: 4, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 } },
   fabTxt: { color: '#fff', fontWeight: '800' },
   sheetWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },

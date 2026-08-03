@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { colors } from '../theme';
 import { api } from '../api';
+import { enqueue } from '../storage';
 
 const STAGE = {
   prospecto: { label: 'Prospecto', color: colors.warn, bg: '#fff7e6' },
@@ -12,13 +13,16 @@ const STAGE = {
 export default function ClientsScreen() {
   const [items, setItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [detail, setDetail] = useState(null);
   const [form, setForm] = useState(null); // objeto de alta de prospecto
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     setRefreshing(true);
-    try { setItems(await api.myClients()); } catch {}
-    setRefreshing(false);
+    try { setItems(await api.myClients()); setLoadError(false); } catch { setLoadError(true); }
+    setRefreshing(false); setFirstLoad(false);
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -27,9 +31,24 @@ export default function ClientsScreen() {
   }
 
   async function saveProspect() {
-    if (!form.name?.trim()) return Alert.alert('Falta el nombre');
-    try { await api.createProspect(form); setForm(null); load(); }
-    catch (e) { Alert.alert('No se pudo guardar', e.message); }
+    if (busy) return;
+    if (!form.name?.trim()) return Alert.alert('Falta el nombre', 'Escribe el nombre o empresa del prospecto.');
+    const payload = { ...form };
+    setBusy(true);
+    try {
+      await api.createProspect(payload);
+      setForm(null);
+      Alert.alert('Prospecto guardado', payload.name);
+      load();
+    } catch (e) {
+      if (e.offline) {
+        await enqueue({ kind: 'client', payload });
+        setForm(null);
+        Alert.alert('Guardado sin conexión', 'Se sincronizará al reconectar.');
+      } else {
+        Alert.alert('No se pudo guardar', e.message);
+      }
+    } finally { setBusy(false); }
   }
 
   return (
@@ -37,12 +56,15 @@ export default function ClientsScreen() {
       <TouchableOpacity style={st.addBar} onPress={() => setForm({ name: '', cultivo: '', phone: '', contactName: '' })}>
         <Text style={st.addTxt}>＋ Nuevo prospecto</Text>
       </TouchableOpacity>
+      {loadError && <View style={st.errBanner}><Text style={st.errBannerTxt}>Sin conexión · desliza para reintentar</Text></View>}
       <FlatList
         data={items}
         keyExtractor={(it) => String(it.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
         contentContainerStyle={{ padding: 14 }}
-        ListEmptyComponent={<Text style={st.empty}>Aún no tienes cartera asignada.</Text>}
+        ListEmptyComponent={firstLoad
+          ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.red} />
+          : (loadError ? null : <Text style={st.empty}>Aún no tienes cartera asignada.</Text>)}
         renderItem={({ item }) => {
           const s = STAGE[item.stage] || STAGE.cliente;
           return (
@@ -94,8 +116,10 @@ export default function ClientsScreen() {
               <Input label="Contacto" value={form.contactName} onChange={(t) => setForm({ ...form, contactName: t })} />
               <Input label="Teléfono" value={form.phone} onChange={(t) => setForm({ ...form, phone: t })} keyboardType="phone-pad" />
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-                <TouchableOpacity style={[st.closeBtn, { flex: 1 }]} onPress={() => setForm(null)}><Text style={st.closeTxt}>Cancelar</Text></TouchableOpacity>
-                <TouchableOpacity style={[st.saveBtn, { flex: 1 }]} onPress={saveProspect}><Text style={st.saveTxt}>Guardar</Text></TouchableOpacity>
+                <TouchableOpacity style={[st.closeBtn, { flex: 1 }]} onPress={() => setForm(null)} disabled={busy}><Text style={st.closeTxt}>Cancelar</Text></TouchableOpacity>
+                <TouchableOpacity style={[st.saveBtn, { flex: 1 }, busy && { opacity: 0.6 }]} onPress={saveProspect} disabled={busy}>
+                  {busy ? <ActivityIndicator color="#fff" /> : <Text style={st.saveTxt}>Guardar</Text>}
+                </TouchableOpacity>
               </View>
             </>)}
           </View>
@@ -120,8 +144,10 @@ const st = StyleSheet.create({
   name: { fontWeight: '700', color: colors.black, fontSize: 15 },
   meta: { color: colors.gray, marginTop: 2, fontSize: 12 },
   tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  tagTxt: { fontWeight: '700', fontSize: 11 },
+  tagTxt: { fontWeight: '700', fontSize: 12 },
   empty: { textAlign: 'center', color: colors.gray, marginTop: 40 },
+  errBanner: { backgroundColor: '#fff7e6', paddingVertical: 10, paddingHorizontal: 14 },
+  errBannerTxt: { color: '#92400E', textAlign: 'center', fontSize: 12, fontWeight: '600' },
   sheetWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.white, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 20, paddingBottom: 30 },
   sheetTitle: { fontSize: 18, fontWeight: '800', color: colors.black },

@@ -76,6 +76,7 @@ export const api = {
   mesTabletLines: () => request('GET', '/api/mes/tablet/lines'),
   mesScanRoll: (payload) => request('POST', '/api/mes/tablet/scan', { body: payload }),
   mesReportAlert: (payload) => request('POST', '/api/mes/tablet/alert', { body: payload }),
+  mesReportAvance: (payload) => request('POST', '/api/mes/tablet/avance', { body: payload }),
   mesReportMerma: (payload) => request('POST', '/api/mes/tablet/merma', { body: payload }),
   mesProductionBoard: () => request('GET', '/api/mes/tablero'),
 };

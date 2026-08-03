@@ -25,6 +25,7 @@ export default function MesMermasScreen() {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -32,12 +33,13 @@ export default function MesMermasScreen() {
       const list = Array.isArray(data) ? data : (data.lines || []);
       setLines(list);
       if (list.length) setLineId((prev) => prev ?? list[0].id);
-    } catch {}
+      setLoadError(false);
+    } catch { setLoadError(true); }
   }, []);
   useEffect(() => { load(); }, [load]);
 
   async function submit() {
-    if (!qty.trim()) return Alert.alert('Cantidad', 'Escribe la cantidad de merma.');
+    if (!qty.trim()) return Alert.alert('Falta la cantidad', 'Escribe la cantidad de merma.');
     const n = Number(String(qty).replace(',', '.').replace(/[^0-9.]/g, ''));
     if (!n) return Alert.alert('Cantidad inválida', 'Revisa la cantidad capturada.');
     setBusy(true);
@@ -72,6 +74,11 @@ export default function MesMermasScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
+      {loadError && (
+        <TouchableOpacity style={st.errBanner} onPress={load} accessibilityRole="button" accessibilityLabel="Reintentar carga">
+          <Text style={st.errBannerTxt}>Sin conexión · toca para reintentar</Text>
+        </TouchableOpacity>
+      )}
       <Text style={st.label}>🏭 Línea</Text>
       <View style={st.chips}>
         {lines.map((l) => (
@@ -138,4 +145,6 @@ const st = StyleSheet.create({
   note: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.lightGray, borderRadius: 10, padding: 12, minHeight: 70, color: colors.black, textAlignVertical: 'top' },
   primary: { backgroundColor: colors.red, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
   primaryTxt: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  errBanner: { backgroundColor: '#fff7e6', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14 },
+  errBannerTxt: { color: '#92400E', textAlign: 'center', fontWeight: '700' },
 });

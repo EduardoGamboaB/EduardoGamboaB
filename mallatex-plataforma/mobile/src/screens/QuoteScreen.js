@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { colors } from '../theme';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { colors, buttons } from '../theme';
 import { api } from '../api';
 
 const money = (n) => '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -22,6 +22,10 @@ export default function QuoteScreen() {
     const q = Math.max(0, (c[id] || 0) + delta);
     const next = { ...c }; if (q) next[id] = q; else delete next[id]; return next;
   });
+  const setQtyText = (id, t) => setCart((c) => {
+    const q = Number(String(t).replace(/[^0-9]/g, '')) || 0;
+    const next = { ...c }; if (q) next[id] = q; else delete next[id]; return next;
+  });
 
   const lines = Object.entries(cart).map(([id, qty]) => { const p = products.find((x) => x.id === Number(id)); return p ? { p, qty } : null; }).filter(Boolean);
   const subtotal = lines.reduce((s, l) => s + l.p.price * l.qty, 0);
@@ -29,8 +33,8 @@ export default function QuoteScreen() {
   const total = subtotal + iva;
 
   async function save(convert) {
-    if (!clientId) return Alert.alert('Selecciona un cliente');
-    if (!lines.length) return Alert.alert('Agrega al menos un producto');
+    if (!clientId) return Alert.alert('Falta el cliente', 'Selecciona un cliente para cotizar.');
+    if (!lines.length) return Alert.alert('Carrito vacío', 'Agrega al menos un producto.');
     setBusy(true);
     try {
       const items = lines.map((l) => ({ productId: l.p.id, qty: l.qty }));
@@ -49,7 +53,7 @@ export default function QuoteScreen() {
   async function toOrder() {
     setBusy(true);
     try { const order = await api.createOrder({ quoteId: done.quoteId }); setDone({ kind: 'pedido', folio: order.folio, total: order.total }); }
-    catch (e) { Alert.alert('Error', e.message); }
+    catch (e) { Alert.alert('No se pudo levantar el pedido', e.message); }
     setBusy(false);
   }
 
@@ -74,20 +78,30 @@ export default function QuoteScreen() {
               <Text style={[st.chipTxt, clientId === c.id && st.chipTxtOn]}>{c.name}</Text>
             </TouchableOpacity>
           ))}
+          {clients.length === 0 && <Text style={st.emptyTxt}>Aún no tienes cartera asignada.</Text>}
         </View>
 
         <Text style={st.label}>Productos</Text>
+        {products.length === 0 && <Text style={st.emptyTxt}>Sin productos disponibles.</Text>}
         {products.map((p) => {
           const qty = cart[p.id] || 0;
           return (
             <View key={p.id} style={st.prod}>
               <View style={{ flex: 1 }}>
                 <Text style={st.pName}>{p.name}</Text>
-                <Text style={st.pMeta}>{money(p.price)} / {p.unit} · stock {p.stock.toLocaleString('es-MX')}</Text>
+                <Text style={st.pMeta}>{money(p.price)} / {p.unit} · stock {Number(p.stock || 0).toLocaleString('es-MX')}</Text>
               </View>
               <View style={st.stepper}>
                 <TouchableOpacity style={st.step} onPress={() => setQty(p.id, -10)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Disminuir cantidad"><Text style={st.stepTxt}>−</Text></TouchableOpacity>
-                <Text style={st.qty}>{qty}</Text>
+                <TextInput
+                  style={st.qtyInput}
+                  value={qty ? String(qty) : ''}
+                  onChangeText={(t) => setQtyText(p.id, t)}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={colors.gray}
+                  accessibilityLabel={`Cantidad de ${p.name}`}
+                />
                 <TouchableOpacity style={st.step} onPress={() => setQty(p.id, +10)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Aumentar cantidad"><Text style={st.stepTxt}>＋</Text></TouchableOpacity>
               </View>
             </View>
@@ -102,8 +116,8 @@ export default function QuoteScreen() {
           <Text style={st.tTotal}>Total {money(total)}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <TouchableOpacity style={[st.secondary, { flex: 1, marginTop: 0 }]} onPress={() => save(false)} disabled={busy}><Text style={st.secondaryTxt}>Guardar cotización</Text></TouchableOpacity>
-          <TouchableOpacity style={[st.primary, { flex: 1, marginTop: 0 }]} onPress={() => save(true)} disabled={busy}>{busy ? <ActivityIndicator color="#fff" /> : <Text style={st.primaryTxt}>Levantar pedido</Text>}</TouchableOpacity>
+          <TouchableOpacity style={[st.secondary, { flex: 1, marginTop: 0 }, busy && { opacity: 0.6 }]} onPress={() => save(false)} disabled={busy}>{busy ? <ActivityIndicator color={colors.red} /> : <Text style={st.secondaryTxt}>Guardar cotización</Text>}</TouchableOpacity>
+          <TouchableOpacity style={[st.primary, { flex: 1, marginTop: 0 }, busy && { opacity: 0.6 }]} onPress={() => save(true)} disabled={busy}>{busy ? <ActivityIndicator color="#fff" /> : <Text style={st.primaryTxt}>Levantar pedido</Text>}</TouchableOpacity>
         </View>
       </View>
     </View>
@@ -122,12 +136,13 @@ const st = StyleSheet.create({
   stepper: { flexDirection: 'row', alignItems: 'center' },
   step: { width: 34, height: 34, minHeight: 44, borderRadius: 8, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   stepTxt: { fontSize: 20, color: colors.red, fontWeight: '700' },
-  qty: { minWidth: 40, textAlign: 'center', fontWeight: '700', color: colors.black },
+  qtyInput: { minWidth: 48, textAlign: 'center', fontWeight: '700', color: colors.black, paddingVertical: 4, paddingHorizontal: 2 },
+  emptyTxt: { color: colors.gray, marginTop: 4 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.lightGray, padding: 14 },
   totals: { marginBottom: 10 },
   tLabel: { color: colors.gray, fontSize: 13, textAlign: 'right' }, tVal: { color: colors.black, fontWeight: '600' },
   tTotal: { color: colors.black, fontWeight: '800', fontSize: 18, textAlign: 'right', marginTop: 2 },
-  primary: { backgroundColor: colors.red, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
+  primary: { ...buttons.primary, marginTop: 14 },
   primaryTxt: { color: '#fff', fontWeight: '700' },
   secondary: { borderWidth: 1, borderColor: colors.red, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
   secondaryTxt: { color: colors.red, fontWeight: '700' },

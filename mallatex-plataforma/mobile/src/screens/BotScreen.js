@@ -87,9 +87,9 @@ const st = StyleSheet.create({
   recPct: { color: colors.gray, marginTop: 2, fontWeight: '600' },
   prod: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg, borderRadius: 10, padding: 12, marginTop: 12 },
   pName: { fontWeight: '700', color: colors.black }, pMeta: { color: colors.gray, fontSize: 12, marginTop: 2 },
-  pPrice: { color: colors.red, fontWeight: '800' }, pUnit: { color: colors.gray, fontWeight: '400', fontSize: 11 },
+  pPrice: { color: colors.red, fontWeight: '800' }, pUnit: { color: colors.gray, fontWeight: '400', fontSize: 12 },
   rationale: { color: colors.black, marginTop: 12, lineHeight: 20 },
   altTitle: { fontWeight: '700', color: colors.black, marginTop: 14, marginBottom: 4 },
   alt: { color: colors.gray, marginBottom: 2 },
-  disclaimer: { color: colors.gray, fontSize: 11, marginTop: 14, fontStyle: 'italic' },
+  disclaimer: { color: colors.gray, fontSize: 12, marginTop: 14, fontStyle: 'italic' },
 });

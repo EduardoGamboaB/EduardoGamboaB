@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { colors } from '../theme';
@@ -16,9 +16,10 @@ export default function CheckinScreen({ profile, onQueued }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
 
-  useEffect(() => { (async () => { if (!camPermission?.granted) await requestCamPermission(); })(); }, []);
-
+  // El permiso de cámara solo se consulta al montar (el hook expone el estado);
+  // el diálogo del sistema se dispara hasta la primera acción que lo necesita.
   async function takeSelfie() {
+    if (!camPermission?.granted) { await requestCamPermission(); return; }
     try {
       const shot = await cameraRef.current?.takePictureAsync({ base64: true, quality: 0.4, skipProcessing: true });
       if (shot?.base64) setPhoto('data:image/jpeg;base64,' + shot.base64);
@@ -101,7 +102,12 @@ export default function CheckinScreen({ profile, onQueued }) {
             ? <View style={st.photoDone}><Text style={{ fontSize: 40 }}>🤳</Text><Text style={st.sub}>Selfie lista</Text></View>
             : <CameraView ref={cameraRef} style={{ flex: 1 }} facing="front" />
         ) : (
-          <View style={st.center}><Text style={st.sub}>Se necesita permiso de cámara</Text></View>
+          <View style={st.center}>
+            <Text style={st.sub}>Se necesita permiso de cámara</Text>
+            {camPermission && !camPermission.canAskAgain
+              ? <TouchableOpacity style={st.permBtn} onPress={() => Linking.openSettings()}><Text style={st.permBtnTxt}>Abrir ajustes</Text></TouchableOpacity>
+              : <TouchableOpacity style={st.permBtn} onPress={requestCamPermission}><Text style={st.permBtnTxt}>Permitir cámara</Text></TouchableOpacity>}
+          </View>
         )}
       </View>
       <TouchableOpacity style={st.secondaryBtn} onPress={photo ? () => setPhoto(null) : takeSelfie} disabled={!camPermission?.granted}>
@@ -151,6 +157,8 @@ const st = StyleSheet.create({
   primaryBtnTxt: { color: colors.white, fontWeight: '700', fontSize: 16 },
   secondaryBtn: { borderWidth: 1, borderColor: colors.red, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 10 },
   secondaryBtnTxt: { color: colors.red, fontWeight: '700' },
+  permBtn: { backgroundColor: colors.red, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 18, marginTop: 12 },
+  permBtnTxt: { color: '#fff', fontWeight: '700' },
   hint: { color: colors.gray, fontSize: 12, marginTop: 12, textAlign: 'center' },
   badge: { width: 92, height: 92, borderRadius: 46, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
   badgeIcon: { color: '#fff', fontSize: 46, fontWeight: '800' },

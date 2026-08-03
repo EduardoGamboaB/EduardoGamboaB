@@ -32,13 +32,13 @@ export default function RouteScreen({ onGoVisit }) {
   async function updateTrack() {
     setBusy(true);
     try { const geo = await getLocation(); const r = await api.trackRoute(route.id, [{ lat: geo.lat, lng: geo.lng }]); setRoute({ ...route, track: Array(r.points).fill(0) }); Alert.alert('Recorrido', `Punto agregado (${r.points} en total).`); }
-    catch (e) { Alert.alert('Error', e.message); }
+    catch (e) { Alert.alert('No se pudo actualizar', e.message); }
     setBusy(false);
   }
   async function end() {
     Alert.alert('Finalizar ruta', '¿Cerrar el recorrido de hoy?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Finalizar', style: 'destructive', onPress: async () => { try { await stopBackgroundTracking(); await api.endRoute(route.id); setRoute(null); setBg(false); } catch (e) { Alert.alert('Error', e.message); } } },
+      { text: 'Finalizar', style: 'destructive', onPress: async () => { try { await stopBackgroundTracking(); await api.endRoute(route.id); setRoute(null); setBg(false); } catch (e) { Alert.alert('No se pudo finalizar', e.message); } } },
     ]);
   }
 

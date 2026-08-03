@@ -11,3 +11,9 @@ export const colors = {
   warn: '#D97706',
   err: '#C0322B',
 };
+
+// Estilos de botón compartidos entre pantallas (las pantallas de piso —Mermas,
+// Producción, Tablet— conservan su padding mayor a propósito).
+export const buttons = {
+  primary: { backgroundColor: colors.red, borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
+};

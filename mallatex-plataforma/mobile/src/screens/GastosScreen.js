@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, TextInput, Alert, ActivityIndicator, Modal, ScrollView, Switch, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, TextInput, Alert, ActivityIndicator, Modal, ScrollView, Switch, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors } from '../theme';
 import { api } from '../api';
@@ -13,13 +13,17 @@ export default function GastosScreen() {
   const [items, setItems] = useState([]);
   const [requests, setRequests] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [open, setOpen] = useState(false);
 
   const load = useCallback(async () => {
     setRefreshing(true);
-    try { setItems(await api.expenses()); } catch {}
-    try { setRequests((await api.expenseRequests()).filter((r) => r.status === 'aprobado')); } catch {}
-    setRefreshing(false);
+    let err = false;
+    try { setItems(await api.expenses()); } catch { err = true; }
+    try { setRequests((await api.expenseRequests()).filter((r) => r.status === 'aprobado')); } catch { err = true; }
+    setLoadError(err);
+    setRefreshing(false); setFirstLoad(false);
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -27,13 +31,16 @@ export default function GastosScreen() {
 
   return (
     <View style={{ flex: 1 }}>
+      {loadError && <View style={st.errBanner}><Text style={st.errBannerTxt}>Sin conexión · desliza para reintentar</Text></View>}
       <FlatList
         data={items}
         keyExtractor={(it) => String(it.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
         contentContainerStyle={{ padding: 14, paddingBottom: 90 }}
         ListHeaderComponent={items.length ? <View style={st.sum}><Text style={st.sumL}>Comprobado</Text><Text style={st.sumV}>{money(total)}</Text></View> : null}
-        ListEmptyComponent={<Text style={st.empty}>Aún no has comprobado gastos. Toma foto del ticket o factura con “＋ Comprobar”.</Text>}
+        ListEmptyComponent={firstLoad
+          ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.red} />
+          : (loadError ? null : <Text style={st.empty}>Aún no has comprobado gastos. Toma foto del ticket o factura con “＋ Comprobar”.</Text>)}
         renderItem={({ item }) => {
           const s = STATUS[item.status] || {};
           return (
@@ -87,9 +94,16 @@ function ExpenseModal({ visible, requests, onClose, onDone }) {
     if (!amount.trim()) return Alert.alert('Falta el monto', 'Captura el importe del gasto.');
     const amt = Number(String(amount).replace(',', '.').replace(/[^0-9.]/g, ''));
     if (!amt) return Alert.alert('Monto inválido', 'Revisa el importe capturado.');
+    if (date.trim() && !(/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) && !isNaN(new Date(date.trim()).getTime()))) {
+      return Alert.alert('Fecha inválida (formato AAAA-MM-DD)', 'Revisa la fecha capturada.');
+    }
+    if (rfc.trim() && !/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc.trim().toUpperCase())) {
+      return Alert.alert('RFC inválido', 'Revisa el RFC del emisor.');
+    }
     setBusy(true);
     try {
-      await api.createExpense({ category, merchant, amount: amt, date, hasInvoice, rfc, requestId, photo: photo || undefined });
+      const r = await api.createExpense({ category, merchant, amount: amt, date, hasInvoice, rfc, requestId, photo: photo || undefined });
+      Alert.alert('Solicitud enviada', 'Folio ' + (r.folio || '—'));
       onDone();
     } catch (e) { Alert.alert('No se pudo comprobar', e.message); }
     finally { setBusy(false); }
@@ -122,20 +136,27 @@ function ExpenseModal({ visible, requests, onClose, onDone }) {
             <TextInput style={st.input} value={merchant} onChangeText={setMerchant} placeholder="Nombre del establecimiento" placeholderTextColor={colors.gray} />
             <View style={st.row2}>
               <View style={{ flex: 1 }}><Text style={st.label}>Monto *</Text><TextInput style={st.input} value={amount} onChangeText={setAmount} keyboardType="numeric" placeholder="0.00" placeholderTextColor={colors.gray} /></View>
-              <View style={{ flex: 1 }}><Text style={st.label}>Fecha</Text><TextInput style={st.input} value={date} onChangeText={setDate} placeholder="AAAA-MM-DD" placeholderTextColor={colors.gray} /></View>
+              <View style={{ flex: 1 }}><Text style={st.label}>Fecha</Text><TextInput style={st.input} value={date} onChangeText={setDate} autoCorrect={false} placeholder="AAAA-MM-DD" placeholderTextColor={colors.gray} /></View>
             </View>
 
             <View style={st.rowBetween}>
               <Text style={st.label}>¿Tiene factura?</Text>
               <Switch value={hasInvoice} onValueChange={setHasInvoice} trackColor={{ true: colors.red, false: colors.lightGray }} thumbColor="#fff" />
             </View>
-            {hasInvoice && <TextInput style={st.input} value={rfc} onChangeText={setRfc} autoCapitalize="characters" placeholder="RFC emisor" placeholderTextColor={colors.gray} />}
+            {hasInvoice && <TextInput style={st.input} value={rfc} onChangeText={setRfc} maxLength={13} autoCapitalize="characters" autoCorrect={false} placeholder="RFC emisor" placeholderTextColor={colors.gray} />}
 
             <Text style={st.label}>Evidencia (ticket / factura)</Text>
             <View style={st.cameraBox}>
               {camPermission?.granted
                 ? (photo ? <View style={st.photoDone}><Text style={{ fontSize: 40 }}>📷</Text><Text style={st.muted}>Evidencia lista</Text></View> : <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back" />)
-                : <View style={st.centerBox}><Text style={st.muted}>Permiso de cámara requerido</Text></View>}
+                : (
+                  <View style={st.centerBox}>
+                    <Text style={st.muted}>Permiso de cámara requerido</Text>
+                    {camPermission && !camPermission.canAskAgain
+                      ? <TouchableOpacity style={st.permBtn} onPress={() => Linking.openSettings()}><Text style={st.permBtnTxt}>Abrir ajustes</Text></TouchableOpacity>
+                      : <TouchableOpacity style={st.permBtn} onPress={requestCamPermission}><Text style={st.permBtnTxt}>Permitir cámara</Text></TouchableOpacity>}
+                  </View>
+                )}
             </View>
             <TouchableOpacity style={st.secondary} onPress={photo ? () => setPhoto(null) : takePhoto} disabled={!camPermission?.granted}>
               <Text style={st.secondaryTxt}>{photo ? 'Repetir foto' : '📷 Tomar foto'}</Text>
@@ -160,9 +181,11 @@ const st = StyleSheet.create({
   merchant: { color: colors.gray, fontSize: 12, marginTop: 6 },
   amount: { color: colors.red, fontWeight: '800', fontSize: 16, marginTop: 8 },
   flags: { flexDirection: 'row', gap: 6, marginTop: 8 },
-  flag: { fontSize: 10, color: colors.gray, backgroundColor: colors.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, overflow: 'hidden' },
-  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }, tagTxt: { fontWeight: '700', fontSize: 11 },
+  flag: { fontSize: 12, color: colors.gray, backgroundColor: colors.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, overflow: 'hidden' },
+  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }, tagTxt: { fontWeight: '700', fontSize: 12 },
   empty: { textAlign: 'center', color: colors.gray, marginTop: 40, paddingHorizontal: 20 },
+  errBanner: { backgroundColor: '#fff7e6', paddingVertical: 10, paddingHorizontal: 14 },
+  errBannerTxt: { color: '#92400E', textAlign: 'center', fontSize: 12, fontWeight: '600' },
   fab: { position: 'absolute', right: 18, bottom: 22, backgroundColor: colors.red, borderRadius: 26, paddingHorizontal: 20, paddingVertical: 14, elevation: 4, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 } },
   fabTxt: { color: '#fff', fontWeight: '800' },
   sheetWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
@@ -180,6 +203,8 @@ const st = StyleSheet.create({
   cameraBox: { height: 190, borderRadius: 14, overflow: 'hidden', backgroundColor: '#000', borderWidth: 1, borderColor: colors.lightGray },
   photoDone: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#141010' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  permBtn: { backgroundColor: colors.red, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 18, marginTop: 12 },
+  permBtnTxt: { color: '#fff', fontWeight: '700' },
   secondary: { borderWidth: 1, borderColor: colors.red, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 10 },
   secondaryTxt: { color: colors.red, fontWeight: '700' },
   muted: { color: colors.gray },

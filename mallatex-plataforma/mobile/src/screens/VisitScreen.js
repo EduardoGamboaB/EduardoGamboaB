@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator, Switch, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator, Switch, TextInput, Linking } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors } from '../theme';
 import { api } from '../api';
@@ -22,23 +22,41 @@ export default function VisitScreen() {
   const [photo, setPhoto] = useState(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => { (async () => {
-    if (!camPermission?.granted) await requestCamPermission();
-    try { setClients(await api.myClients()); } catch {}
+  // El permiso de cámara solo se consulta al montar (el hook expone el estado);
+  // el diálogo del sistema se dispara hasta la primera acción que lo necesita.
+  const loadData = async () => {
+    let err = false;
+    try { setClients(await api.myClients()); } catch { err = true; }
     try { setRoute(await api.activeRoute()); } catch {}
-  })(); }, []);
+    setLoadError(err);
+  };
+  useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function takePhoto() {
+    if (!camPermission?.granted) { await requestCamPermission(); return; }
     try { const s = await cameraRef.current?.takePictureAsync({ base64: true, quality: 0.4, skipProcessing: true }); if (s?.base64) setPhoto('data:image/jpeg;base64,' + s.base64); }
     catch { Alert.alert('Cámara', 'No se pudo tomar la foto.'); }
   }
 
   async function submit() {
-    if (!clientId) return Alert.alert('Selecciona un cliente');
+    if (!clientId) return Alert.alert('Falta el cliente', 'Selecciona un cliente o prospecto.');
+    let geo = null;
+    try { geo = await getLocation(); } catch {}
+    if (!geo) {
+      Alert.alert('Sin ubicación', '¿Registrar la visita sin coordenadas?', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Registrar', onPress: () => doSubmit({}) },
+      ]);
+      return;
+    }
+    await doSubmit(geo);
+  }
+
+  async function doSubmit(geo) {
     setBusy(true);
     try {
-      let geo = {}; try { geo = await getLocation(); } catch {}
       const payload = {
         kind: 'visit', clientId, routeId: route?.id || undefined, type, status, found,
         lat: geo.lat, lng: geo.lng, notes, photos: photo ? [photo] : [],
@@ -64,6 +82,11 @@ export default function VisitScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      {loadError && (
+        <TouchableOpacity style={st.errBanner} onPress={loadData} accessibilityRole="button" accessibilityLabel="Reintentar carga">
+          <Text style={st.errBannerTxt}>Sin conexión · toca para reintentar</Text>
+        </TouchableOpacity>
+      )}
       {!route && <View style={st.warn}><Text style={st.warnTxt}>No tienes una ruta activa. Puedes registrar la visita igual; inicia ruta para asociarla al recorrido.</Text></View>}
 
       <Text style={st.label}>Cliente / prospecto</Text>
@@ -95,7 +118,14 @@ export default function VisitScreen() {
       <View style={st.cameraBox}>
         {camPermission?.granted
           ? (photo ? <View style={st.photoDone}><Text style={{ fontSize: 40 }}>📷</Text><Text style={st.muted}>Foto lista</Text></View> : <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back" />)
-          : <View style={st.center}><Text style={st.muted}>Permiso de cámara requerido</Text></View>}
+          : (
+            <View style={st.center}>
+              <Text style={st.muted}>Permiso de cámara requerido</Text>
+              {camPermission && !camPermission.canAskAgain
+                ? <TouchableOpacity style={st.permBtn} onPress={() => Linking.openSettings()}><Text style={st.permBtnTxt}>Abrir ajustes</Text></TouchableOpacity>
+                : <TouchableOpacity style={st.permBtn} onPress={requestCamPermission}><Text style={st.permBtnTxt}>Permitir cámara</Text></TouchableOpacity>}
+            </View>
+          )}
       </View>
       <TouchableOpacity style={st.secondary} onPress={photo ? () => setPhoto(null) : takePhoto} disabled={!camPermission?.granted}>
         <Text style={st.secondaryTxt}>{photo ? 'Repetir foto' : '📷 Tomar foto'}</Text>
@@ -132,6 +162,10 @@ const st = StyleSheet.create({
   muted2: { color: colors.gray, fontSize: 12, textAlign: 'center', marginTop: 10 },
   warn: { backgroundColor: '#fff7e6', borderRadius: 10, padding: 12, marginBottom: 4 },
   warnTxt: { color: '#92400E', fontSize: 12 },
+  errBanner: { backgroundColor: '#fff7e6', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14, marginBottom: 8 },
+  errBannerTxt: { color: '#92400E', textAlign: 'center', fontWeight: '700', fontSize: 12 },
+  permBtn: { backgroundColor: colors.red, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 18, marginTop: 12 },
+  permBtnTxt: { color: '#fff', fontWeight: '700' },
   badge: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   badgeTxt: { color: '#fff', fontSize: 42, fontWeight: '800' },
   h: { fontSize: 20, fontWeight: '800', color: colors.black },

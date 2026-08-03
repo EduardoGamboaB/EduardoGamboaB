@@ -5,12 +5,12 @@ import { api } from '../api';
 import { setToken, getServerUrl, setServerUrl } from '../storage';
 import { DEFAULT_SERVER_URL } from '../config';
 
-export default function LoginScreen({ onLoggedIn }) {
+export default function LoginScreen({ onLoggedIn, sessionExpired }) {
   const [server, setServer] = useState('');
   const [code, setCode] = useState('');
   const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(sessionExpired ? 'Tu sesión expiró, vuelve a entrar.' : '');
   const [showServer, setShowServer] = useState(false);
 
   useEffect(() => { (async () => setServer(await getServerUrl(DEFAULT_SERVER_URL)))(); }, []);

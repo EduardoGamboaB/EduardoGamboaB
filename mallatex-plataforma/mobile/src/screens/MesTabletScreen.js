@@ -2,11 +2,17 @@
 // Objetivos: pocos pasos, botones grandes, etiquetas con emoji redundante (apoyo a la
 // lectura), y captura por QR del rollo. Reutiliza el patrón de cámara de CheckinScreen/VisitScreen.
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, TextInput, Modal, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, TextInput, Modal, useWindowDimensions, Linking } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme';
 import { api } from '../api';
 import { enqueue } from '../storage';
+
+// Vibración táctil al escanear (si el módulo no está disponible, se ignora en silencio).
+let Haptics; try { Haptics = require('expo-haptics'); } catch {}
+
+const OPERATORS_KEY = 'mtx_mes_operators';
 
 // Motivos de alerta con emoji redundante (operadores con baja alfabetización).
 const ALERTS = [
@@ -22,12 +28,14 @@ export default function MesTabletScreen() {
   const [lines, setLines] = useState([]);
   const [lineId, setLineId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [operators, setOperators] = useState([]); // operadores con turno iniciado (clock-in)
   const [opCode, setOpCode] = useState('');
   const [scanOpen, setScanOpen] = useState(false);
   const [lastRoll, setLastRoll] = useState(null);
   const [busy, setBusy] = useState(false);
   const [activeAlert, setActiveAlert] = useState(null); // tipo de alerta que se está enviando
+  const opsLoaded = useRef(false); // evita pisar la lista guardada antes de hidratarla
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -36,17 +44,27 @@ export default function MesTabletScreen() {
       const list = Array.isArray(data) ? data : (data.lines || []);
       setLines(list);
       if (list.length && lineId == null) setLineId(list[0].id);
-    } catch {}
+      setLoadError(false);
+    } catch { setLoadError(true); }
     setLoading(false);
   }, [lineId]);
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // El turno sobrevive a reinicios de la app: la lista de operadores se persiste localmente.
+  useEffect(() => { (async () => {
+    try { const raw = await AsyncStorage.getItem(OPERATORS_KEY); if (raw) setOperators(JSON.parse(raw)); } catch {}
+    opsLoaded.current = true;
+  })(); }, []);
+  useEffect(() => {
+    if (opsLoaded.current) AsyncStorage.setItem(OPERATORS_KEY, JSON.stringify(operators)).catch(() => {});
+  }, [operators]);
 
   const line = lines.find((l) => l.id === lineId) || null;
 
   function clockIn() {
     const code = opCode.trim();
-    if (!code) return Alert.alert('Operador', 'Escribe el número de gafete del operador.');
-    if (operators.some((o) => o.code === code)) { setOpCode(''); return; }
+    if (!code) return Alert.alert('Falta el gafete', 'Escribe el número de gafete del operador.');
+    if (operators.some((o) => o.code === code)) { setOpCode(''); return Alert.alert('Ya está en turno', code); }
     setOperators((prev) => [...prev, { code, at: new Date().toISOString() }]);
     setOpCode('');
   }
@@ -59,9 +77,11 @@ export default function MesTabletScreen() {
     try {
       const r = await api.mesScanRoll({ lineId, code: payload, operators: operators.map((o) => o.code) });
       setLastRoll({ ok: true, code: payload, ...r });
+      try { Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType.Success); } catch {}
     } catch (e) {
       // El escaneo necesita respuesta viva del servidor: sin conexión no se encola.
       setLastRoll({ ok: false, code: payload, offline: e.offline, message: e.offline ? 'No se pudo consultar el rollo. Intenta cuando vuelva la señal.' : e.message });
+      try { Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType.Error); } catch {}
       if (e.offline) Alert.alert('Sin conexión', 'No se pudo consultar el rollo. Intenta cuando vuelva la señal.');
     } finally { setBusy(false); }
   }
@@ -101,6 +121,11 @@ export default function MesTabletScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
+      {loadError && (
+        <TouchableOpacity style={st.errBanner} onPress={load} accessibilityRole="button" accessibilityLabel="Reintentar carga">
+          <Text style={st.errBannerTxt}>Sin conexión · toca para reintentar</Text>
+        </TouchableOpacity>
+      )}
       {/* Selección de línea */}
       <Text style={st.label}>🏭 Línea de producción</Text>
       <View style={st.chips}>
@@ -122,7 +147,9 @@ export default function MesTabletScreen() {
           onChangeText={setOpCode}
           placeholder="Gafete del operador"
           placeholderTextColor={colors.gray}
-          keyboardType="number-pad"
+          keyboardType="default"
+          autoCapitalize="characters"
+          autoCorrect={false}
           returnKeyType="done"
           onSubmitEditing={clockIn}
         />
@@ -140,6 +167,9 @@ export default function MesTabletScreen() {
 
       {/* Escaneo de rollo */}
       <Text style={st.label}>🏷️ Rollo de material</Text>
+      {operators.length === 0 && (
+        <View style={st.warnBox}><Text style={st.warnTxt}>⚠️ Sin operadores en turno: el escaneo no quedará atribuido</Text></View>
+      )}
       <TouchableOpacity style={st.scanBtn} onPress={() => setScanOpen(true)} disabled={busy}>
         <Text style={st.scanBtnIcon}>📷</Text>
         <Text style={st.scanBtnTxt}>Escanear QR del rollo</Text>
@@ -213,6 +243,9 @@ function ScanCamera({ onScanned, onClose }) {
       ) : (
         <View style={st.center}>
           <Text style={st.permTxt}>Se necesita permiso de cámara para escanear.</Text>
+          {camPermission && !camPermission.canAskAgain
+            ? <TouchableOpacity style={st.permBtn} onPress={() => Linking.openSettings()}><Text style={st.permBtnTxt}>Abrir ajustes</Text></TouchableOpacity>
+            : <TouchableOpacity style={st.permBtn} onPress={requestCamPermission}><Text style={st.permBtnTxt}>Permitir cámara</Text></TouchableOpacity>}
           <TouchableOpacity style={st.opBtn} onPress={onClose}><Text style={st.opBtnTxt}>Cerrar</Text></TouchableOpacity>
         </View>
       )}
@@ -234,7 +267,7 @@ const st = StyleSheet.create({
   // operadores
   opRow: { flexDirection: 'row', gap: 10 },
   opInput: { flex: 1, backgroundColor: colors.white, borderWidth: 2, borderColor: colors.lightGray, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: colors.black, fontSize: 18 },
-  opBtn: { backgroundColor: colors.black, borderRadius: 12, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
+  opBtn: { backgroundColor: colors.black, borderRadius: 12, paddingHorizontal: 18, minHeight: 52, alignItems: 'center', justifyContent: 'center' },
   opBtnTxt: { color: '#fff', fontWeight: '800', fontSize: 16 },
   opList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   opTag: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF3F3', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 14 },
@@ -259,4 +292,10 @@ const st = StyleSheet.create({
   scanCancel: { marginTop: 40, borderWidth: 2, borderColor: '#fff', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 40 },
   scanCancelTxt: { color: '#fff', fontWeight: '800', fontSize: 18 },
   permTxt: { color: colors.gray, textAlign: 'center', marginBottom: 20, fontSize: 16 },
+  permBtn: { backgroundColor: colors.red, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 28, marginBottom: 12 },
+  permBtnTxt: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  warnBox: { backgroundColor: '#fff7e6', borderRadius: 10, padding: 12, marginBottom: 10 },
+  warnTxt: { color: '#92400E', fontSize: 13, fontWeight: '600' },
+  errBanner: { backgroundColor: '#fff7e6', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14 },
+  errBannerTxt: { color: '#92400E', textAlign: 'center', fontWeight: '700' },
 });
