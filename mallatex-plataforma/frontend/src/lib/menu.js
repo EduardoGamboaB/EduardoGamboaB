@@ -22,81 +22,81 @@ import {
   Images, ClipboardList, Megaphone,
 } from 'lucide-react'
 
-// Orden canónico de los grupos en la barra lateral.
+// Orden canónico de los grupos en la barra lateral. Cada grupo corresponde a
+// un área de la empresa; los módulos viven en el área que los opera:
+//   Inicio → Asistencia → RH → Nómina (personas) · Comercial → Marketing →
+//   Eventos y Leads (mercado) · Producción (planta) · Administración (sistema).
 export const GROUP_ORDER = [
-  'Operación',
+  'Inicio',
+  'Asistencia',
+  'Recursos Humanos',
   'Nómina',
   'Comercial',
   'Marketing',
-  'Recursos Humanos',
-  'MES',
-  'Leads',
-  'Catálogos',
+  'Eventos y Leads',
+  'Producción (MES)',
   'Administración',
-  'Configuración',
 ]
 
 // key -> { label, grp, href, icon }
 export const MODULES = {
-  // ---- Operación ----------------------------------------------------------
-  dashboard: { label: 'Tablero', grp: 'Operación', href: '/dashboard', icon: LayoutDashboard },
-  attendance: { label: 'Asistencia', grp: 'Operación', href: '/asistencia', icon: CalendarClock },
-  incidents: { label: 'Incidencias', grp: 'Operación', href: '/incidencias', icon: AlertTriangle },
-  overtime: { label: 'Tiempo extra', grp: 'Operación', href: '/tiempo-extra', icon: Timer },
+  // ---- Inicio -------------------------------------------------------------
+  dashboard: { label: 'Tablero', grp: 'Inicio', href: '/dashboard', icon: LayoutDashboard },
 
-  // ---- Nómina -------------------------------------------------------------
+  // ---- Asistencia (control diario y su infraestructura) -------------------
+  attendance: { label: 'Asistencia diaria', grp: 'Asistencia', href: '/asistencia', icon: CalendarClock },
+  incidents: { label: 'Incidencias', grp: 'Asistencia', href: '/incidencias', icon: AlertTriangle },
+  overtime: { label: 'Tiempo extra', grp: 'Asistencia', href: '/tiempo-extra', icon: Timer },
+  checador: { label: 'Checador', grp: 'Asistencia', href: '/catalogos/checador', icon: Fingerprint },
+  sites: { label: 'Sitios / geocercas', grp: 'Asistencia', href: '/catalogos/sitios', icon: MapPin },
+
+  // ---- Recursos Humanos (gestión de personas) -----------------------------
+  employees: { label: 'Empleados', grp: 'Recursos Humanos', href: '/catalogos/empleados', icon: Contact },
+  schedules: { label: 'Horarios', grp: 'Recursos Humanos', href: '/catalogos/horarios', icon: Clock },
+  'rh-vacaciones': { label: 'Vacaciones', grp: 'Recursos Humanos', href: '/rh/vacaciones', icon: Plane },
+  'rh-tickets': { label: 'Tickets RH', grp: 'Recursos Humanos', href: '/rh/tickets', icon: Ticket },
+  'rh-indicadores': { label: 'Indicadores RH', grp: 'Recursos Humanos', href: '/rh/indicadores', icon: BarChart3 },
+
+  // ---- Nómina (cálculo y pago) --------------------------------------------
   periods: { label: 'Periodos / NOI', grp: 'Nómina', href: '/periodos', icon: CalendarRange },
   variablepay: { label: 'Percepciones variables', grp: 'Nómina', href: '/percepciones', icon: Wallet },
+  'rh-recibos': { label: 'Recibos de nómina', grp: 'Nómina', href: '/rh/recibos', icon: BadgeDollarSign },
 
-  // ---- Comercial ----------------------------------------------------------
+  // ---- Comercial (CRM y su catálogo) --------------------------------------
   'crm-clientes': { label: 'Clientes', grp: 'Comercial', href: '/crm/clientes', icon: Users },
   'crm-objetivos': { label: 'Objetivos', grp: 'Comercial', href: '/crm/objetivos', icon: Target },
   'crm-administrativo': { label: 'Viáticos y gastos', grp: 'Comercial', href: '/crm/administrativo', icon: Receipt },
   'crm-facturacion': { label: 'Facturación', grp: 'Comercial', href: '/crm/facturacion', icon: FileText },
+  products: { label: 'Catálogo de productos', grp: 'Comercial', href: '/productos', icon: Package },
 
-  // ---- Marketing -----------------------------------------------------------
-  'mkt-banco': { label: 'Banco de contenido', grp: 'Marketing', href: '/marketing/banco', icon: Images },
-  'mkt-formatos': { label: 'Solicitudes de formatos', grp: 'Marketing', href: '/marketing/formatos', icon: ClipboardList },
-  'mkt-publicaciones': { label: 'Publicaciones', grp: 'Marketing', href: '/marketing/publicaciones', icon: Megaphone },
+  // ---- Marketing (planear → producir → difundir → surtir) -----------------
   'mkt-calendario': { label: 'Calendario de campañas', grp: 'Marketing', href: '/marketing/calendario', icon: CalendarDays },
-  'mkt-impresos': { label: 'Inventario de impresos', grp: 'Marketing', href: '/marketing/impresos', icon: Package },
+  'mkt-banco': { label: 'Banco de contenido', grp: 'Marketing', href: '/marketing/banco', icon: Images },
+  'mkt-publicaciones': { label: 'Publicaciones', grp: 'Marketing', href: '/marketing/publicaciones', icon: Megaphone },
+  'mkt-formatos': { label: 'Solicitudes de formatos', grp: 'Marketing', href: '/marketing/formatos', icon: ClipboardList },
+  'mkt-impresos': { label: 'Inventario de impresos', grp: 'Marketing', href: '/marketing/impresos', icon: Boxes },
 
-  // ---- Recursos Humanos ---------------------------------------------------
-  'rh-recibos': { label: 'Recibos', grp: 'Recursos Humanos', href: '/rh/recibos', icon: BadgeDollarSign },
-  'rh-vacaciones': { label: 'Vacaciones', grp: 'Recursos Humanos', href: '/rh/vacaciones', icon: Plane },
-  'rh-tickets': { label: 'Tickets', grp: 'Recursos Humanos', href: '/rh/tickets', icon: Ticket },
-  'rh-indicadores': { label: 'Indicadores', grp: 'Recursos Humanos', href: '/rh/indicadores', icon: BarChart3 },
+  // ---- Eventos y Leads (Anaberries) ---------------------------------------
+  'leads-eventos': { label: 'Eventos', grp: 'Eventos y Leads', href: '/leads/eventos', icon: CalendarDays },
+  'leads-captura': { label: 'Captura de leads', grp: 'Eventos y Leads', href: '/leads/captura', icon: UserPlus },
+  'leads-sorteo': { label: 'Sorteo', grp: 'Eventos y Leads', href: '/leads/sorteo', icon: Gift },
+  'leads-dashboard': { label: 'Dashboard de leads', grp: 'Eventos y Leads', href: '/leads/dashboard', icon: PieChart },
 
-  // ---- MES ----------------------------------------------------------------
-  'mes-tablero': { label: 'Tablero de producción', grp: 'MES', href: '/mes/tablero', icon: LayoutGrid },
-  'mes-produccion': { label: 'Jefe de producción', grp: 'MES', href: '/mes/produccion', icon: Factory },
-  'mes-almacen': { label: 'Almacén', grp: 'MES', href: '/mes/almacen', icon: Warehouse },
-  'mes-operaciones': { label: 'Operaciones', grp: 'MES', href: '/mes/operaciones', icon: Settings2 },
-  'mes-cobranza': { label: 'Cobranza', grp: 'MES', href: '/mes/cobranza', icon: HandCoins },
-  'mes-direccion': { label: 'Dirección', grp: 'MES', href: '/mes/direccion', icon: LineChart },
+  // ---- Producción (MES) ---------------------------------------------------
+  'mes-tablero': { label: 'Tablero de producción', grp: 'Producción (MES)', href: '/mes/tablero', icon: LayoutGrid },
+  'mes-produccion': { label: 'Jefe de producción', grp: 'Producción (MES)', href: '/mes/produccion', icon: Factory },
+  'mes-operaciones': { label: 'Operaciones', grp: 'Producción (MES)', href: '/mes/operaciones', icon: Settings2 },
+  'mes-almacen': { label: 'Almacén', grp: 'Producción (MES)', href: '/mes/almacen', icon: Warehouse },
+  'mes-cobranza': { label: 'Cobranza', grp: 'Producción (MES)', href: '/mes/cobranza', icon: HandCoins },
+  'mes-direccion': { label: 'Dirección', grp: 'Producción (MES)', href: '/mes/direccion', icon: LineChart },
 
-  // ---- Leads --------------------------------------------------------------
-  'leads-captura': { label: 'Captura', grp: 'Leads', href: '/leads/captura', icon: UserPlus },
-  'leads-sorteo': { label: 'Sorteo', grp: 'Leads', href: '/leads/sorteo', icon: Gift },
-  'leads-dashboard': { label: 'Dashboard leads', grp: 'Leads', href: '/leads/dashboard', icon: PieChart },
-  'leads-eventos': { label: 'Eventos', grp: 'Leads', href: '/leads/eventos', icon: CalendarDays },
-
-  // ---- Catálogos ----------------------------------------------------------
-  employees: { label: 'Empleados', grp: 'Catálogos', href: '/catalogos/empleados', icon: Contact },
-  schedules: { label: 'Horarios', grp: 'Catálogos', href: '/catalogos/horarios', icon: Clock },
-  checador: { label: 'Checador', grp: 'Catálogos', href: '/catalogos/checador', icon: Fingerprint },
-  products: { label: 'Productos', grp: 'Catálogos', href: '/productos', icon: Package },
-  sites: { label: 'Sitios / geocercas', grp: 'Catálogos', href: '/catalogos/sitios', icon: MapPin },
-
-  // ---- Administración -----------------------------------------------------
+  // ---- Administración del sistema -----------------------------------------
+  users: { label: 'Usuarios', grp: 'Administración', href: '/config/usuarios', icon: UserCog },
+  roles: { label: 'Roles', grp: 'Administración', href: '/config/roles', icon: KeyRound },
+  modulos: { label: 'Módulos', grp: 'Administración', href: '/config/modulos', icon: Boxes },
+  permisos: { label: 'Permisos', grp: 'Administración', href: '/config/permisos', icon: Lock },
+  asignacion: { label: 'Asignación de acceso', grp: 'Administración', href: '/config/asignacion', icon: SlidersHorizontal },
   audit: { label: 'Auditoría', grp: 'Administración', href: '/auditoria', icon: ShieldCheck },
-
-  // ---- Configuración ------------------------------------------------------
-  users: { label: 'Usuarios', grp: 'Configuración', href: '/config/usuarios', icon: UserCog },
-  roles: { label: 'Roles', grp: 'Configuración', href: '/config/roles', icon: KeyRound },
-  modulos: { label: 'Módulos', grp: 'Configuración', href: '/config/modulos', icon: Boxes },
-  permisos: { label: 'Permisos', grp: 'Configuración', href: '/config/permisos', icon: Lock },
-  asignacion: { label: 'Asignación de acceso', grp: 'Configuración', href: '/config/asignacion', icon: SlidersHorizontal },
 }
 
 /**

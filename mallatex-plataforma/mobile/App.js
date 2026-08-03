@@ -29,27 +29,30 @@ import MesMermasScreen from './src/screens/MesMermasScreen';
 // Menú extensible: agregar un módulo nuevo = una entrada aquí + su pantalla.
 // Las claves coinciden con el catálogo de módulos del backend; el perfil del colaborador
 // (profile.modules) decide cuáles se muestran. Los módulos MES solo aparecen para el perfil "línea".
+// Menú agrupado por área: la jornada del colaborador (asistencia) va primero,
+// después su labor principal (Ventas / Producción), herramientas de apoyo y
+// lo administrativo. El backend filtra por perfil (allowedMenu).
 const MENU = [
+  { key: 'asistencia', label: 'Mi asistencia', icon: '📍', group: 'Mi jornada' },
+  { key: 'historial', label: 'Historial', icon: '🗂️', group: 'Mi jornada' },
   { key: 'ruta', label: 'Ruta de visitas', icon: '🧭', group: 'Ventas' },
   { key: 'clientes', label: 'Mis clientes', icon: '👥', group: 'Ventas' },
   { key: 'visita', label: 'Registrar visita', icon: '📋', group: 'Ventas' },
   { key: 'desempeno', label: 'Mi desempeño', icon: '🎯', group: 'Ventas' },
-  { key: 'asistencia', label: 'Mi asistencia', icon: '📍', group: 'Ventas' },
-  { key: 'historial', label: 'Historial', icon: '🗂️', group: 'Ventas' },
+  { key: 'mes-tablet', label: 'Tablet de línea', icon: '🏭', group: 'Producción (MES)' },
+  { key: 'mes-produccion-movil', label: 'Producción', icon: '📊', group: 'Producción (MES)' },
+  { key: 'mes-mermas', label: 'Reportar merma', icon: '🗑️', group: 'Producción (MES)' },
   { key: 'material', label: 'Material de venta', icon: '🎨', group: 'Herramientas' },
   { key: 'inventario', label: 'Inventario', icon: '📦', group: 'Herramientas' },
   { key: 'cotizador', label: 'Cotizador', icon: '🧮', group: 'Herramientas' },
   { key: 'pedidos', label: 'Pedidos', icon: '🛒', group: 'Herramientas' },
-  { key: 'bot', label: 'Asistente técnico', icon: '🤖', group: 'Herramientas' },
+  { key: 'bot', label: 'Asesor técnico', icon: '🤖', group: 'Herramientas' },
   { key: 'viaticos', label: 'Viáticos', icon: '✈️', group: 'Administración' },
   { key: 'gastos', label: 'Gastos', icon: '🧾', group: 'Administración' },
   { key: 'facturas', label: 'Facturas', icon: '📑', group: 'Administración' },
-  { key: 'mes-tablet', label: 'Tablet de línea', icon: '🏭', group: 'MES' },
-  { key: 'mes-produccion-movil', label: 'Producción', icon: '📊', group: 'MES' },
-  { key: 'mes-mermas', label: 'Reportar merma', icon: '🗑️', group: 'MES' },
   { key: 'perfil', label: 'Mi perfil', icon: '👤', group: 'Cuenta' },
 ];
-const GROUPS = ['Ventas', 'Herramientas', 'Administración', 'MES', 'Cuenta'];
+const GROUPS = ['Mi jornada', 'Ventas', 'Producción (MES)', 'Herramientas', 'Administración', 'Cuenta'];
 const titleOf = (key) => (MENU.find((m) => m.key === key) || {}).label || 'Mallatex Ventas';
 // El menú lo dicta el backend (perfil del colaborador). Si no llega la lista, se muestra todo.
 const allowedMenu = (modules) => (modules ? MENU.filter((m) => modules.includes(m.key)) : MENU);
