@@ -40,7 +40,13 @@ export function buildRoutes({ assetService, formatRequestService, postService, c
     requireAuth,
     asyncHandler(async (req, res) => {
       const archivo = await assetService.archivo(req.params.id);
-      if (archivo.kind === 'blob') return res.type(archivo.mime).send(archivo.data);
+      if (archivo.kind === 'blob') {
+        // Se sirve como descarga y sin sniffing: aunque el MIME ya está en lista
+        // blanca, esto evita ejecución inline de cualquier contenido (XSS).
+        res.setHeader('Content-Disposition', 'attachment');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        return res.type(archivo.mime).send(archivo.data);
+      }
       return res.redirect(302, archivo.url);
     })
   );

@@ -23,12 +23,14 @@
         "NSLocationWhenInUseUsageDescription": "Se usa tu ubicación al registrar asistencia y visitas, y para validar el sitio (geocerca).",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Se registra tu recorrido de ruta mientras la app está en segundo plano.",
         "NSFaceIDUsageDescription": "Se usa Face ID para acceder a la app de forma segura.",
-        "UIBackgroundModes": ["location"]
+        "UIBackgroundModes": ["location"],
+        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": false }
       }
     },
     "android": {
       "package": "mx.mallatex.campo",
       "versionCode": 1,
+      "usesCleartextTraffic": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"

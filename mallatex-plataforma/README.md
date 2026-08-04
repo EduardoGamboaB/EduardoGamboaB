@@ -139,6 +139,31 @@ App móvil / portal (empleados) — código + PIN `1234`:
 | `MTX002` | comercial | CRM completo + Material de venta |
 | `MTX021` | linea | Módulos MES (tablet, producción, mermas) |
 
+## Seguridad
+
+Endurecimiento aplicado (ver detalle en el informe de pentest):
+
+- **Secreto JWT:** el arranque **aborta en producción** si `JWT_SECRET` falta,
+  es débil o mide <24 caracteres. Genera uno con `openssl rand -base64 48`.
+- **Autorización:** los endpoints de PII y operaciones destructivas de leads,
+  el sorteo y el dashboard exigen sesión de administración (no cualquier token).
+- **Banco de contenido:** los archivos se validan por *magic bytes* contra una
+  lista blanca por tipo (no se acepta HTML/SVG) y se sirven como descarga con
+  `nosniff`; las ligas externas se restringen a `http(s)`.
+- **Web:** CSP, `X-Frame-Options: DENY`, `nosniff`, HSTS y `Referrer-Policy` en
+  `next.config.js`; el logout revoca el token en el servidor.
+- **API:** CORS con `*` deshabilita credenciales; `/api/gateway/routes` no
+  expone URLs internas en producción; rate limiting por IP en el autoregistro
+  público de leads; tamaño validado **antes** de decodificar base64.
+- **Móvil:** la selfie de la cola offline se guarda en almacenamiento privado
+  (no en `AsyncStorage` en claro); la URL del servidor exige `https://` (salvo
+  LAN local); `usesCleartextTraffic:false` (Android) y ATS estricto (iOS).
+
+**Pendiente (requiere build nativo):** *certificate pinning* en la app móvil.
+Necesita un plugin de config + EAS build (p. ej. `react-native-ssl-pinning` o
+`expo-build-properties`), no expresable en el runtime JS gestionado. Mitigación
+interina vigente: HTTPS forzado + ATS/cleartext deshabilitado.
+
 ## Despliegue a producción
 
 - **Render:** blueprint en [`render.yaml`](render.yaml) (base de datos +
@@ -158,7 +183,7 @@ App móvil / portal (empleados) — código + PIN `1234`:
 | `npm run db:seed` | Siembra catálogos y datos demo |
 | `npm run db:reset` | Recrea el esquema y siembra |
 | `npm test` | Pruebas de todos los workspaces |
-| `npm run test:e2e` | Suite E2E vía gateway (211 aserciones) — ver [`docs/manual-e2e.md`](docs/manual-e2e.md) |
+| `npm run test:e2e` | Suite E2E vía gateway (220 aserciones) — ver [`docs/manual-e2e.md`](docs/manual-e2e.md) |
 
 ---
 

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicat
 import { StatusBar } from 'expo-status-bar';
 import { colors } from './src/theme';
 import { api } from './src/api';
-import { getToken, setToken, getQueue, saveQueue, getBiometricEnabled, setBiometricEnabled } from './src/storage';
+import { getToken, setToken, getQueue, saveQueue, hydrateQueueItem, discardQueueItem, getBiometricEnabled, setBiometricEnabled } from './src/storage';
 import { biometricAvailable, biometricLabel, biometricAuthenticate } from './src/biometrics';
 import { flushTrackBuffer } from './src/tracking';
 import { registerPushToken, onPushReceived } from './src/push';
@@ -123,7 +123,9 @@ export default function App() {
     const q = await getQueue();
     if (!q.length) { if (!silent) Alert.alert('Sincronizar', 'No hay registros pendientes.'); return; }
     const remaining = []; let sent = 0;
-    for (const item of q) {
+    for (const stored of q) {
+      // Rehidrata la selfie desde el archivo privado justo antes de enviar.
+      const item = await hydrateQueueItem(stored);
       try {
         if (item.kind === 'visit') await api.createVisit(item);
         else if (item.kind === 'client') await api.createProspect(item.payload ?? item);
@@ -132,8 +134,9 @@ export default function App() {
         else if (item.kind === 'mes-avance') await api.mesReportAvance(item.payload ?? item);
         else await api.checkin(item);
         sent++;
+        await discardQueueItem(stored); // borra el archivo de la selfie ya enviada
       }
-      catch (e) { if (e.offline) remaining.push(item); }
+      catch (e) { if (e.offline) remaining.push(stored); }
     }
     await saveQueue(remaining); setQueueVersion((v) => v + 1);
     if (!silent) Alert.alert('Sincronización', `${sent} enviado(s), ${remaining.length} pendiente(s).`);

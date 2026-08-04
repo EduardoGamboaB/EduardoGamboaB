@@ -9,7 +9,7 @@
 // ---------------------------------------------------------------------------
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { login as apiLogin, me as apiMe, setSession, clearSession, getToken } from './api'
+import { login as apiLogin, me as apiMe, logout as apiLogout, setSession, clearSession, getToken } from './api'
 
 const AuthContext = createContext(null)
 
@@ -53,7 +53,10 @@ export function AuthProvider({ children }) {
     return profile
   }, [])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // Revoca el token en el servidor antes de limpiar el estado local, para
+    // que un token ya capturado no siga siendo válido tras el logout.
+    await apiLogout()
     clearSession()
     setSessionState(null)
     if (typeof window !== 'undefined') window.location.href = '/login'

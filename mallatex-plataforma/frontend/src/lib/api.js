@@ -116,3 +116,13 @@ export async function login(email, password) {
 export async function me() {
   return api('/api/auth/me')
 }
+
+// Cierre de sesión: revoca el token en el servidor (denylist del jti).
+// Best-effort: no bloquea el logout local si la red falla.
+export async function logout() {
+  try {
+    await api('/api/auth/logout', { method: 'POST' })
+  } catch {
+    /* el logout local procede igual */
+  }
+}

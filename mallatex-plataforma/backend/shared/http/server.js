@@ -21,10 +21,13 @@ export function createServer({ name = config.service, mountApi } = {}) {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     })
   );
+  // CORS: si se permite cualquier origen ('*'), NO se habilitan credenciales
+  // (reflejar cualquier Origin con credentials:true es una mala configuración).
+  const corsAny = config.http.corsOrigins.includes('*');
   app.use(
     cors({
-      origin: config.http.corsOrigins.includes('*') ? true : config.http.corsOrigins,
-      credentials: true,
+      origin: corsAny ? true : config.http.corsOrigins,
+      credentials: !corsAny,
     })
   );
   if (config.env !== 'test') app.use(morgan('tiny'));

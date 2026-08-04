@@ -91,6 +91,11 @@ export class EmployeeService {
     if (typeof photo !== 'string' || !photo.startsWith('data:image/')) {
       throw new DomainError('Se requiere una foto (dataURL) o un descriptor facial', { code: 'FACE_INPUT_REQUIRED' });
     }
+    // Cota de tamaño de la foto de referencia (~3 MB de base64) para evitar
+    // bloat de la columna TEXT por envíos repetidos (ver pentest #14).
+    if (photo.length > 4 * 1024 * 1024) {
+      throw new DomainError('La foto es demasiado grande (máximo ~3 MB)', { code: 'FACE_PHOTO_TOO_LARGE', status: 413 });
+    }
     await this.employeeDAO.update(id, { facePhoto: photo });
     await this.audit?.record({ action: 'face-reference', entity: 'employee', entityId: String(id) });
     return { ok: true, faceEnrolled: emp.faceEnrolled, reference: true };

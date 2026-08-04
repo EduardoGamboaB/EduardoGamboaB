@@ -1,7 +1,7 @@
 import { DomainError } from '@mallatex/shared/ddd';
 import { PLAIN_LIMIT, wantsPage, pageOpts, mapItems, paginateArray } from '@mallatex/shared/http';
 import { Asset, DEFAULT_VIDEO_DB_MAX_BYTES } from '../domain/Asset.js';
-import { decodeDataUrl } from '../infrastructure/images.js';
+import { decodeAssetFile } from '../infrastructure/images.js';
 import { keyForAsset } from '../infrastructure/S3Storage.js';
 
 /**
@@ -55,9 +55,15 @@ export class AssetService {
   async crear(body = {}, { uploadedBy = '' } = {}) {
     let file = null;
     if (body.file !== undefined && body.file !== null && body.file !== '') {
-      file = decodeDataUrl(body.file);
+      // El MIME se valida contra los bytes reales y una lista blanca por tipo:
+      // no se acepta HTML/SVG ni contenido que no corresponda al tipo declarado.
+      file = decodeAssetFile(body.file, body.tipo);
       if (!file) {
-        throw new DomainError('Archivo no válido; envía un dataURL base64', { code: 'ASSET_FILE_INVALIDO' });
+        throw new DomainError(
+          'Archivo no válido: envía un dataURL base64 cuyo contenido real sea del tipo permitido ' +
+            '(imagen png/jpeg/webp/gif, documento pdf, video mp4/webm/mov).',
+          { code: 'ASSET_FILE_INVALIDO' }
+        );
       }
     }
 

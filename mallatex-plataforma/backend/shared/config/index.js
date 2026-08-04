@@ -12,6 +12,25 @@ function bool(v, def = false) {
 
 const dialect = env.DB_DIALECT || (env.DATABASE_URL ? 'postgres' : 'sqlite');
 
+// --- Barrera de arranque del secreto JWT -----------------------------------
+// En producción NO se permite arrancar con el secreto por defecto ni con uno
+// débil: firmaría/validaría tokens forjables por cualquiera que lea el repo.
+const WEAK_SECRETS = new Set([
+  'dev-mallatex-secret-change-me',
+  'cambia-esto',
+  'cambia-esto-en-produccion',
+  'change-me',
+  'secret',
+]);
+const isProdEnv = env.NODE_ENV === 'production';
+const jwtSecret = env.JWT_SECRET || 'dev-mallatex-secret-change-me';
+if (isProdEnv && (!env.JWT_SECRET || WEAK_SECRETS.has(jwtSecret) || jwtSecret.length < 24)) {
+  throw new Error(
+    'JWT_SECRET ausente o débil en producción: define un secreto aleatorio de ≥24 caracteres ' +
+      '(p. ej. `openssl rand -base64 48`). El arranque se aborta para no emitir tokens forjables.'
+  );
+}
+
 export const config = Object.freeze({
   env: env.NODE_ENV || 'development',
   isProd: env.NODE_ENV === 'production',
@@ -29,7 +48,7 @@ export const config = Object.freeze({
   }),
 
   auth: Object.freeze({
-    jwtSecret: env.JWT_SECRET || 'dev-mallatex-secret-change-me',
+    jwtSecret,
     ttlHours: Number(env.AUTH_TTL_HOURS || 12),
     issuer: env.JWT_ISSUER || 'mallatex-plataforma',
   }),

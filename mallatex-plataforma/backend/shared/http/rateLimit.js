@@ -49,3 +49,34 @@ export function createLoginRateLimiter({ max = 10, windowMs = 15 * 60 * 1000 } =
     },
   };
 }
+
+/**
+ * Limitador genérico por IP para endpoints públicos (autoregistro, ligas
+ * públicas). Cuenta TODAS las peticiones por IP en la ventana y responde 429
+ * al superar `max`. En memoria por proceso; suficiente como primer freno de
+ * abuso/DoS. Detrás del gateway se debe activar TRUST_PROXY para ver la IP real.
+ */
+export function createIpRateLimiter({ max = 30, windowMs = 60 * 1000 } = {}) {
+  const hits = new Map(); // ip -> [timestamps]
+  const ipOf = (req) => req.ip || req.socket?.remoteAddress || '?';
+  function prune(list, now) {
+    while (list.length && now - list[0] > windowMs) list.shift();
+    return list;
+  }
+  return function guard(req, res, next) {
+    const now = Date.now();
+    const list = prune(hits.get(ipOf(req)) || [], now);
+    if (list.length >= max) {
+      const retryS = Math.ceil((windowMs - (now - list[0])) / 1000);
+      res.set('Retry-After', String(retryS));
+      return res.status(429).json({
+        error: 'Demasiadas solicitudes; inténtalo de nuevo en un momento.',
+        code: 'RATE_LIMITED',
+        retryAfterSeconds: retryS,
+      });
+    }
+    list.push(now);
+    hits.set(ipOf(req), list);
+    next();
+  };
+}

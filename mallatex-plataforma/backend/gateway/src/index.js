@@ -20,8 +20,17 @@ if (config.env !== 'test') app.use(morgan('tiny'));
 app.get('/api/health', (_req, res) =>
   res.json({ ok: true, service: NAME, ts: new Date().toISOString() })
 );
+// Descubrimiento de rutas: NO se exponen las URLs internas de los servicios
+// (divulgación de infraestructura). Solo los prefijos públicos y, fuera de
+// producción, el destino para depurar.
 app.get('/api/gateway/routes', (_req, res) =>
-  res.json(routeMap.map((r) => ({ name: r.name, target: r.target, prefixes: r.prefixes })))
+  res.json(
+    routeMap.map((r) => ({
+      name: r.name,
+      prefixes: r.prefixes,
+      ...(config.isProd ? {} : { target: r.target }),
+    }))
+  )
 );
 
 // Un proxy por microservicio, montado a nivel raíz con `pathFilter` para

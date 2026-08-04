@@ -32,7 +32,7 @@ services:
     depends_on: { migrate: { condition: service_completed_successfully } }
     environment:
       DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
-      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-solo-cambia-en-produccion-0123}
       PORT: '3001'
       SERVICE_NAME: identity
     command: npm run start:identity
@@ -43,7 +43,7 @@ services:
     depends_on: { migrate: { condition: service_completed_successfully } }
     environment:
       DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
-      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-solo-cambia-en-produccion-0123}
       PORT: '3002'
       SERVICE_NAME: attendance
       # Las checadas llegan en hora de pared de la planta (checador/kiosco):
@@ -57,7 +57,7 @@ services:
     depends_on: { migrate: { condition: service_completed_successfully } }
     environment:
       DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
-      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-solo-cambia-en-produccion-0123}
       PORT: '3003'
       SERVICE_NAME: crm
     command: npm run start:crm
@@ -68,7 +68,7 @@ services:
     depends_on: { migrate: { condition: service_completed_successfully } }
     environment:
       DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
-      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-solo-cambia-en-produccion-0123}
       PORT: '3004'
       SERVICE_NAME: mes
     command: npm run start:mes
@@ -79,7 +79,7 @@ services:
     depends_on: { migrate: { condition: service_completed_successfully } }
     environment:
       DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
-      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-solo-cambia-en-produccion-0123}
       PORT: '3005'
       SERVICE_NAME: leads
     command: npm run start:leads
@@ -90,10 +90,10 @@ services:
     depends_on: { migrate: { condition: service_completed_successfully } }
     environment:
       DATABASE_URL: postgres://mallatex:mallatex@db:5432/mallatex
-      JWT_SECRET: ${JWT_SECRET:-cambia-esto}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-solo-cambia-en-produccion-0123}
       PORT: '3006'
       SERVICE_NAME: marketing
-      JSON_LIMIT: 60mb
+      JSON_LIMIT: 40mb
     command: npm run start:marketing
     ports: ['3006:3006']
 

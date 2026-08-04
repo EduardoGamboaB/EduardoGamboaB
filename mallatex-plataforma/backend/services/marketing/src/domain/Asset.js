@@ -13,6 +13,23 @@ export function clean(v, max = 500) {
   return (v == null ? '' : String(v)).trim().slice(0, max);
 }
 
+/**
+ * Normaliza una liga externa: solo http(s) con host. Evita open redirect y
+ * esquemas peligrosos (javascript:, data:, file:) al servirse vía 302 en
+ * /assets/:id/file (ver pentest #10). Devuelve '' si no es válida.
+ */
+export function cleanUrl(v, max = 1000) {
+  const s = clean(v, max);
+  if (!s) return '';
+  let u;
+  try { u = new URL(s); } catch { throw new DomainError('Liga externa inválida', { code: 'ASSET_URL_INVALIDA' }); }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+    throw new DomainError('La liga externa debe ser http(s)', { code: 'ASSET_URL_ESQUEMA' });
+  }
+  if (!u.hostname) throw new DomainError('Liga externa sin host', { code: 'ASSET_URL_HOST' });
+  return u.toString();
+}
+
 /** Id numérico opcional (FK): número válido o null. */
 export function idOpcional(v) {
   if (v === undefined || v === null || v === '') return null;
@@ -63,7 +80,7 @@ export class Asset extends AggregateRoot {
     const titulo = clean(body.titulo, 200);
     if (!titulo) throw new DomainError('El título es obligatorio', { code: 'ASSET_TITULO_REQUERIDO' });
 
-    const externalUrl = clean(body.externalUrl, 1000);
+    const externalUrl = cleanUrl(body.externalUrl, 1000);
     if (!file && !externalUrl) {
       throw new DomainError('Adjunta un archivo o proporciona una liga externa', {
         code: 'ASSET_FUENTE_REQUERIDA',
@@ -132,7 +149,7 @@ export class Asset extends AggregateRoot {
     if (body.categoria !== undefined) this.categoria = clean(body.categoria, 120);
     if (body.productSku !== undefined) this.productSku = clean(body.productSku, 120);
     if (body.campaignId !== undefined) this.campaignId = idOpcional(body.campaignId);
-    if (body.externalUrl !== undefined) this.externalUrl = clean(body.externalUrl, 1000);
+    if (body.externalUrl !== undefined) this.externalUrl = cleanUrl(body.externalUrl, 1000);
     return this;
   }
 

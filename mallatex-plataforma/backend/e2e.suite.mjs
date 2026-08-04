@@ -519,6 +519,14 @@ sec('LEADS · captura (staff + autoregistro público)');
   ok('búsqueda de leads', search.status === 200 && (search.json?.length ?? search.json?.items?.length ?? 0) >= 1);
   const csv = await get('/api/leads/export.csv', { token: admin });
   ok('export CSV', csv.status === 200 && csv.text.toLowerCase().includes('folio'));
+
+  // Seguridad: un empleado NO puede leer/exportar/borrar PII de leads (pentest #2).
+  const empLista = await get(`/api/leads?event=${eventId}`, { token: empCom });
+  ok('empleado no lista leads → 403', empLista.status === 403, `(${empLista.status})`);
+  const empCsv = await get('/api/leads/export.csv', { token: empCom });
+  ok('empleado no exporta CSV → 403', empCsv.status === 403, `(${empCsv.status})`);
+  const empDel = await del(`/api/leads/${leadId || 1}`, { token: empCom });
+  ok('empleado no borra leads → 403', empDel.status === 403, `(${empDel.status})`);
 }
 
 sec('LEADS · sorteo y dashboard');
@@ -532,6 +540,12 @@ sec('LEADS · sorteo y dashboard');
   const stats = await get('/api/stats', { token: admin });
   ok('dashboard: total y consentimiento', stats.status === 200 && (stats.json?.total ?? 0) >= 3, `(total=${stats.json?.total})`);
   ok('dashboard: desglose por interés', Array.isArray(stats.json?.porInteres) && stats.json.porInteres.length >= 1);
+
+  // Seguridad: sorteo y dashboard solo para administración (pentest #2).
+  const empDraw = await post('/api/raffle/draw', { token: empCom, body: { eventId } });
+  ok('empleado no ejecuta sorteo → 403', empDraw.status === 403, `(${empDraw.status})`);
+  const empStats = await get('/api/stats', { token: empCom });
+  ok('empleado no ve dashboard de leads → 403', empStats.status === 403, `(${empStats.status})`);
 }
 
 // =====================================================================
@@ -586,12 +600,25 @@ let mkt, assetId;
   ok('listar banco filtrado por tipo', list.status === 200 && (list.json || []).some((a) => a.id === assetId));
   const file = await get(`/api/mkt/assets/${assetId}/file`, { token: mkt });
   ok('descargar archivo del asset', file.status === 200 && String(file.headers.get('content-type')).includes('image/png'), `(${file.status})`);
+  ok('archivo se sirve como descarga (no inline)', String(file.headers.get('content-disposition') || '').includes('attachment') && file.headers.get('x-content-type-options') === 'nosniff');
+
+  // Seguridad: no se acepta HTML/SVG disfrazado (XSS almacenado) — pentest #3.
+  const htmlB64 = Buffer.from('<html><script>alert(1)</script></html>').toString('base64');
+  const xss = await post('/api/mkt/assets', { token: mkt, body: { tipo: 'documento', titulo: 'x', file: `data:text/html;base64,${htmlB64}` } });
+  ok('rechaza documento HTML (XSS)', xss.status >= 400 && xss.json?.code === 'ASSET_FILE_INVALIDO', `(${xss.status})`);
+  const svgB64 = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>').toString('base64');
+  const xss2 = await post('/api/mkt/assets', { token: mkt, body: { tipo: 'imagen', titulo: 'x', file: `data:image/svg+xml;base64,${svgB64}` } });
+  ok('rechaza imagen SVG (XSS)', xss2.status >= 400 && xss2.json?.code === 'ASSET_FILE_INVALIDO', `(${xss2.status})`);
+  // Seguridad: open redirect por externalUrl con esquema peligroso — pentest #10.
+  const badUrl = await post('/api/mkt/assets', { token: mkt, body: { tipo: 'documento', titulo: 'x', externalUrl: 'javascript:alert(1)' } });
+  ok('rechaza externalUrl no http(s)', badUrl.status >= 400, `(${badUrl.status})`);
 
   const empList = await get('/api/mkt/assets', { token: empCom });
   ok('vendedor (empleado) consulta el banco', empList.status === 200);
   ok('seed incluye assets de ejemplo en el banco', (empList.json || []).length >= 4, `(${empList.json?.length})`);
 
-  const vid = 'data:video/mp4;base64,' + Buffer.from('e2e-video-bytes').toString('base64');
+  // Video con cabecera mp4 real (ftyp/isom): pasa la validación de magic bytes.
+  const vid = 'data:video/mp4;base64,' + Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from('ftypisom'), Buffer.from('relleno-e2e-video')]).toString('base64');
   const cv = await post('/api/mkt/assets', { token: mkt, body: { tipo: 'video', titulo: 'Video E2E', file: vid } });
   ok('video sin S3 queda en BD pendiente de sincronizar', cv.status === 201 && cv.json?.storage === 'db' && cv.json?.pendingSync === true, JSON.stringify(cv.json).slice(0, 100));
 

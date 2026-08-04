@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { asyncHandler } from '@mallatex/shared/http';
+import { asyncHandler, createIpRateLimiter } from '@mallatex/shared/http';
 import { requireAuth, adminOnly } from '@mallatex/shared/auth';
 
 /**
@@ -45,27 +45,35 @@ export function buildRoutes({ eventService, leadService, raffleService, statsSer
   // Resuelve el evento objetivo desde body o query (?event=<id>).
   const conEvento = (req) => ({ ...(req.body || {}), event: (req.body && req.body.event) || req.query.event });
 
-  // Captura por el personal (requiere sesión). forzar salta el duplicado.
+  // Captura por el personal administrativo (requiere sesión admin). forzar salta el duplicado.
   leads.post(
     '/',
     requireAuth,
+    adminOnly,
     asyncHandler(async (req, res) => {
       const body = conEvento(req);
       res.status(201).json(await leadService.capturar(body, { forzar: Boolean(body.forzar) }));
     })
   );
 
-  // Autoregistro público (landing/QR).
-  leads.post('/registro', asyncHandler(async (req, res) => res.status(201).json(await leadService.autoregistro(conEvento(req)))));
+  // Autoregistro público (landing/QR): limitado por IP para frenar spam/DoS
+  // (además del honeypot y la deduplicación del servicio). Requiere TRUST_PROXY
+  // para ver la IP real detrás del gateway.
+  const registroLimiter = createIpRateLimiter({
+    max: Number(process.env.LEADS_REGISTRO_MAX || 20),
+    windowMs: Number(process.env.LEADS_REGISTRO_WINDOW_MIN || 5) * 60 * 1000,
+  });
+  leads.post('/registro', registroLimiter, asyncHandler(async (req, res) => res.status(201).json(await leadService.autoregistro(conEvento(req)))));
 
   // Catálogos para el formulario (público).
   leads.get('/meta', asyncHandler(async (_req, res) => res.json(await leadService.meta())));
 
-  // A partir de aquí, solo con sesión.
-  leads.get('/', requireAuth, asyncHandler(async (req, res) => res.json(await leadService.listar(req.query))));
+  // A partir de aquí, PII y operaciones destructivas: solo administración.
+  leads.get('/', requireAuth, adminOnly, asyncHandler(async (req, res) => res.json(await leadService.listar(req.query))));
   leads.get(
     '/export.csv',
     requireAuth,
+    adminOnly,
     asyncHandler(async (req, res) => {
       const csv = await leadService.exportCsv(req.query.event);
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -76,14 +84,15 @@ export function buildRoutes({ eventService, leadService, raffleService, statsSer
   leads.get(
     '/:id/badge',
     requireAuth,
+    adminOnly,
     asyncHandler(async (req, res) => sendImage(res, await leadService.badge(req.params.id), 'Sin foto'))
   );
-  leads.delete('/:id', requireAuth, asyncHandler(async (req, res) => res.json(await leadService.eliminar(req.params.id))));
+  leads.delete('/:id', requireAuth, adminOnly, asyncHandler(async (req, res) => res.json(await leadService.eliminar(req.params.id))));
   router.use('/api/leads', leads);
 
-  // ---- Sorteo (requiere sesión) ------------------------------------
+  // ---- Sorteo (solo administración) --------------------------------
   const raffle = Router();
-  raffle.use(requireAuth);
+  raffle.use(requireAuth, adminOnly);
   raffle.get('/eligible', asyncHandler(async (req, res) => res.json(await raffleService.eligible(req.query))));
   raffle.post('/draw', asyncHandler(async (req, res) => res.status(201).json(await raffleService.draw({ ...(req.body || {}), event: (req.body && req.body.event) || req.query.event }))));
   raffle.get('/winners', asyncHandler(async (req, res) => res.json(await raffleService.winners(req.query))));
@@ -95,9 +104,9 @@ export function buildRoutes({ eventService, leadService, raffleService, statsSer
   );
   router.use('/api/raffle', raffle);
 
-  // ---- Estadísticas (requiere sesión) ------------------------------
+  // ---- Estadísticas (solo administración) --------------------------
   const stats = Router();
-  stats.use(requireAuth);
+  stats.use(requireAuth, adminOnly);
   stats.get('/', asyncHandler(async (req, res) => res.json(await statsService.dashboard(req.query))));
   router.use('/api/stats', stats);
 
