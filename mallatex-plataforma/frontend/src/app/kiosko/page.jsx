@@ -1010,7 +1010,114 @@ const RH_TABS = [
   { id: 'solicitudes', label: '🏖️ Vacaciones y permisos' },
   { id: 'recibos', label: '🧾 Mis recibos' },
   { id: 'tickets', label: '🎫 Tickets' },
+  { id: 'rostro', label: '🪪 Mi rostro' },
 ]
+
+// ---------- Autoservicio: enrolamiento facial -------------------------------
+// Captura la selfie con la cámara de la tablet. Si el modelo de reconocimiento
+// está instalado (archivos en /models/face-api/, drop-in opcional), calcula el
+// descriptor 128D y el enrolamiento queda completo; si no, la foto se guarda
+// como referencia y RH termina el enrolamiento desde el catálogo de empleados.
+function TabRostro({ token }) {
+  const videoRef = useRef(null)
+  const [ready, setReady] = useState(false)
+  const [me2, setMe2] = useState(null)
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    kfetch('/api/field/me', { token }).then(setMe2).catch(() => {})
+  }, [token])
+
+  useEffect(() => {
+    let stream
+    ;(async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640 } })
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          await videoRef.current.play()
+          setReady(true)
+        }
+      } catch {
+        setMsg('No se pudo abrir la cámara de la tablet. Avisa a Sistemas. 📷')
+      }
+    })()
+    return () => stream?.getTracks().forEach((t) => t.stop())
+  }, [])
+
+  // Descriptor 128D con face-api si el modelo está instalado (opcional).
+  async function tryDescriptor(video) {
+    try {
+      const fa = window.faceapi
+      if (!fa) return null
+      if (!fa.nets.tinyFaceDetector.params) {
+        await fa.nets.tinyFaceDetector.loadFromUri('/models/face-api')
+        await fa.nets.faceLandmark68Net.loadFromUri('/models/face-api')
+        await fa.nets.faceRecognitionNet.loadFromUri('/models/face-api')
+      }
+      const det = await fa
+        .detectSingleFace(video, new fa.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor()
+      return det ? Array.from(det.descriptor) : null
+    } catch {
+      return null
+    }
+  }
+
+  async function capture() {
+    const video = videoRef.current
+    if (!video || busy) return
+    setBusy(true)
+    setMsg('')
+    try {
+      const canvas = document.createElement('canvas')
+      const w = 480
+      canvas.width = w
+      canvas.height = Math.round((video.videoHeight / video.videoWidth) * w) || 360
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+      const photo = canvas.toDataURL('image/jpeg', 0.7)
+      const descriptor = await tryDescriptor(video)
+      const r = await kfetch('/api/field/face', { method: 'POST', token, body: { photo, descriptor } })
+      setMe2((m) => (m ? { ...m, employee: { ...m.employee, faceEnrolled: r.faceEnrolled } } : m))
+      setMsg(r.faceEnrolled
+        ? '✅ Rostro enrolado: ya puedes checar con reconocimiento facial.'
+        : '📸 Foto guardada como referencia. RH completará tu enrolamiento.')
+    } catch (e) {
+      setMsg(e?.message || 'No se pudo guardar. Intenta de nuevo.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const enrolled = me2?.employee?.faceEnrolled
+  return (
+    <div className="kiosk-face">
+      <p className="kiosk-sub">
+        {enrolled
+          ? 'Tu rostro ya está enrolado. Puedes actualizarlo tomando una nueva selfie.'
+          : 'Toma una selfie para checar con reconocimiento facial en el kiosco.'}
+      </p>
+      <div className="kiosk-face-cam">
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <video ref={videoRef} playsInline muted style={{ width: '100%', borderRadius: 14, background: '#000' }} />
+      </div>
+      <button
+        type="button"
+        className="kiosk-btn kiosk-btn-red"
+        style={{ width: '100%', marginTop: 12 }}
+        onClick={capture}
+        disabled={!ready || busy}
+      >
+        {busy ? 'Guardando…' : enrolled ? '📷 ACTUALIZAR MI ROSTRO' : '📷 REGISTRAR MI ROSTRO'}
+      </button>
+      {msg && (
+        <p className="kiosk-face-msg" role="status">{msg}</p>
+      )}
+    </div>
+  )
+}
 
 function RhPortal({ session, onExit }) {
   const { token } = session
@@ -1091,6 +1198,7 @@ function RhPortal({ session, onExit }) {
         {tab === 'solicitudes' && <TabSolicitudes token={token} />}
         {tab === 'recibos' && <TabRecibos token={token} me={me} />}
         {tab === 'tickets' && <TabTickets token={token} />}
+        {tab === 'rostro' && <TabRostro token={token} />}
       </div>
       {secondsLeft <= 20 && secondsLeft > 0 && (
         <div className="kiosk-timeout-chip" role="status">

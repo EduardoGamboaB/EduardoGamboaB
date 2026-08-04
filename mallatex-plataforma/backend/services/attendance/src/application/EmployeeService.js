@@ -75,6 +75,36 @@ export class EmployeeService {
     return { ok: true, faceEnrolled: true };
   }
 
+  /**
+   * Autoenrolamiento (app/kiosco). Con descriptor 128D queda enrolado para
+   * reconocimiento; con solo foto se guarda como referencia (RH o el kiosco
+   * con modelo facial completan el descriptor después).
+   */
+  async selfFace(id, { descriptor, photo } = {}) {
+    const emp = await this.get(id);
+    if (Array.isArray(descriptor) && descriptor.length) {
+      emp.enrollFace(descriptor, photo);
+      await this.employeeDAO.update(id, { faceDescriptor: emp.faceDescriptor, facePhoto: emp.facePhoto });
+      await this.audit?.record({ action: 'self-enroll-face', entity: 'employee', entityId: String(id) });
+      return { ok: true, faceEnrolled: true, reference: false };
+    }
+    if (typeof photo !== 'string' || !photo.startsWith('data:image/')) {
+      throw new DomainError('Se requiere una foto (dataURL) o un descriptor facial', { code: 'FACE_INPUT_REQUIRED' });
+    }
+    await this.employeeDAO.update(id, { facePhoto: photo });
+    await this.audit?.record({ action: 'face-reference', entity: 'employee', entityId: String(id) });
+    return { ok: true, faceEnrolled: emp.faceEnrolled, reference: true };
+  }
+
+  /** Guarda el Expo push token del último dispositivo del colaborador. */
+  async savePushToken(id, token) {
+    const clean = typeof token === 'string' ? token.trim().slice(0, 200) : '';
+    if (!clean) throw new DomainError('Token push requerido', { code: 'PUSH_TOKEN_REQUIRED' });
+    await this.get(id);
+    await this.employeeDAO.update(id, { pushToken: clean });
+    return { ok: true };
+  }
+
   async unenrollFace(id) {
     const emp = await this.get(id);
     emp.unenrollFace();

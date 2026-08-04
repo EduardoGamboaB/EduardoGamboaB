@@ -11,7 +11,8 @@
     "./persistence": "./persistence/index.js",
     "./http": "./http/index.js",
     "./auth": "./auth/index.js",
-    "./config": "./config/index.js"
+    "./config": "./config/index.js",
+    "./notifications": "./notifications/expoPush.js"
   },
   "scripts": {
     "test": "node --test"

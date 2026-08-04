@@ -10,6 +10,8 @@ import { CampaignDAO } from './infrastructure/CampaignDAO.js';
 import { PrintItemDAO } from './infrastructure/PrintItemDAO.js';
 import { PrintMovementDAO } from './infrastructure/PrintMovementDAO.js';
 import { S3Storage } from './infrastructure/S3Storage.js';
+import { activePushTokens } from './infrastructure/pushTokens.js';
+import { sendExpoPush } from '@mallatex/shared/notifications';
 import { AssetService } from './application/AssetService.js';
 import { FormatRequestService } from './application/FormatRequestService.js';
 import { PostService } from './application/PostService.js';
@@ -38,7 +40,9 @@ async function bootstrap() {
 
   const assetService = new AssetService({ assetDAO, s3 });
   const formatRequestService = new FormatRequestService({ formatRequestDAO, assetDAO });
-  const postService = new PostService({ postDAO, postViewDAO, assetDAO });
+  // Push best-effort a todo el equipo cuando marketing publica material nuevo.
+  const notifier = async (msg) => sendExpoPush(await activePushTokens(), msg);
+  const postService = new PostService({ postDAO, postViewDAO, assetDAO, notifier });
   const campaignService = new CampaignService({ campaignDAO });
   const printService = new PrintService({ printItemDAO, printMovementDAO });
 

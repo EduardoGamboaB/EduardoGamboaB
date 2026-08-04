@@ -11,6 +11,7 @@
  */
 import pg from 'pg';
 import { scrypt, randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { promisify } from 'node:util';
 
 const scryptAsync = promisify(scrypt);
@@ -213,6 +214,32 @@ async function main() {
       ('Antigranizo temporada alta','Empuje de malla antigranizo previo a tormentas','#ED3237','mixto','2026-07-01','2026-10-31','["MA-90"]','vigente','Marketing'),
       ('Sombra primavera','Malla sombra para hortaliza','#B45309','redes','2027-02-01','2027-05-31','["MS-35"]','planeada','Marketing')
       ON CONFLICT DO NOTHING`);
+    // Banco de contenido: assets de ejemplo (logos reales del repo si están
+    // disponibles; si no, un PNG mínimo para que la galería no quede vacía).
+    const TINY_PNG = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64'
+    );
+    const logoBlob = (name) => {
+      try {
+        return readFileSync(new URL(`../frontend/public/logos/${name}`, import.meta.url));
+      } catch {
+        return TINY_PNG;
+      }
+    };
+    const demoAssets = [
+      ['Logotipo Mallatex (horizontal)', 'logos', null, logoBlob('mallatex-full.png')],
+      ['Símbolo Mallatex', 'logos', null, logoBlob('mallatex-symbol.png')],
+      ['Ficha técnica malla antigranizo', 'fichas', 'MA-90', logoBlob('mallatex-full.png')],
+    ];
+    for (const [titulo, categoria, sku, blob] of demoAssets) {
+      await c.query(
+        `INSERT INTO marketing.assets(tipo,titulo,categoria,product_sku,mime,size_bytes,storage,blob,uploaded_by)
+         SELECT 'imagen',$1,$2,$3,'image/png',$4,'db',$5,'Marketing'
+         WHERE NOT EXISTS (SELECT 1 FROM marketing.assets WHERE titulo=$1)`,
+        [titulo, categoria, sku, blob.length, blob]
+      );
+    }
     await c.query(`INSERT INTO marketing.posts(titulo,copy_texto,red,campaign_id,publicado_por) VALUES
       ('Protege tu cosecha del granizo','La malla antigranizo Mallatex resiste hasta... #ProtegemosLoQueSiembras','whatsapp',1,'Marketing')
       ON CONFLICT DO NOTHING`);

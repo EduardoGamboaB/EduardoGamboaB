@@ -9,10 +9,12 @@ export const REDES = ['facebook', 'instagram', 'whatsapp', 'tiktok', 'otro'];
  * de "nuevas" alimentado por marketing.post_views.
  */
 export class PostService {
-  constructor({ postDAO, postViewDAO, assetDAO }) {
+  constructor({ postDAO, postViewDAO, assetDAO, notifier = null }) {
     this.postDAO = postDAO;
     this.postViewDAO = postViewDAO;
     this.assetDAO = assetDAO;
+    // notifier: async ({title, body, data}) => void — push best-effort al equipo.
+    this.notifier = notifier;
   }
 
   /** Listado activo DESC (tope 200), enriquecido con el activo ligado. */
@@ -51,6 +53,14 @@ export class PostService {
       activo: true,
     });
     const asset = created.assetId ? await this.assetDAO.porId(created.assetId) : null;
+    // Aviso push al equipo (fire-and-forget: nunca bloquea ni falla la publicación).
+    try {
+      this.notifier?.({
+        title: 'Nuevo material de venta',
+        body: created.titulo,
+        data: { screen: 'material', postId: String(created.id) },
+      })?.catch(() => {});
+    } catch { /* best-effort */ }
     return this.#item(created, asset);
   }
 

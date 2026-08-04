@@ -225,6 +225,9 @@ export function buildRoutes(deps) {
   field.get('/sites', asyncHandler(async (req, res) => res.json(await fieldService.fieldSites(empId(req)))));
   field.get('/checkins', asyncHandler(async (req, res) => res.json(await fieldService.fieldCheckins(empId(req)))));
   field.post('/checkin', asyncHandler(async (req, res) => res.status(201).json(await fieldService.fieldCheckin(empId(req), req.body))));
+  // Fase 2 móvil: token push del dispositivo y autoenrolamiento facial.
+  field.post('/push-token', asyncHandler(async (req, res) => res.json(await employeeService.savePushToken(empId(req), req.body?.token))));
+  field.post('/face', asyncHandler(async (req, res) => res.json(await employeeService.selfFace(empId(req), req.body || {}))));
   router.use('/api/field', field);
 
   // ================================================================

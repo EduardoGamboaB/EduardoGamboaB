@@ -263,6 +263,17 @@ sec('ATTENDANCE · asistencia de campo (geocerca) y kiosco');
   // El perfil de campo debe incluir los módulos efectivos (la app arma su menú con esto)
   const fme = await get('/api/field/me', { token: empCom });
   ok('field/me incluye módulos del perfil', fme.status === 200 && Array.isArray(fme.json?.modules) && fme.json.modules.length === 15 && fme.json?.profile === 'comercial', `(${fme.json?.modules?.length})`);
+
+  // Fase 2 móvil: registro de push token y autoenrolamiento facial
+  const pt = await post('/api/field/push-token', { token: empCom, body: { token: 'ExponentPushToken[e2e-device]' } });
+  ok('registrar push token del dispositivo', pt.status === 200 && pt.json?.ok === true, `(${pt.status})`);
+  const foto = 'data:image/jpeg;base64,' + Buffer.from('selfie-e2e').toString('base64');
+  const ref = await post('/api/field/face', { token: empCom, body: { photo: foto } });
+  ok('selfie sola queda como referencia (sin enrolar)', ref.status === 200 && ref.json?.reference === true && ref.json?.faceEnrolled === false, JSON.stringify(ref.json));
+  const full = await post('/api/field/face', { token: empCom, body: { photo: foto, descriptor: Array(128).fill(0.42) } });
+  ok('selfie + descriptor 128D enrola el rostro', full.status === 200 && full.json?.faceEnrolled === true, JSON.stringify(full.json));
+  const fme2 = await get('/api/field/me', { token: empCom });
+  ok('field/me refleja el rostro enrolado', fme2.json?.employee?.faceEnrolled === true);
 }
 {
   const me = await get('/api/field/me', { token: empCom });
@@ -578,6 +589,7 @@ let mkt, assetId;
 
   const empList = await get('/api/mkt/assets', { token: empCom });
   ok('vendedor (empleado) consulta el banco', empList.status === 200);
+  ok('seed incluye assets de ejemplo en el banco', (empList.json || []).length >= 4, `(${empList.json?.length})`);
 
   const vid = 'data:video/mp4;base64,' + Buffer.from('e2e-video-bytes').toString('base64');
   const cv = await post('/api/mkt/assets', { token: mkt, body: { tipo: 'video', titulo: 'Video E2E', file: vid } });

@@ -37,6 +37,49 @@ jobs:
       - name: Test workspaces
         run: npm test --workspaces --if-present
 
+  e2e:
+    name: E2E (stack completo vía gateway)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: mallatex
+          POSTGRES_PASSWORD: mallatex
+          POSTGRES_DB: mallatex
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U mallatex"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgres://mallatex:mallatex@localhost:5432/mallatex
+      JWT_SECRET: ci-secret
+      ASPEL_WEBHOOK_SECRET: hook-secret
+      # El motor de asistencia interpreta checadas en hora de pared de planta.
+      TZ: America/Mexico_City
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install (workspaces)
+        run: npm install --workspaces --include-workspace-root
+      - name: Migrate + seed
+        run: node database/migrate.js up && node database/seed.js
+      - name: Start stack (gateway + 6 servicios)
+        run: |
+          node scripts/dev.js > /tmp/stack.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/health > /dev/null; then echo "gateway listo"; break; fi
+            sleep 2
+          done
+          curl -sf http://localhost:3000/api/health
+      - name: Run E2E suite
+        run: node backend/e2e.suite.mjs
+      - name: Stack logs on failure
+        if: failure()
+        run: tail -100 /tmp/stack.log
+
   frontend:
     name: Frontend (build)
     runs-on: ubuntu-latest

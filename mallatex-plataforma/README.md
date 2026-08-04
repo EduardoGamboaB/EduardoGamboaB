@@ -95,6 +95,21 @@ Kiosko de planta (tablet por línea): `http://<web>/kiosko` — pantalla complet
 para checar entrada/salida y autoservicio RH; la línea (LC1..LE) se configura
 en la propia tablet al primer arranque.
 
+### Notificaciones push y reconocimiento facial (fase 2 móvil)
+
+- **Push**: al iniciar sesión, la app registra su `ExponentPushToken`
+  (`POST /api/field/push-token`); cuando marketing publica material nuevo, el
+  servicio avisa a todo el equipo vía Expo (sin credenciales adicionales).
+  Para builds EAS, definir `extra.eas.projectId` en `mobile/app.json`.
+- **Rostro**: el colaborador se autoenrola desde la app (Perfil → Mi rostro) o
+  el kiosco (Autoservicio → Mi rostro). Con solo foto queda como *referencia*;
+  el descriptor 128D (enrolamiento completo) se calcula en el kiosco si se
+  instala el modelo [face-api.js](https://github.com/justadudewhohacks/face-api.js)
+  en `frontend/public/models/face-api/` (drop-in opcional: `face-api.min.js`
+  cargado en la página + pesos de tiny_face_detector, face_landmark_68 y
+  face_recognition). El matching por descriptor ya está implementado y probado
+  en el backend.
+
 ### Videos del banco de marketing (S3 opcional)
 
 Sin configurar nada, los videos quedan en la base de datos marcados
@@ -143,7 +158,7 @@ App móvil / portal (empleados) — código + PIN `1234`:
 | `npm run db:seed` | Siembra catálogos y datos demo |
 | `npm run db:reset` | Recrea el esquema y siembra |
 | `npm test` | Pruebas de todos los workspaces |
-| `npm run test:e2e` | Suite E2E vía gateway (206 aserciones) — ver [`docs/manual-e2e.md`](docs/manual-e2e.md) |
+| `npm run test:e2e` | Suite E2E vía gateway (211 aserciones) — ver [`docs/manual-e2e.md`](docs/manual-e2e.md) |
 
 ---
 

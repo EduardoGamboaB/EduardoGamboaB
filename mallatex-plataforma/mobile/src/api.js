@@ -43,6 +43,8 @@ export const api = {
   sites: () => request('GET', '/api/field/sites'),
   checkins: () => request('GET', '/api/field/checkins'),
   checkin: (payload) => request('POST', '/api/field/checkin', { body: payload }),
+  savePushToken: (token) => request('POST', '/api/field/push-token', { body: { token } }),
+  enrollFace: (payload) => request('POST', '/api/field/face', { body: payload }),
   logout: () => request('POST', '/api/auth/logout').catch(() => {}),
 
   // ---- CRM de ventas ----

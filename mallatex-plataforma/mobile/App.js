@@ -6,6 +6,8 @@ import { api } from './src/api';
 import { getToken, setToken, getQueue, saveQueue, getBiometricEnabled, setBiometricEnabled } from './src/storage';
 import { biometricAvailable, biometricLabel, biometricAuthenticate } from './src/biometrics';
 import { flushTrackBuffer } from './src/tracking';
+import { registerPushToken, onPushReceived } from './src/push';
+import { confirmAction } from './src/confirm';
 import LoginScreen from './src/screens/LoginScreen';
 import CheckinScreen from './src/screens/CheckinScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
@@ -80,10 +82,22 @@ export default function App() {
     api.mktUnseenCount().then((r) => setMktUnseen(r?.count || 0)).catch(() => {});
   }, []);
 
+  // Registro del push token (una vez por sesión, silencioso: web/permiso
+  // denegado/emulador simplemente no registran).
+  const pushRegisteredRef = React.useRef(false);
+  const registerPush = useCallback(() => {
+    if (pushRegisteredRef.current) return;
+    pushRegisteredRef.current = true;
+    registerPushToken().then((tok) => { if (tok) api.savePushToken(tok).catch(() => {}); }).catch(() => {});
+  }, []);
+
+  // Push recibido con la app abierta → refrescar el badge de Material de venta.
+  useEffect(() => onPushReceived(() => refreshMktUnseen()), [refreshMktUnseen]);
+
   const loadProfile = useCallback(async () => {
-    try { const me = await api.me(); setProfile(me); setAuthed(true); setSessionExpired(false); refreshMktUnseen(); return true; }
+    try { const me = await api.me(); setProfile(me); setAuthed(true); setSessionExpired(false); refreshMktUnseen(); registerPush(); return true; }
     catch (e) { if (e.status === 401) { await setToken(null); setAuthed(false); setSessionExpired(true); } return false; }
-  }, [refreshMktUnseen]);
+  }, [refreshMktUnseen, registerPush]);
 
   const unlock = useCallback(async () => {
     const ok = await biometricAuthenticate(`Desbloquea Mallatex Campo con ${bioName}`);
@@ -155,10 +169,7 @@ export default function App() {
   }
   async function logout() { await api.logout(); await setToken(null); setAuthed(false); setLocked(false); setProfile(null); setScreen('ruta'); }
   function confirmLogout() {
-    Alert.alert('Cerrar sesión', '¿Salir de tu cuenta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Salir', style: 'destructive', onPress: logout },
-    ]);
+    confirmAction('Cerrar sesión', '¿Salir de tu cuenta?', logout, 'Salir');
   }
   function go(key) { setMenuOpen(false); if (key !== screen) setScreen(key); }
 

@@ -74,6 +74,7 @@ export function defineModels(sequelize) {
       allowedSiteIds: { type: DataTypes.JSONB, defaultValue: [], field: 'allowed_site_ids' },
       faceDescriptor: { type: DataTypes.JSONB, field: 'face_descriptor' },
       facePhoto: { type: DataTypes.TEXT, field: 'face_photo' },
+      pushToken: { type: DataTypes.TEXT, field: 'push_token' },
       active: { type: DataTypes.BOOLEAN, defaultValue: true },
       extraModules: { type: DataTypes.JSONB, defaultValue: [], field: 'extra_modules' },
       revokedModules: { type: DataTypes.JSONB, defaultValue: [], field: 'revoked_modules' },

@@ -2,7 +2,7 @@
 
 La suite E2E (`backend/e2e.suite.mjs`) valida la plataforma **de extremo a
 extremo, módulo por módulo**: hace peticiones HTTP reales contra el **gateway**
-(igual que la web y la app móvil) y verifica **206 aserciones** que cubren los
+(igual que la web y la app móvil) y verifica **211 aserciones** que cubren los
 seis microservicios, el kiosco de planta, la seguridad de sesión y la
 paginación del API. No usa mocks: requiere el stack completo arriba
 (PostgreSQL sembrado + 6 servicios + gateway).
