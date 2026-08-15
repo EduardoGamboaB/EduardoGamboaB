@@ -674,6 +674,14 @@ sec('MARKETING · aportes de campo (contenido del vendedor)');
   const bandeja = await get('/api/mkt/field-posts?estado=nuevo', { token: mkt });
   ok('marketing ve la bandeja de aportes', bandeja.status === 200 && (bandeja.json || []).some((a) => a.id === apId));
 
+  // Hilo bidireccional vendedor <-> marketing.
+  const mMkt = await post(`/api/mkt/field-posts/${apId}/message`, { token: mkt, body: { message: '¿Nombre del cliente?' } });
+  ok('marketing escribe en el hilo del aporte', mMkt.status === 200 && (mMkt.json?.mensajes || []).length === 1 && mMkt.json.mensajes[0].role === 'marketing', `(${mMkt.status})`);
+  const mEmp = await post(`/api/mkt/field-posts/${apId}/message`, { token: empCom, body: { message: 'Agrícola El Rosario' } });
+  ok('vendedor responde en su aporte', mEmp.status === 200 && (mEmp.json?.mensajes || []).length === 2 && mEmp.json.mensajes[1].role === 'vendedor', `(${mEmp.status})`);
+  const mOtro = await post(`/api/mkt/field-posts/${apId}/message`, { token: empOp, body: { message: 'intruso' } });
+  ok('empleado ajeno no comenta el aporte → 403', mOtro.status === 403, `(${mOtro.status})`);
+
   const foto = await get(`/api/mkt/field-posts/photos/${photoId}/file`, { token: mkt });
   ok('sirve la foto del aporte (attachment, nosniff)', foto.status === 200 && String(foto.headers.get('content-type')).includes('image/png') && String(foto.headers.get('content-disposition') || '').includes('attachment'), `(${foto.status})`);
 

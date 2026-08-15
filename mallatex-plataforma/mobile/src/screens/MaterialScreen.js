@@ -394,7 +394,7 @@ function ProyectosTab() {
         ListEmptyComponent={firstLoad
           ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.red} />
           : (loadError ? null : <Text style={st.empty}>Aún no has compartido proyectos. Usa “＋ Nuevo aporte”.</Text>)}
-        renderItem={({ item }) => <AporteCard item={item} />}
+        renderItem={({ item }) => <AporteCard item={item} onReplied={load} />}
       />
       <TouchableOpacity style={st.fab} onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel="Nuevo aporte de proyecto">
         <Text style={st.fabTxt}>＋ Nuevo aporte</Text>
@@ -404,9 +404,27 @@ function ProyectosTab() {
   );
 }
 
-function AporteCard({ item }) {
+function AporteCard({ item, onReplied }) {
   const s = ESTADO_APORTE[item.estado] || { l: item.estado || '—', c: colors.gray };
   const sub = [item.ubicacion, item.cultivo].filter(Boolean).join(' · ');
+  const mensajes = item.mensajes || [];
+  const [open, setOpen] = useState(false);
+  const [reply, setReply] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function send() {
+    const text = reply.trim();
+    if (!text) return;
+    setBusy(true);
+    try {
+      await api.mktAporteMessage(item.id, { message: text });
+      setReply('');
+      if (onReplied) onReplied();
+    } catch (e) {
+      Alert.alert('No se pudo enviar', e.offline ? 'Sin conexión con el servidor.' : e.message);
+    } finally { setBusy(false); }
+  }
+
   return (
     <View style={st.card}>
       <View style={st.rowTop}>
@@ -423,6 +441,27 @@ function AporteCard({ item }) {
         <View style={st.notaBox}><Text style={st.notaTxt}>💬 {item.notaMarketing}</Text></View>
       )}
       {item.estado === 'publicado' && <Text style={st.pubTxt}>✓ Publicado al banco de contenido</Text>}
+
+      <TouchableOpacity onPress={() => setOpen((v) => !v)} accessibilityRole="button" accessibilityLabel="Conversación con marketing">
+        <Text style={st.threadToggle}>💬 {mensajes.length} mensaje(s) con marketing {open ? '▲' : '▼'}</Text>
+      </TouchableOpacity>
+      {open && (
+        <View style={st.thread}>
+          {mensajes.length === 0 && <Text style={st.meta}>Sin mensajes todavía.</Text>}
+          {mensajes.map((m, i) => (
+            <View key={i} style={st.msg}>
+              <Text style={st.msgAuthor}>{m.by || (m.role === 'marketing' ? 'Marketing' : 'Tú')}</Text>
+              <Text style={st.msgTxt}>{m.message || m.mensaje || ''}</Text>
+            </View>
+          ))}
+          <View style={st.replyRow}>
+            <TextInput style={[st.input, { flex: 1, marginBottom: 0 }]} value={reply} onChangeText={setReply} placeholder="Escribe a marketing…" placeholderTextColor={colors.gray} accessibilityLabel="Escribir mensaje" />
+            <TouchableOpacity style={[st.sendBtn, busy && { opacity: 0.6 }]} onPress={send} disabled={busy} accessibilityRole="button" accessibilityLabel="Enviar mensaje">
+              {busy ? <ActivityIndicator color="#fff" /> : <Text style={st.sendTxt}>➤</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -870,6 +909,7 @@ const st = StyleSheet.create({
   notaBox: { backgroundColor: colors.bg, borderRadius: 10, padding: 10, marginTop: 10 },
   notaTxt: { color: colors.black, fontSize: 13, lineHeight: 18 },
   pubTxt: { color: colors.ok, fontWeight: '700', fontSize: 12, marginTop: 8 },
+  threadToggle: { color: colors.red, fontWeight: '700', fontSize: 12, marginTop: 10 },
   twoCol: { flexDirection: 'row', gap: 12 },
   col: { flex: 1 },
   cameraBox: { height: 220, borderRadius: 14, overflow: 'hidden', backgroundColor: '#000', borderWidth: 1, borderColor: colors.lightGray, marginBottom: 10 },

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ImageOff, CheckCircle2, XCircle, UploadCloud, MapPin, Sprout } from 'lucide-react'
+import { ImageOff, CheckCircle2, XCircle, UploadCloud, MapPin, Sprout, Send, MessageCircle } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -64,7 +64,44 @@ function FieldPhoto({ photoId, alt = '' }) {
   )
 }
 
-function AporteCard({ ap, onAction, busy }) {
+function Thread({ ap, onReply }) {
+  const [text, setText] = useState('')
+  const [sending, setSending] = useState(false)
+  const mensajes = ap.mensajes || []
+  async function send() {
+    if (!text.trim() || sending) return
+    setSending(true)
+    try { await onReply(ap, text.trim()); setText('') } finally { setSending(false) }
+  }
+  return (
+    <div style={{ marginTop: 12, borderTop: '1px solid var(--line, #e3e3e6)', paddingTop: 10 }}>
+      <div className="muted" style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
+        <MessageCircle size={12} style={{ verticalAlign: '-2px' }} /> Conversación con el vendedor
+      </div>
+      {mensajes.length === 0 && <p className="muted" style={{ fontSize: 12, margin: '0 0 8px' }}>Aún no hay mensajes. Escribe al vendedor para pedir más contexto o agradecer el aporte.</p>}
+      {mensajes.map((m, i) => (
+        <div key={i} style={{ background: m.role === 'marketing' ? '#fdecec' : 'var(--line-2, #f6f6f7)', borderRadius: 8, padding: '7px 10px', marginBottom: 6 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: m.role === 'marketing' ? brand.red : brand.ink }}>
+            {m.by || (m.role === 'marketing' ? 'Marketing' : 'Vendedor')}
+          </div>
+          <div style={{ fontSize: 13 }}>{m.message || m.mensaje}</div>
+        </div>
+      ))}
+      <div className="row" style={{ gap: 6, marginTop: 4 }}>
+        <input
+          style={{ flex: 1, minHeight: 36 }}
+          placeholder="Responder al vendedor…"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') send() }}
+        />
+        <button className="btn btn-sm btn-primary" onClick={send} disabled={sending || !text.trim()}><Send size={13} /></button>
+      </div>
+    </div>
+  )
+}
+
+function AporteCard({ ap, onAction, onReply, busy }) {
   const badge = ESTADO_BADGE[ap.estado] || { v: 'muted', l: ap.estado }
   const meta = [ap.producto, ap.cliente].filter(Boolean).join(' · ')
   return (
@@ -118,6 +155,8 @@ function AporteCard({ ap, onAction, busy }) {
             </button>
           </div>
         )}
+
+        <Thread ap={ap} onReply={onReply} />
       </div>
     </Card>
   )
@@ -157,6 +196,16 @@ export default function AportesPage() {
     }
   }
 
+  async function onReply(ap, message) {
+    setMsg(null)
+    try {
+      await post(`/api/mkt/field-posts/${ap.id}/message`, { message })
+      reload()
+    } catch (err) {
+      setMsg({ ok: false, text: `No se pudo enviar el mensaje: ${err.message}` })
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -185,7 +234,7 @@ export default function AportesPage() {
           ) : (
             <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 14, alignItems: 'start' }}>
               {aportes.map((ap) => (
-                <AporteCard key={ap.id} ap={ap} onAction={onAction} busy={busyId === ap.id} />
+                <AporteCard key={ap.id} ap={ap} onAction={onAction} onReply={onReply} busy={busyId === ap.id} />
               ))}
             </div>
           )}

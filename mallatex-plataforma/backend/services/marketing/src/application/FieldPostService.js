@@ -17,11 +17,21 @@ const MAX_FOTOS = 8; // por aporte
  * Asset imagen por cada foto (cierra el ciclo: campo -> banco -> fuerza de venta).
  */
 export class FieldPostService {
-  constructor({ fieldPostDAO, fieldPostPhotoDAO, assetDAO, s3 }) {
+  constructor({ fieldPostDAO, fieldPostPhotoDAO, assetDAO, s3, notifyAuthor = null }) {
     this.fieldPostDAO = fieldPostDAO;
     this.photoDAO = fieldPostPhotoDAO;
     this.assetDAO = assetDAO;
     this.s3 = s3;
+    // Aviso push dirigido al autor del aporte (best-effort, inyectado).
+    this.notifyAuthor = notifyAuthor;
+  }
+
+  // Envía un push al autor sin romper el caso de uso si falla.
+  async #avisar(fp, title, body) {
+    if (!this.notifyAuthor || !fp.autorId) return;
+    try {
+      await this.notifyAuthor(fp.autorId, { title, body, data: { tipo: 'aporte', folio: fp.folio, estado: fp.estado } });
+    } catch { /* best-effort */ }
   }
 
   /**
@@ -111,6 +121,11 @@ export class FieldPostService {
     const fp = await this.#obtener(id);
     fp.cambiarEstado(estado, { notaMarketing });
     await this.fieldPostDAO.update(id, fp);
+    if (fp.estado === 'aprobado') {
+      await this.#avisar(fp, 'Tu aporte fue aprobado', `${fp.titulo}: marketing aprobó tu proyecto.`);
+    } else if (fp.estado === 'rechazado') {
+      await this.#avisar(fp, 'Tu aporte necesita ajustes', fp.notaMarketing || `${fp.titulo}: revisa los comentarios de marketing.`);
+    }
     return this.detalle(id);
   }
 
@@ -171,6 +186,7 @@ export class FieldPostService {
     }
     fp.cambiarEstado('publicado', { assetIds });
     await this.fieldPostDAO.update(id, fp);
+    await this.#avisar(fp, '¡Tu proyecto se publicó! 🎉', `${fp.titulo} ya está en el banco de contenido como caso de éxito.`);
     return this.detalle(id);
   }
 
