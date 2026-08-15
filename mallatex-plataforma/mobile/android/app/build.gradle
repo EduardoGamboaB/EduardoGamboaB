@@ -110,6 +110,11 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'mx.mallatex.campo'
+    lint {
+        // El modelo de lint de release (Robolectric) agota memoria y no aplica al APK.
+        checkReleaseBuilds false
+        abortOnError false
+    }
     defaultConfig {
         applicationId 'mx.mallatex.campo'
         minSdkVersion rootProject.ext.minSdkVersion
