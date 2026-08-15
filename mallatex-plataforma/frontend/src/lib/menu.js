@@ -19,7 +19,7 @@ import {
   UserPlus, Gift, PieChart, CalendarDays,
   Contact, Clock, Fingerprint, Package, MapPin, ShieldCheck,
   UserCog, KeyRound, Boxes, Lock, SlidersHorizontal,
-  Images, ClipboardList, Megaphone,
+  Images, ClipboardList, Megaphone, Camera,
 } from 'lucide-react'
 
 // Orden canónico de los grupos en la barra lateral. Cada grupo corresponde a
@@ -74,6 +74,7 @@ export const MODULES = {
   'mkt-banco': { label: 'Banco de contenido', grp: 'Marketing', href: '/marketing/banco', icon: Images },
   'mkt-publicaciones': { label: 'Publicaciones', grp: 'Marketing', href: '/marketing/publicaciones', icon: Megaphone },
   'mkt-formatos': { label: 'Solicitudes de formatos', grp: 'Marketing', href: '/marketing/formatos', icon: ClipboardList },
+  'mkt-aportes': { label: 'Aportes de campo', grp: 'Marketing', href: '/marketing/aportes', icon: Camera },
   'mkt-impresos': { label: 'Inventario de impresos', grp: 'Marketing', href: '/marketing/impresos', icon: Boxes },
 
   // ---- Eventos y Leads (Anaberries) ---------------------------------------

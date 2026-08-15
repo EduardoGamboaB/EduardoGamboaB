@@ -9,7 +9,7 @@ import { requireAuth, requireModule, requireEmployee } from '@mallatex/shared/au
  * empleados en la app móvil (lecturas, solicitudes de formato y salidas de
  * inventario).
  */
-export function buildRoutes({ assetService, formatRequestService, postService, campaignService, printService }) {
+export function buildRoutes({ assetService, formatRequestService, fieldPostService, postService, campaignService, printService }) {
   const router = Router();
   const mkt = Router();
 
@@ -105,6 +105,81 @@ export function buildRoutes({ assetService, formatRequestService, postService, c
     })
   );
   mkt.use('/format-requests', formatos);
+
+  // ================================================================
+  //  APORTES DE CAMPO — el vendedor (móvil) sube fotos+contexto de sus
+  //  proyectos; marketing (mkt-aportes) revisa, comenta, aprueba/rechaza
+  //  y publica al banco. Sentido inverso al resto: campo -> marketing.
+  // ================================================================
+  const aportes = Router();
+
+  // Alta por el empleado (con fotos en base64).
+  aportes.post(
+    '/',
+    requireAuth,
+    requireEmployee,
+    asyncHandler(async (req, res) =>
+      res.status(201).json(
+        await fieldPostService.crear(req.body || {}, {
+          autorId: empId(req),
+          autor: req.auth.name || `Empleado ${req.auth.sub}`,
+        })
+      )
+    )
+  );
+  aportes.get('/mine', requireAuth, requireEmployee, asyncHandler(async (req, res) => res.json(await fieldPostService.mias(empId(req)))));
+
+  // Curación por marketing.
+  aportes.get('/', requireAuth, requireModule('mkt-aportes'), asyncHandler(async (req, res) => res.json(await fieldPostService.listar(req.query))));
+  aportes.get('/:id', requireAuth, requireModule('mkt-aportes'), asyncHandler(async (req, res) => res.json(await fieldPostService.detalle(req.params.id))));
+  aportes.post('/:id/estado', requireAuth, requireModule('mkt-aportes'), asyncHandler(async (req, res) => res.json(await fieldPostService.cambiarEstado(req.params.id, req.body || {}))));
+  aportes.post('/:id/publicar', requireAuth, requireModule('mkt-aportes'), asyncHandler(async (req, res) => res.json(await fieldPostService.publicarAlBanco(req.params.id, { uploadedBy: actor(req) || 'Marketing' }))));
+
+  // Fotos: cualquier sesión autenticada puede verlas (el vendedor las suyas en
+  // la app; marketing todas en la bandeja). Se sirven como descarga, sin sniff.
+  aportes.get(
+    '/photos/:photoId/file',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const archivo = await fieldPostService.foto(req.params.photoId);
+      if (archivo.kind === 'blob') {
+        res.setHeader('Content-Disposition', 'attachment');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        return res.type(archivo.mime).send(archivo.data);
+      }
+      return res.redirect(302, archivo.url);
+    })
+  );
+
+  // Mensajes al hilo: vendedor sólo en los suyos; marketing en cualquiera.
+  aportes.post(
+    '/:id/message',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const message = (req.body || {}).message;
+      if (esEmpleado(req)) {
+        return res.json(
+          await fieldPostService.mensaje(req.params.id, {
+            by: req.auth.name || `Empleado ${req.auth.sub}`,
+            role: 'vendedor',
+            message,
+            employeeId: empId(req),
+          })
+        );
+      }
+      if (!tieneModulo(req, 'mkt-aportes')) {
+        return res.status(403).json({ error: 'Módulo no autorizado: mkt-aportes' });
+      }
+      return res.json(
+        await fieldPostService.mensaje(req.params.id, {
+          by: actor(req) || 'Marketing',
+          role: 'marketing',
+          message,
+        })
+      );
+    })
+  );
+  mkt.use('/field-posts', aportes);
 
   // ================================================================
   //  PUBLICACIONES — lecturas con sesión; escrituras mkt-publicaciones

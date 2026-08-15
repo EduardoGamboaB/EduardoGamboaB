@@ -125,5 +125,43 @@ export function defineModels(sequelize) {
     { schema: 'marketing', tableName: 'print_movements', underscored: true, timestamps: true, updatedAt: false }
   );
 
-  return { Campaign, Asset, FormatRequest, Post, PostView, PrintItem, PrintMovement };
+  // ---- Aportes de campo (vendedor -> marketing) --------------------
+  const FieldPost = sequelize.define(
+    'FieldPost',
+    {
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      folio: { type: DataTypes.TEXT, unique: true }, // APC-XXXX
+      autorId: { type: DataTypes.BIGINT, field: 'autor_id' }, // attendance.employees.id
+      autor: { type: DataTypes.TEXT, allowNull: false },
+      titulo: { type: DataTypes.TEXT, allowNull: false },
+      ubicacion: DataTypes.TEXT,
+      cultivo: DataTypes.TEXT,
+      producto: DataTypes.TEXT,
+      cliente: DataTypes.TEXT,
+      contexto: DataTypes.TEXT,
+      estado: { type: DataTypes.TEXT, allowNull: false, defaultValue: 'nuevo' }, // nuevo|aprobado|publicado|rechazado
+      notaMarketing: { type: DataTypes.TEXT, field: 'nota_marketing' },
+      mensajes: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] }, // [{by, role, message, at}]
+      publicadoAssetIds: { type: DataTypes.JSONB, allowNull: false, defaultValue: [], field: 'publicado_asset_ids' },
+    },
+    { schema: 'marketing', tableName: 'field_posts', underscored: true, timestamps: true }
+  );
+
+  // ---- Fotos de los aportes (BYTEA, mismo esquema que assets) -------
+  const FieldPostPhoto = sequelize.define(
+    'FieldPostPhoto',
+    {
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      fieldPostId: { type: DataTypes.BIGINT, allowNull: false, field: 'field_post_id' },
+      mime: { type: DataTypes.TEXT, allowNull: false },
+      sizeBytes: { type: DataTypes.BIGINT, allowNull: false, defaultValue: 0, field: 'size_bytes' },
+      storage: { type: DataTypes.TEXT, allowNull: false, defaultValue: 'db' }, // db|s3
+      blob: DataTypes.BLOB, // cuando storage='db' (BYTEA)
+      s3Key: { type: DataTypes.TEXT, field: 's3_key' }, // cuando storage='s3'
+      orden: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    },
+    { schema: 'marketing', tableName: 'field_post_photos', underscored: true, timestamps: true, updatedAt: false }
+  );
+
+  return { Campaign, Asset, FormatRequest, Post, PostView, PrintItem, PrintMovement, FieldPost, FieldPostPhoto };
 }

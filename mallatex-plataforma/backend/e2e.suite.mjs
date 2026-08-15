@@ -46,7 +46,7 @@ let admin, empCom, empOp, empLinea;
 {
   const r = await post('/api/auth/login', { body: { email: 'admin@mallatex.mx', password: 'mallatex2026' } });
   ok('login admin devuelve token', r.status === 200 && !!r.json?.token);
-  ok('admin recibe 40 módulos web', r.json?.modules?.length === 40, `(${r.json?.modules?.length})`);
+  ok('admin recibe 41 módulos web', r.json?.modules?.length === 41, `(${r.json?.modules?.length})`);
   admin = r.json?.token;
 
   const bad = await post('/api/auth/login', { body: { email: 'admin@mallatex.mx', password: 'incorrecta' } });
@@ -95,7 +95,7 @@ sec('IDENTITY · matriz de acceso');
   const cat = await get('/api/access/catalog?surface=mobile', { token: admin });
   ok('catálogo móvil (18 módulos)', cat.status === 200 && cat.json?.length === 18, `(${cat.json?.length})`);
   const m = await get('/api/access/matrix', { token: admin });
-  ok('matriz completa (146 grants)', m.status === 200 && m.json?.grants?.length === 146, `(${m.json?.grants?.length})`);
+  ok('matriz completa (149 grants)', m.status === 200 && m.json?.grants?.length === 149, `(${m.json?.grants?.length})`);
   // Conceder inventario al perfil operativo y verificar en login
   const before = (m.json.grants || []).filter((g) => g.subjectType === 'profile' && g.subjectKey === 'operativo' && g.surface === 'mobile').map((g) => g.moduleKey);
   const r1 = await put('/api/access/grants', { token: admin, body: { subjectType: 'profile', subjectKey: 'operativo', surface: 'mobile', moduleKeys: [...before, 'inventario'] } });
@@ -588,7 +588,7 @@ sec('MARKETING · banco de materiales (assets)');
 let mkt, assetId;
 {
   const r = await post('/api/auth/login', { body: { email: 'marketing@mallatex.mx', password: 'mallatex2026' } });
-  ok('login usuario marketing con sus 5 módulos', r.status === 200 && (r.json?.modules || []).filter((m) => m.startsWith('mkt-')).length === 5, `(${(r.json?.modules || []).join(',')})`);
+  ok('login usuario marketing con sus 6 módulos', r.status === 200 && (r.json?.modules || []).filter((m) => m.startsWith('mkt-')).length === 6, `(${(r.json?.modules || []).join(',')})`);
   mkt = r.json?.token;
 
   const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
@@ -645,6 +645,49 @@ sec('MARKETING · solicitudes de formatos');
   ok('pasar a en_diseno', t1.status === 200 && t1.json?.estado === 'en_diseno', `(${t1.status})`);
   const t2 = await post(`/api/mkt/format-requests/${fmtId}/estado`, { token: mkt, body: { estado: 'entregado', entregableAssetId: assetId } });
   ok('entregar con entregable', t2.status === 200 && t2.json?.estado === 'entregado', `(${t2.status})`);
+}
+
+sec('MARKETING · aportes de campo (contenido del vendedor)');
+{
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  const c = await post('/api/mkt/field-posts', {
+    token: empCom,
+    body: {
+      titulo: 'Proyecto E2E antigranizo', ubicacion: 'Jocotepec, Jalisco', cultivo: 'Zarzamora',
+      producto: 'Malla antigranizo', cliente: 'Cliente E2E', contexto: 'Instalación E2E de prueba.',
+      fotos: [png, png],
+    },
+  });
+  ok('vendedor crea aporte con folio APC- y 2 fotos', c.status === 201 && /^APC-/.test(c.json?.folio || '') && c.json?.fotoCount === 2, JSON.stringify(c.json).slice(0, 120));
+  const apId = c.json?.id;
+  const photoId = c.json?.fotos?.[0]?.id;
+
+  const noFoto = await post('/api/mkt/field-posts', { token: empCom, body: { titulo: 'x', fotos: [] } });
+  ok('aporte sin fotos → 400', noFoto.status === 400, `(${noFoto.status})`);
+
+  const mine = await get('/api/mkt/field-posts/mine', { token: empCom });
+  ok('vendedor ve sus aportes', mine.status === 200 && (mine.json || []).some((a) => a.id === apId));
+
+  const empBandeja = await get('/api/mkt/field-posts', { token: empCom });
+  ok('vendedor NO accede a la bandeja de marketing → 403', empBandeja.status === 403, `(${empBandeja.status})`);
+
+  const bandeja = await get('/api/mkt/field-posts?estado=nuevo', { token: mkt });
+  ok('marketing ve la bandeja de aportes', bandeja.status === 200 && (bandeja.json || []).some((a) => a.id === apId));
+
+  const foto = await get(`/api/mkt/field-posts/photos/${photoId}/file`, { token: mkt });
+  ok('sirve la foto del aporte (attachment, nosniff)', foto.status === 200 && String(foto.headers.get('content-type')).includes('image/png') && String(foto.headers.get('content-disposition') || '').includes('attachment'), `(${foto.status})`);
+
+  const badTrans = await post(`/api/mkt/field-posts/${apId}/estado`, { token: mkt, body: { estado: 'publicado' } });
+  ok('publicar directo (nuevo→publicado) → 409', badTrans.status === 409, `(${badTrans.status})`);
+
+  const aprob = await post(`/api/mkt/field-posts/${apId}/estado`, { token: mkt, body: { estado: 'aprobado', notaMarketing: 'Va.' } });
+  ok('marketing aprueba el aporte', aprob.status === 200 && aprob.json?.estado === 'aprobado', `(${aprob.status})`);
+
+  const pub = await post(`/api/mkt/field-posts/${apId}/publicar`, { token: mkt });
+  ok('publicar al banco crea 2 assets y pasa a publicado', pub.status === 200 && pub.json?.estado === 'publicado' && (pub.json?.publicadoAssetIds || []).length === 2, JSON.stringify(pub.json?.publicadoAssetIds));
+
+  const banco = await get('/api/mkt/assets?categoria=casos-exito', { token: empCom });
+  ok('los casos de éxito quedan en el banco para la fuerza de venta', banco.status === 200 && (banco.json || []).length >= 2, `(${banco.json?.length})`);
 }
 
 sec('MARKETING · publicaciones y difusión al equipo');

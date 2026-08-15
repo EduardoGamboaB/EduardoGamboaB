@@ -38,6 +38,7 @@ const WEB_MODULES = [
   ['products', 'Comercial', 'Catálogo de productos'],
   ['mkt-calendario', 'Marketing', 'Calendario de campañas'], ['mkt-banco', 'Marketing', 'Banco de contenido'],
   ['mkt-publicaciones', 'Marketing', 'Publicaciones'], ['mkt-formatos', 'Marketing', 'Solicitudes de formatos'],
+  ['mkt-aportes', 'Marketing', 'Aportes de campo'],
   ['mkt-impresos', 'Marketing', 'Inventario de impresos'],
   ['leads-eventos', 'Eventos y Leads', 'Eventos'], ['leads-captura', 'Eventos y Leads', 'Captura de leads'],
   ['leads-sorteo', 'Eventos y Leads', 'Sorteo'], ['leads-dashboard', 'Eventos y Leads', 'Dashboard de leads'],
@@ -78,7 +79,7 @@ grant('role', 'nomina', 'web', ['dashboard', 'attendance', 'incidents', 'overtim
 grant('role', 'comercial', 'web', ['crm-clientes', 'crm-objetivos', 'crm-administrativo', 'crm-facturacion', 'products', 'mkt-banco', 'mkt-publicaciones', 'mkt-calendario']);
 grant('role', 'produccion', 'web', ['mes-tablero', 'mes-produccion', 'mes-almacen', 'mes-operaciones']);
 grant('role', 'direccion', 'web', ['dashboard', 'mes-tablero', 'mes-direccion', 'rh-indicadores', 'audit']);
-grant('role', 'marketing', 'web', ['mkt-banco', 'mkt-formatos', 'mkt-publicaciones', 'mkt-calendario', 'mkt-impresos']);
+grant('role', 'marketing', 'web', ['mkt-banco', 'mkt-formatos', 'mkt-aportes', 'mkt-publicaciones', 'mkt-calendario', 'mkt-impresos']);
 grant('profile', 'comercial', 'mobile', MOBILE_MODULES.filter((m) => !m[0].startsWith('mes-')).map((m) => m[0]));
 grant('profile', 'operativo', 'mobile', ['asistencia', 'historial', 'perfil']);
 grant('profile', 'linea', 'mobile', ['mes-tablet', 'mes-produccion-movil', 'mes-mermas', 'asistencia', 'perfil']);

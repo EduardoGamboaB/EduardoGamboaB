@@ -3,6 +3,7 @@
 // El contenido lo administra el equipo de marketing desde la plataforma web.
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, FlatList, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, TextInput, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, Image, Share, Linking } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors } from '../theme';
 import { api } from '../api';
 import { getToken } from '../storage';
@@ -16,9 +17,18 @@ let Clipboard; try { Clipboard = require('expo-clipboard'); } catch {}
 const TABS = [
   ['banco', '🖼️', 'Banco'],
   ['pubs', '📣', 'Publicaciones'],
+  ['proyectos', '🏗️', 'Proyectos'],
   ['formatos', '📋', 'Formatos'],
   ['impresos', '📦', 'Impresos'],
 ];
+
+const MAX_FOTOS_APORTE = 8;
+const ESTADO_APORTE = {
+  nuevo: { l: 'En revisión', c: colors.warn },
+  aprobado: { l: 'Aprobado', c: '#2563eb' },
+  publicado: { l: 'Publicado', c: colors.ok },
+  rechazado: { l: 'Rechazado', c: colors.red },
+};
 
 const TIPO_ICON = { imagen: '🖼️', video: '🎬', documento: '📄' };
 const TIPOS = [['', 'Todo'], ['imagen', '🖼️ Imágenes'], ['video', '🎬 Videos'], ['documento', '📄 Documentos']];
@@ -103,6 +113,7 @@ export default function MaterialScreen({ onSeen }) {
       </View>
       {tab === 'banco' && <BancoTab />}
       {tab === 'pubs' && <PubsTab onSeen={onSeen} />}
+      {tab === 'proyectos' && <ProyectosTab />}
       {tab === 'formatos' && <FormatosTab />}
       {tab === 'impresos' && <ImpresosTab />}
     </View>
@@ -346,6 +357,183 @@ function PostCard({ post }) {
         </TouchableOpacity>
       </View>
     </View>
+  );
+}
+
+// ============================ Aportes de campo (Proyectos) ============================
+
+function ProyectosTab() {
+  const [items, setItems] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const load = useCallback(async () => {
+    setRefreshing(true);
+    try { setItems(await api.mktMyAportes()); setLoadError(false); } catch { setLoadError(true); }
+    setRefreshing(false); setFirstLoad(false);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={st.introBox}>
+        <Text style={st.introTxt}>📸 Comparte tus proyectos con marketing: sube fotos con su contexto (proyecto, ubicación, cultivo) y el equipo los convierte en material para todos.</Text>
+      </View>
+      {loadError && (
+        <TouchableOpacity style={st.errBanner} onPress={load} accessibilityRole="button">
+          <Text style={st.errBannerTxt}>Sin conexión · toca para reintentar</Text>
+        </TouchableOpacity>
+      )}
+      <FlatList
+        data={items}
+        keyExtractor={(it) => String(it.id ?? it.folio)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
+        contentContainerStyle={{ padding: 14, paddingBottom: 90 }}
+        ListEmptyComponent={firstLoad
+          ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.red} />
+          : (loadError ? null : <Text style={st.empty}>Aún no has compartido proyectos. Usa “＋ Nuevo aporte”.</Text>)}
+        renderItem={({ item }) => <AporteCard item={item} />}
+      />
+      <TouchableOpacity style={st.fab} onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel="Nuevo aporte de proyecto">
+        <Text style={st.fabTxt}>＋ Nuevo aporte</Text>
+      </TouchableOpacity>
+      <AporteModal visible={open} onClose={() => setOpen(false)} onDone={() => { setOpen(false); load(); }} />
+    </View>
+  );
+}
+
+function AporteCard({ item }) {
+  const s = ESTADO_APORTE[item.estado] || { l: item.estado || '—', c: colors.gray };
+  const sub = [item.ubicacion, item.cultivo].filter(Boolean).join(' · ');
+  return (
+    <View style={st.card}>
+      <View style={st.rowTop}>
+        <Text style={st.folio}>{item.folio || 'APC'}</Text>
+        <View style={[st.tag, { backgroundColor: s.c + '22' }]}><Text style={[st.tagTxt, { color: s.c }]}>{s.l}</Text></View>
+      </View>
+      <Text style={st.cardTitle}>{item.titulo}</Text>
+      {!!sub && <Text style={st.metaSmall}>📍 {sub}</Text>}
+      <Text style={st.metaSmall}>
+        🖼️ {item.fotoCount || 0} foto(s)
+        {item.createdAt ? ' · ' + new Date(item.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) : ''}
+      </Text>
+      {!!item.notaMarketing && (
+        <View style={st.notaBox}><Text style={st.notaTxt}>💬 {item.notaMarketing}</Text></View>
+      )}
+      {item.estado === 'publicado' && <Text style={st.pubTxt}>✓ Publicado al banco de contenido</Text>}
+    </View>
+  );
+}
+
+function AporteModal({ visible, onClose, onDone }) {
+  const [camPermission, requestCamPermission] = useCameraPermissions();
+  const cameraRef = useRef(null);
+  const [showCam, setShowCam] = useState(false);
+  const [fotos, setFotos] = useState([]);
+  const [titulo, setTitulo] = useState('');
+  const [ubicacion, setUbicacion] = useState('');
+  const [cultivo, setCultivo] = useState('');
+  const [producto, setProducto] = useState('');
+  const [cliente, setCliente] = useState('');
+  const [contexto, setContexto] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (visible) { setFotos([]); setTitulo(''); setUbicacion(''); setCultivo(''); setProducto(''); setCliente(''); setContexto(''); setShowCam(false); }
+  }, [visible]);
+
+  async function capturar() {
+    if (!camPermission?.granted) { await requestCamPermission(); return; }
+    if (fotos.length >= MAX_FOTOS_APORTE) { Alert.alert('Límite de fotos', `Máximo ${MAX_FOTOS_APORTE} fotos por aporte.`); return; }
+    try {
+      const s = await cameraRef.current?.takePictureAsync({ base64: true, quality: 0.5, skipProcessing: true });
+      if (s?.base64) setFotos((prev) => [...prev, 'data:image/jpeg;base64,' + s.base64]);
+    } catch { Alert.alert('Cámara', 'No se pudo tomar la foto.'); }
+  }
+
+  async function submit() {
+    if (!titulo.trim()) return Alert.alert('Falta el título', 'Escribe un título para el proyecto.');
+    if (fotos.length === 0) return Alert.alert('Falta una foto', 'Toma al menos una foto del proyecto.');
+    setBusy(true);
+    try {
+      const r = await api.mktCreateAporte({
+        titulo: titulo.trim(), ubicacion: ubicacion.trim(), cultivo: cultivo.trim(),
+        producto: producto.trim(), cliente: cliente.trim(), contexto: contexto.trim(), fotos,
+      });
+      Alert.alert('Aporte enviado', `Folio ${r.folio || '—'}. Marketing lo revisará y, si procede, lo publicará al banco.`);
+      onDone();
+    } catch (e) {
+      Alert.alert('No se pudo enviar', e.offline ? 'Sin conexión con el servidor. Intenta cuando tengas señal (la subida de fotos requiere conexión).' : e.message);
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={st.sheetWrap}>
+        <View style={st.sheet}>
+          <View style={st.sheetHead}>
+            <Text style={st.sheetTitle}>Nuevo aporte de proyecto</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="Cerrar"><Text style={st.close}>✕</Text></TouchableOpacity>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <Text style={st.label}>Título *</Text>
+            <TextInput style={st.input} value={titulo} onChangeText={setTitulo} placeholder="p. ej. Cierre de proyecto Malla Antigranizo" placeholderTextColor={colors.gray} />
+            <Text style={st.label}>Ubicación</Text>
+            <TextInput style={st.input} value={ubicacion} onChangeText={setUbicacion} placeholder="p. ej. Jocotepec, Jalisco" placeholderTextColor={colors.gray} />
+            <View style={st.twoCol}>
+              <View style={st.col}>
+                <Text style={st.label}>Cultivo</Text>
+                <TextInput style={st.input} value={cultivo} onChangeText={setCultivo} placeholder="Zarzamora" placeholderTextColor={colors.gray} />
+              </View>
+              <View style={st.col}>
+                <Text style={st.label}>Producto</Text>
+                <TextInput style={st.input} value={producto} onChangeText={setProducto} placeholder="Malla antigranizo" placeholderTextColor={colors.gray} />
+              </View>
+            </View>
+            <Text style={st.label}>Cliente (opcional)</Text>
+            <TextInput style={st.input} value={cliente} onChangeText={setCliente} placeholder="Nombre del cliente o predio" placeholderTextColor={colors.gray} />
+            <Text style={st.label}>Contexto del proyecto</Text>
+            <TextInput
+              style={[st.input, { minHeight: 80, textAlignVertical: 'top' }]}
+              value={contexto} onChangeText={setContexto} multiline
+              placeholder="Cuenta la historia: qué se instaló, superficie, resultado para el cliente…"
+              placeholderTextColor={colors.gray}
+            />
+
+            <Text style={st.label}>Fotos del proyecto *</Text>
+            {fotos.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+                {fotos.map((uri, i) => (
+                  <View key={i} style={st.thumbWrap}>
+                    <Image source={{ uri }} style={st.aporteThumb} />
+                    <TouchableOpacity style={st.thumbX} onPress={() => setFotos((prev) => prev.filter((_, j) => j !== i))} accessibilityRole="button" accessibilityLabel={`Quitar foto ${i + 1}`}>
+                      <Text style={st.thumbXTxt}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            {showCam && camPermission?.granted && (
+              <View style={st.cameraBox}><CameraView ref={cameraRef} style={{ flex: 1 }} facing="back" /></View>
+            )}
+            {!camPermission?.granted ? (
+              <TouchableOpacity style={st.secondary} onPress={requestCamPermission}><Text style={st.secondaryTxt}>Permitir cámara</Text></TouchableOpacity>
+            ) : !showCam ? (
+              <TouchableOpacity style={st.secondary} onPress={() => setShowCam(true)}><Text style={st.secondaryTxt}>📷 Abrir cámara</Text></TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={[st.secondary, { backgroundColor: colors.red }]} onPress={capturar}><Text style={[st.secondaryTxt, { color: '#fff' }]}>📸 Tomar foto ({fotos.length}/{MAX_FOTOS_APORTE})</Text></TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={[st.primary, busy && { opacity: 0.6 }]} onPress={submit} disabled={busy}>
+              {busy ? <ActivityIndicator color="#fff" /> : <Text style={st.primaryTxt}>Enviar aporte</Text>}
+            </TouchableOpacity>
+            <Text style={st.hint}>Marketing revisará tu aporte; al aprobarlo puede publicarlo como caso de éxito en el banco de contenido.</Text>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -676,6 +864,21 @@ const st = StyleSheet.create({
   // impresos
   stockDot: { width: 12, height: 12, borderRadius: 6, marginRight: 8 },
   stockNum: { fontWeight: '800', color: colors.black, fontSize: 18, marginLeft: 10 },
+  // proyectos / aportes de campo
+  introBox: { backgroundColor: '#eef4ff', paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.lightGray },
+  introTxt: { color: '#1e40af', fontSize: 12, lineHeight: 17 },
+  notaBox: { backgroundColor: colors.bg, borderRadius: 10, padding: 10, marginTop: 10 },
+  notaTxt: { color: colors.black, fontSize: 13, lineHeight: 18 },
+  pubTxt: { color: colors.ok, fontWeight: '700', fontSize: 12, marginTop: 8 },
+  twoCol: { flexDirection: 'row', gap: 12 },
+  col: { flex: 1 },
+  cameraBox: { height: 220, borderRadius: 14, overflow: 'hidden', backgroundColor: '#000', borderWidth: 1, borderColor: colors.lightGray, marginBottom: 10 },
+  secondary: { borderWidth: 1, borderColor: colors.red, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 2 },
+  secondaryTxt: { color: colors.red, fontWeight: '700' },
+  thumbWrap: { marginRight: 8, position: 'relative' },
+  aporteThumb: { width: 84, height: 84, borderRadius: 10, backgroundColor: colors.bg },
+  thumbX: { position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 12, backgroundColor: colors.red, alignItems: 'center', justifyContent: 'center' },
+  thumbXTxt: { color: '#fff', fontWeight: '800', fontSize: 12 },
   // sheet compartido
   sheetWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 18, maxHeight: '90%' },

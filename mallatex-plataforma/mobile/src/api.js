@@ -96,6 +96,15 @@ export const api = {
   mktFormatMessage: (id, body) => request('POST', `/api/mkt/format-requests/${id}/message`, { body }),
   mktPrintItems: () => request('GET', '/api/mkt/print-items'),
   mktPrintOut: (body) => request('POST', '/api/mkt/print-movements', { body }),
+  // Aportes de campo: el vendedor sube fotos+contexto de sus proyectos a marketing.
+  mktCreateAporte: (body) => request('POST', '/api/mkt/field-posts', { body }),
+  mktMyAportes: () => request('GET', '/api/mkt/field-posts/mine'),
+  mktAporteMessage: (id, body) => request('POST', `/api/mkt/field-posts/${id}/message`, { body }),
+  // URL absoluta del binario de una foto de aporte (descarga con Bearer).
+  mktAportePhotoUrl: async (photoId) => {
+    const base = await getServerUrl(DEFAULT_SERVER_URL);
+    return base.replace(/\/$/, '') + `/api/mkt/field-posts/photos/${photoId}/file`;
+  },
 
   // ---- MES móvil (planta / líneas de producción) ----
   // Solo visibles para colaboradores con perfil "línea" (el backend define profile.modules).

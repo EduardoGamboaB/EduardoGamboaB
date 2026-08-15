@@ -8,6 +8,7 @@ import { ValueObject } from '@mallatex/shared/ddd';
  */
 const PREFIX = Object.freeze({
   formatRequest: 'FMT',
+  fieldPost: 'APC', // Aporte de campo (contenido del vendedor)
 });
 
 export class Folio extends ValueObject {
@@ -32,6 +33,10 @@ export class Folio extends ValueObject {
 
   static formatRequest(seq) {
     return Folio.for('formatRequest', seq);
+  }
+
+  static fieldPost(seq) {
+    return Folio.for('fieldPost', seq);
   }
 }
 

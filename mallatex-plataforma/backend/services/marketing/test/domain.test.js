@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { Asset, MAX_DB_FILE_BYTES } from '../src/domain/Asset.js';
 import { Folio } from '../src/domain/Folio.js';
 import { FormatRequest } from '../src/domain/FormatRequest.js';
+import { FieldPost } from '../src/domain/FieldPost.js';
 import { Campaign } from '../src/domain/Campaign.js';
 import { PrintItem, validarMovimiento } from '../src/domain/PrintItem.js';
 // S3Storage importa el SDK de AWS de forma dinámica dentro de sus métodos, por
@@ -337,4 +338,44 @@ test('decodeDataUrl acepta cualquier MIME y reporta el tamaño', () => {
   assert.equal(pdf.mime, 'application/pdf');
   assert.equal(decodeDataUrl('no-es-dataurl'), null);
   assert.equal(decodeDataUrl(''), null);
+});
+
+// ---------- FieldPost: aportes de campo (vendedor -> marketing) ----------
+
+test('Folio.fieldPost genera APC-#### con relleno', () => {
+  assert.equal(Folio.fieldPost(1).value, 'APC-0001');
+  assert.equal(Folio.fieldPost(273).value, 'APC-0273');
+});
+
+test('FieldPost.crear exige título y autor', () => {
+  assert.throws(() => FieldPost.crear({ titulo: '' }, { autor: 'Ana' }), DomainError);
+  assert.throws(() => FieldPost.crear({ titulo: 'Proyecto' }, { autor: '' }), DomainError);
+  const fp = FieldPost.crear(
+    { titulo: 'Cierre antigranizo', ubicacion: 'Jocotepec', cultivo: 'Zarzamora' },
+    { autorId: 2, autor: 'Ana López' }
+  );
+  assert.equal(fp.estado, 'nuevo');
+  assert.equal(fp.autorId, 2);
+  assert.equal(fp.cultivo, 'Zarzamora');
+});
+
+test('FieldPost: máquina de estados nuevo -> aprobado -> publicado', () => {
+  const fp = FieldPost.crear({ titulo: 'P' }, { autorId: 1, autor: 'Ana' });
+  fp.cambiarEstado('aprobado', { notaMarketing: 'Va' });
+  assert.equal(fp.estado, 'aprobado');
+  assert.equal(fp.notaMarketing, 'Va');
+  fp.cambiarEstado('publicado', { assetIds: [10, 11] });
+  assert.equal(fp.estado, 'publicado');
+  assert.deepEqual(fp.publicadoAssetIds, [10, 11]);
+});
+
+test('FieldPost: transición inválida nuevo -> publicado lanza 409', () => {
+  const fp = FieldPost.crear({ titulo: 'P' }, { autorId: 1, autor: 'Ana' });
+  assert.throws(() => fp.cambiarEstado('publicado'), (e) => e instanceof DomainError && e.status === 409);
+});
+
+test('FieldPost: sólo el autor puede reconocerse como dueño', () => {
+  const fp = FieldPost.crear({ titulo: 'P' }, { autorId: 7, autor: 'Ana' });
+  assert.equal(fp.esDe(7), true);
+  assert.equal(fp.esDe(8), false);
 });
