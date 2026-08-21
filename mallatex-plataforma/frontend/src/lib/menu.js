@@ -15,7 +15,7 @@ import {
   CalendarRange, Wallet,
   Users, Target, Receipt, FileText,
   BadgeDollarSign, Plane, Ticket, BarChart3,
-  LayoutGrid, Factory, Warehouse, Settings2, HandCoins, LineChart, ClipboardCheck,
+  LayoutGrid, Factory, Warehouse, Settings2, HandCoins, LineChart, ClipboardCheck, KanbanSquare,
   UserPlus, Gift, PieChart, CalendarDays,
   Contact, Clock, Fingerprint, Package, MapPin, ShieldCheck,
   UserCog, KeyRound, Boxes, Lock, SlidersHorizontal,
@@ -85,6 +85,7 @@ export const MODULES = {
 
   // ---- Producción (MES) ---------------------------------------------------
   'mes-tablero': { label: 'Tablero de producción', grp: 'Producción (MES)', href: '/mes/tablero', icon: LayoutGrid },
+  'mes-pedidos': { label: 'Pedidos (Kanban)', grp: 'Producción (MES)', href: '/mes/pedidos', icon: KanbanSquare },
   'mes-produccion': { label: 'Jefe de producción', grp: 'Producción (MES)', href: '/mes/produccion', icon: Factory },
   'mes-operaciones': { label: 'Operaciones', grp: 'Producción (MES)', href: '/mes/operaciones', icon: Settings2 },
   'mes-almacen': { label: 'Almacén', grp: 'Producción (MES)', href: '/mes/almacen', icon: Warehouse },

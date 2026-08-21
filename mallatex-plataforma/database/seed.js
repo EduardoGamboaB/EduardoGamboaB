@@ -46,6 +46,7 @@ const WEB_MODULES = [
   ['mes-operaciones', 'Producción (MES)', 'Operaciones'], ['mes-almacen', 'Producción (MES)', 'Almacén'],
   ['mes-cobranza', 'Producción (MES)', 'Cobranza'], ['mes-direccion', 'Producción (MES)', 'Dirección'],
   ['mes-inventario', 'Producción (MES)', 'Inventario físico'],
+  ['mes-pedidos', 'Producción (MES)', 'Pedidos (Kanban)'],
   ['users', 'Administración', 'Usuarios'], ['roles', 'Administración', 'Roles'],
   ['modulos', 'Administración', 'Módulos'], ['permisos', 'Administración', 'Permisos'],
   ['asignacion', 'Administración', 'Asignación de acceso'], ['audit', 'Administración', 'Auditoría'],
@@ -79,8 +80,8 @@ grant('role', 'admin', 'web', webKeys);
 grant('role', 'contador', 'web', webKeys.filter((k) => !['users', 'roles', 'modulos', 'permisos', 'asignacion'].includes(k)));
 grant('role', 'nomina', 'web', ['dashboard', 'attendance', 'incidents', 'overtime', 'periods', 'variablepay', 'rh-recibos', 'rh-vacaciones', 'rh-tickets', 'rh-indicadores', 'employees', 'schedules', 'checador', 'audit']);
 grant('role', 'comercial', 'web', ['crm-clientes', 'crm-objetivos', 'crm-administrativo', 'crm-facturacion', 'products', 'mkt-banco', 'mkt-publicaciones', 'mkt-calendario']);
-grant('role', 'produccion', 'web', ['mes-tablero', 'mes-produccion', 'mes-almacen', 'mes-operaciones', 'mes-inventario']);
-grant('role', 'direccion', 'web', ['dashboard', 'mes-tablero', 'mes-direccion', 'rh-indicadores', 'audit']);
+grant('role', 'produccion', 'web', ['mes-tablero', 'mes-produccion', 'mes-almacen', 'mes-operaciones', 'mes-inventario', 'mes-pedidos']);
+grant('role', 'direccion', 'web', ['dashboard', 'mes-tablero', 'mes-direccion', 'mes-pedidos', 'rh-indicadores', 'audit']);
 grant('role', 'marketing', 'web', ['mkt-banco', 'mkt-formatos', 'mkt-aportes', 'mkt-publicaciones', 'mkt-calendario', 'mkt-impresos']);
 grant('profile', 'comercial', 'mobile', MOBILE_MODULES.filter((m) => !m[0].startsWith('mes-')).map((m) => m[0]));
 grant('profile', 'operativo', 'mobile', ['asistencia', 'historial', 'perfil']);

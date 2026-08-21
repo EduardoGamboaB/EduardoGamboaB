@@ -46,7 +46,7 @@ let admin, empCom, empOp, empLinea;
 {
   const r = await post('/api/auth/login', { body: { email: 'admin@mallatex.mx', password: 'mallatex2026' } });
   ok('login admin devuelve token', r.status === 200 && !!r.json?.token);
-  ok('admin recibe 42 módulos web', r.json?.modules?.length === 42, `(${r.json?.modules?.length})`);
+  ok('admin recibe 43 módulos web', r.json?.modules?.length === 43, `(${r.json?.modules?.length})`);
   admin = r.json?.token;
 
   const bad = await post('/api/auth/login', { body: { email: 'admin@mallatex.mx', password: 'incorrecta' } });
@@ -95,7 +95,7 @@ sec('IDENTITY · matriz de acceso');
   const cat = await get('/api/access/catalog?surface=mobile', { token: admin });
   ok('catálogo móvil (19 módulos)', cat.status === 200 && cat.json?.length === 19, `(${cat.json?.length})`);
   const m = await get('/api/access/matrix', { token: admin });
-  ok('matriz completa (153 grants)', m.status === 200 && m.json?.grants?.length === 153, `(${m.json?.grants?.length})`);
+  ok('matriz completa (157 grants)', m.status === 200 && m.json?.grants?.length === 157, `(${m.json?.grants?.length})`);
   // Conceder inventario al perfil operativo y verificar en login
   const before = (m.json.grants || []).filter((g) => g.subjectType === 'profile' && g.subjectKey === 'operativo' && g.surface === 'mobile').map((g) => g.moduleKey);
   const r1 = await put('/api/access/grants', { token: admin, body: { subjectType: 'profile', subjectKey: 'operativo', surface: 'mobile', moduleKeys: [...before, 'inventario'] } });
@@ -505,6 +505,25 @@ sec('MES · tablero, KPIs y tablet de línea (móvil)');
   ok('perfil comercial bloqueado en tablet → 403', blocked.status === 403, `(${blocked.status})`);
   const adminNoMes = await get('/api/mes/tablero', { token: empOp });
   ok('operativo bloqueado en tablero → 403', adminNoMes.status === 403, `(${adminNoMes.status})`);
+}
+
+sec('MES · tablero Kanban (vista en vivo + transiciones)');
+{
+  const board = await get('/api/mes/kanban/board', { token: admin });
+  ok('board: 200 con {at, orders[]}', board.status === 200 && typeof board.json?.at === 'string' && Array.isArray(board.json?.orders), `(${board.status})`);
+  const fel = (board.json?.orders || []).find((o) => o.code === 'FEL220');
+  ok('board: cada tarjeta trae progreso y partidas', !!fel && typeof fel.progreso === 'number' && Array.isArray(fel.suborders), JSON.stringify(fel).slice(0, 80));
+  // FEL220 quedó liberado con avance (terminados=5 del avance de tablet).
+  const det = await post(`/api/mes/kanban/${felId}/detener`, { token: admin, body: { motivo: 'Prueba E2E' } });
+  ok('detener pedido → detenido', det.status === 200 && det.json?.estado === 'detenido', `(${det.json?.estado})`);
+  const boardDet = await get('/api/mes/kanban/board', { token: admin });
+  ok('board refleja el pedido detenido', (boardDet.json?.orders || []).find((o) => o.id === felId)?.estado === 'detenido');
+  const rea = await post(`/api/mes/kanban/${felId}/reanudar`, { token: admin });
+  ok('reanudar detenido (con avance) → en-produccion', rea.status === 200 && rea.json?.estado === 'en-produccion', `(${rea.json?.estado})`);
+  const entNo = await post(`/api/mes/kanban/${felId}/entregar`, { token: admin });
+  ok('entregar pedido no terminado → 409', entNo.status === 409, `(${entNo.status})`);
+  const guard = await get('/api/mes/kanban/board', { token: empOp });
+  ok('operativo sin mes-pedidos bloqueado en board → 403', guard.status === 403, `(${guard.status})`);
 }
 
 // =====================================================================

@@ -170,6 +170,60 @@ test('toPublic includes progreso; toPlain does not', () => {
   assert.equal('progreso' in o.toPlain(), false);
 });
 
+// ---------- Kanban: entregar / detener / reanudar ----------
+
+test('entregar sólo procede desde terminado y fija entregados', () => {
+  const noDone = ProductionOrder.create({ code: 'P-1', meta: 10, terminados: 4, estado: 'en-produccion' });
+  assert.throws(() => noDone.entregar(), (e) => e.code === 'ORDER_NO_TERMINADO' && e.status === 409);
+
+  const done = ProductionOrder.create({ code: 'P-2', meta: 10, terminados: 10, estado: 'terminado' });
+  done.pullDomainEvents();
+  done.entregar();
+  assert.equal(done.estado, 'entregado');
+  assert.equal(done.entregados, 10);
+  assert.equal(done.pullDomainEvents().map((e) => e.name).join(','), 'PedidoEntregado');
+});
+
+test('detener pausa el pedido conservando el avance; no aplica a entregado', () => {
+  const o = ProductionOrder.create({ code: 'P-1', meta: 10, terminados: 3, estado: 'en-produccion', materialEgresado: true });
+  o.pullDomainEvents();
+  o.detener('falta material');
+  assert.equal(o.estado, 'detenido');
+  assert.equal(o.terminados, 3, 'conserva avance');
+  assert.equal(o.materialEgresado, true);
+  assert.equal(o.observaciones, 'falta material');
+  assert.equal(o.pullDomainEvents().map((e) => e.name).join(','), 'PedidoDetenido');
+  // idempotente: detener de nuevo no cambia estado ni emite otro evento
+  o.detener();
+  assert.equal(o.pullDomainEvents().length, 0);
+
+  const entregado = ProductionOrder.create({ code: 'P-2', estado: 'entregado', pagoConfirmado: true });
+  assert.throws(() => entregado.detener(), (e) => e.code === 'ORDER_YA_ENTREGADO' && e.status === 409);
+});
+
+test('reanudar reconstruye el estado según el avance persistido', () => {
+  // con avance → en-produccion
+  const conAvance = ProductionOrder.create({ code: 'P-1', meta: 10, terminados: 3, estado: 'detenido', materialEgresado: true });
+  conAvance.reanudar();
+  assert.equal(conAvance.estado, 'en-produccion');
+
+  // material egresado, sin avance → material-egresado
+  const egresado = ProductionOrder.create({ code: 'P-2', meta: 10, terminados: 0, estado: 'detenido', materialEgresado: true });
+  egresado.reanudar();
+  assert.equal(egresado.estado, 'material-egresado');
+
+  // sin material ni avance → liberado
+  const liberado = ProductionOrder.create({ code: 'P-3', meta: 10, terminados: 0, estado: 'detenido', materialEgresado: false });
+  liberado.pullDomainEvents();
+  liberado.reanudar();
+  assert.equal(liberado.estado, 'liberado');
+  assert.equal(liberado.pullDomainEvents().map((e) => e.name).join(','), 'PedidoReanudado');
+
+  // reanudar un pedido que no está detenido → 409
+  const enProd = ProductionOrder.create({ code: 'P-4', estado: 'en-produccion', pagoConfirmado: true });
+  assert.throws(() => enProd.reanudar(), (e) => e.code === 'ORDER_NO_DETENIDO' && e.status === 409);
+});
+
 // ---------- Merma ----------
 
 test('Merma.create rejects an invalid categoria', () => {

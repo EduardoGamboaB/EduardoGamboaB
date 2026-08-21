@@ -64,6 +64,20 @@ export function buildRoutes({ productionService, shopFloorService, warehouseServ
   );
   router.use('/api/mes/orders', orders);
 
+  // ---- Tablero Kanban de pedidos (vista en vivo + transiciones) -----
+  // Módulo propio 'mes-pedidos' para que producción y dirección lo usen sin
+  // depender de la gestión completa de órdenes. El board se refresca por
+  // polling desde la web; las tarjetas se mueven solas al cambiar el estado
+  // que la tablet actualiza (avance -> terminado), y a mano por arrastre.
+  const kanban = Router();
+  kanban.use(requireAuth, requireModule('mes-pedidos'));
+  kanban.get('/board', asyncHandler(async (_req, res) => res.json(await productionService.board())));
+  kanban.post('/:id/liberar', asyncHandler(async (req, res) => res.json((await productionService.liberar(req.params.id)).toPublic())));
+  kanban.post('/:id/entregar', asyncHandler(async (req, res) => res.json((await productionService.entregar(req.params.id)).toPublic())));
+  kanban.post('/:id/detener', asyncHandler(async (req, res) => res.json((await productionService.detener(req.params.id, (req.body || {}).motivo)).toPublic())));
+  kanban.post('/:id/reanudar', asyncHandler(async (req, res) => res.json((await productionService.reanudar(req.params.id)).toPublic())));
+  router.use('/api/mes/kanban', kanban);
+
   // ---- Líneas -------------------------------------------------------
   const lines = Router();
   lines.use(requireAuth, requireModule('mes-produccion'));

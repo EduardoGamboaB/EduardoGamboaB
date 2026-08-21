@@ -95,6 +95,44 @@ export class ProductionService {
     return this.#persist(order);
   }
 
+  async entregar(id) {
+    const order = await this.#load(id);
+    order.entregar();
+    return this.#persist(order);
+  }
+
+  async detener(id, motivo) {
+    const order = await this.#load(id);
+    order.detener(motivo);
+    return this.#persist(order);
+  }
+
+  async reanudar(id) {
+    const order = await this.#load(id);
+    order.reanudar();
+    return this.#persist(order);
+  }
+
+  /**
+   * Tablero Kanban: todos los pedidos con sus partidas (subórdenes), en dos
+   * queries. Cada tarjeta trae progreso y el detalle de sus partidas para que
+   * el web las agrupe por columna (estado) y las mueva en vivo.
+   */
+  async board() {
+    const orders = await this.orderDAO.list({});
+    const subs = await this.suborderDAO.byOrders(orders.map((o) => o.id));
+    const porOrden = new Map();
+    for (const s of subs) {
+      const k = String(s.orderId ?? s.order_id);
+      if (!porOrden.has(k)) porOrden.set(k, []);
+      porOrden.get(k).push(typeof s.toPlain === 'function' ? s.toPlain() : s);
+    }
+    return {
+      at: new Date().toISOString(),
+      orders: orders.map((o) => ({ ...o.toPublic(), suborders: porOrden.get(String(o.id)) || [] })),
+    };
+  }
+
   /** Pedidos en espera de liberación por cobranza (pago no confirmado). */
   cobranzaPendientes() {
     return this.orderDAO.findAll({ pagoConfirmado: false });

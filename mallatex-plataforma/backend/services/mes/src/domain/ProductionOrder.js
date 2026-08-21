@@ -159,6 +159,43 @@ export class ProductionOrder extends AggregateRoot {
     return this;
   }
 
+  /** Entrega el pedido terminado (última etapa del tablero). */
+  entregar() {
+    if (this.estado !== 'terminado') {
+      throw new DomainError('Sólo se entregan pedidos terminados', { code: 'ORDER_NO_TERMINADO', status: 409 });
+    }
+    this.estado = 'entregado';
+    this.entregados = this.terminados;
+    this.addDomainEvent(new DomainEvent('PedidoEntregado', { code: this.code }));
+    return this;
+  }
+
+  /** Detiene (pausa) el pedido. Conserva terminados/materialEgresado para reanudar. */
+  detener(motivo = '') {
+    if (this.estado === 'detenido') return this;
+    if (this.estado === 'entregado') {
+      throw new DomainError('No se puede detener un pedido entregado', { code: 'ORDER_YA_ENTREGADO', status: 409 });
+    }
+    this.estado = 'detenido';
+    if (motivo) this.observaciones = String(motivo).slice(0, 500);
+    this.addDomainEvent(new DomainEvent('PedidoDetenido', { code: this.code, motivo }));
+    return this;
+  }
+
+  /**
+   * Reanuda un pedido detenido. Reconstruye un estado sensato a partir de los
+   * campos persistidos: si ya había avance → en-produccion; si el material salió
+   * → material-egresado; en otro caso → liberado.
+   */
+  reanudar() {
+    if (this.estado !== 'detenido') {
+      throw new DomainError('El pedido no está detenido', { code: 'ORDER_NO_DETENIDO', status: 409 });
+    }
+    this.estado = this.terminados > 0 ? 'en-produccion' : this.materialEgresado ? 'material-egresado' : 'liberado';
+    this.addDomainEvent(new DomainEvent('PedidoReanudado', { code: this.code, estado: this.estado }));
+    return this;
+  }
+
   get progreso() {
     if (!this.meta) return 0;
     return Math.min(Math.round((this.terminados / this.meta) * 100), 100);

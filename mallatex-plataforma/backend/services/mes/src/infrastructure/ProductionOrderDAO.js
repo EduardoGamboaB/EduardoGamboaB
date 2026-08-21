@@ -45,4 +45,10 @@ export class SuborderDAO extends BaseDAO {
   byOrder(orderId) {
     return this.findAll({ orderId }, { order: [['id', 'ASC']] });
   }
+
+  /** Subórdenes (partidas) de un conjunto de pedidos, en un solo query. */
+  byOrders(orderIds = []) {
+    if (!orderIds.length) return Promise.resolve([]);
+    return this.findAll({ orderId: orderIds }, { order: [['id', 'ASC']] });
+  }
 }
