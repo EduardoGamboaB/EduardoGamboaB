@@ -74,7 +74,12 @@ export async function api(path, opts = {}) {
     throw new ApiError('No se pudo conectar con el servidor', 0, null)
   }
 
-  if (res.status === 401) {
+  // Un 401 con token vigente = sesión caducada/revocada: se limpia y se
+  // redirige al login. Un 401 SIN token es un intento de acceso fallido (p.ej.
+  // login con credenciales incorrectas): no es una sesión que expiró, así que
+  // se deja pasar para mostrar el mensaje real del servidor ("Credenciales
+  // inválidas", etc.).
+  if (res.status === 401 && token) {
     clearSession()
     if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
       window.location.href = '/login'
