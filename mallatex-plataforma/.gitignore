@@ -9,3 +9,6 @@ build/
 coverage/
 *.log
 .DS_Store
+
+# Config de PM2 generada por deploy/windows/install.ps1 (contiene secretos)
+ecosystem.config.js
