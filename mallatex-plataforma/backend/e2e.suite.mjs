@@ -407,6 +407,13 @@ let felId, rollCode = 'RL-E2E-001';
   const oid = await get(`/api/mes/orders/${eze?.id}`, { token: admin });
   ok('EZE503 con 5 subpedidos (Driscolls)', oid.status === 200 && (oid.json?.suborders?.length === 5 || oid.json?.subPedidos?.length === 5), JSON.stringify(oid.json).slice(0, 80));
   felId = (or.json || []).find((o) => o.code === 'FEL220')?.id;
+
+  // Alta de pedido por API (regresión: created_at NOT NULL lo cubre el DEFAULT
+  // now() de la BD; el DAO ya no reenvía createdAt: null en el alta).
+  const alta = await post('/api/mes/orders', { token: admin, body: { code: 'PC-E2E-ALTA', cliente: 'Alta E2E', material: 'Malla', medida: '4x50', meta: 50, subPedidos: ['Partida 1', 'Partida 2'] } });
+  ok('alta de pedido por API → 201 con created_at', alta.status === 201 && !!alta.json?.createdAt && alta.json?.estado === 'cobranza-pendiente', `(${alta.status}, created_at=${alta.json?.createdAt})`);
+  const altaDet = await get(`/api/mes/orders/${alta.json?.id}`, { token: admin });
+  ok('el pedido nuevo trae sus 2 partidas', altaDet.json?.suborders?.length === 2, `(${altaDet.json?.suborders?.length})`);
 }
 
 sec('MES · candado de cobranza (gate)');

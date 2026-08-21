@@ -13,7 +13,11 @@ export class ProductionOrderDAO extends BaseDAO {
     if (!(entity instanceof ProductionOrder)) return entity;
     // El id lo asigna la base (BIGSERIAL); la entidad nueva trae un UUID de
     // Entity que no debe insertarse. En update, BaseDAO ya localiza por PK.
-    const { id, ...rest } = entity.toPlain();
+    const { id, createdAt, ...rest } = entity.toPlain();
+    // created_at lo gestiona la base (DEFAULT now()); sólo lo reenviamos si el
+    // agregado ya trae una fecha real, para no sobrescribir el default con null
+    // al dar de alta un pedido nuevo (toPlain() expone createdAt: null).
+    if (createdAt != null) rest.createdAt = createdAt;
     return rest;
   }
 
