@@ -211,11 +211,82 @@ export function defineModels(sequelize) {
     opts('locations')
   );
 
+  // ---- Inventario físico + conteo + sincronización SAE -------------
+  const InventoryItem = sequelize.define(
+    'InventoryItem',
+    {
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      sku: { type: DataTypes.TEXT, allowNull: false, unique: true },
+      descripcion: { type: DataTypes.TEXT, allowNull: false },
+      unidad: { type: DataTypes.TEXT, allowNull: false, defaultValue: 'pza' },
+      ubicacion: DataTypes.TEXT,
+      minimo: { type: DataTypes.DECIMAL(14, 3), allowNull: false, defaultValue: 0 },
+      activo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+      createdAt: { type: DataTypes.DATE, field: 'created_at' },
+    },
+    opts('inventory_items')
+  );
+
+  const InventoryMovement = sequelize.define(
+    'InventoryMovement',
+    {
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      itemId: { type: DataTypes.BIGINT, allowNull: false, field: 'item_id' },
+      tipo: { type: DataTypes.TEXT, allowNull: false }, // entrada|salida|ajuste
+      cantidad: { type: DataTypes.DECIMAL(14, 3), allowNull: false },
+      motivo: DataTypes.TEXT,
+      countId: { type: DataTypes.BIGINT, field: 'count_id' },
+      origen: { type: DataTypes.TEXT, allowNull: false, defaultValue: 'web' }, // web|tablet
+      createdBy: { type: DataTypes.TEXT, field: 'created_by' },
+      createdAt: { type: DataTypes.DATE, field: 'created_at' },
+    },
+    opts('inventory_movements')
+  );
+
+  const InventoryCount = sequelize.define(
+    'InventoryCount',
+    {
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      folio: { type: DataTypes.TEXT, unique: true }, // CTF-XXXX
+      ubicacion: DataTypes.TEXT,
+      estado: { type: DataTypes.TEXT, allowNull: false, defaultValue: 'abierto' },
+      createdBy: { type: DataTypes.TEXT, field: 'created_by' },
+      saeSyncEstado: { type: DataTypes.TEXT, allowNull: false, defaultValue: 'pendiente', field: 'sae_sync_estado' },
+      saeRef: { type: DataTypes.TEXT, field: 'sae_ref' },
+      saeError: { type: DataTypes.TEXT, field: 'sae_error' },
+      saeSyncAt: { type: DataTypes.DATE, field: 'sae_sync_at' },
+      createdAt: { type: DataTypes.DATE, field: 'created_at' },
+      closedAt: { type: DataTypes.DATE, field: 'closed_at' },
+      updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
+    },
+    opts('inventory_counts')
+  );
+
+  const InventoryCountLine = sequelize.define(
+    'InventoryCountLine',
+    {
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      countId: { type: DataTypes.BIGINT, allowNull: false, field: 'count_id' },
+      itemId: { type: DataTypes.BIGINT, allowNull: false, field: 'item_id' },
+      sku: { type: DataTypes.TEXT, allowNull: false },
+      teorico: { type: DataTypes.DECIMAL(14, 3), allowNull: false, defaultValue: 0 },
+      contado: { type: DataTypes.DECIMAL(14, 3), allowNull: false, defaultValue: 0 },
+      diferencia: { type: DataTypes.DECIMAL(14, 3), allowNull: false, defaultValue: 0 },
+      contadoPor: { type: DataTypes.TEXT, field: 'contado_por' },
+      createdAt: { type: DataTypes.DATE, field: 'created_at' },
+    },
+    opts('inventory_count_lines')
+  );
+
   // Asociaciones: un pedido tiene sub-pedidos (caso real EZE 503 / Driscolls).
   ProductionOrder.hasMany(ProductionSuborder, { foreignKey: 'order_id', as: 'suborders' });
   ProductionSuborder.belongsTo(ProductionOrder, { foreignKey: 'order_id', as: 'order' });
 
   return {
+    InventoryItem,
+    InventoryMovement,
+    InventoryCount,
+    InventoryCountLine,
     ProductionLine,
     Operator,
     ProductionOrder,

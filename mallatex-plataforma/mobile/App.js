@@ -27,6 +27,7 @@ import MaterialScreen from './src/screens/MaterialScreen';
 import MesTabletScreen from './src/screens/MesTabletScreen';
 import MesProduccionScreen from './src/screens/MesProduccionScreen';
 import MesMermasScreen from './src/screens/MesMermasScreen';
+import MesInventoryScreen from './src/screens/MesInventoryScreen';
 
 // Menú extensible: agregar un módulo nuevo = una entrada aquí + su pantalla.
 // Las claves coinciden con el catálogo de módulos del backend; el perfil del colaborador
@@ -44,6 +45,7 @@ const MENU = [
   { key: 'mes-tablet', label: 'Tablet de línea', icon: '🏭', group: 'Producción (MES)' },
   { key: 'mes-produccion-movil', label: 'Producción', icon: '📊', group: 'Producción (MES)' },
   { key: 'mes-mermas', label: 'Reportar merma', icon: '🗑️', group: 'Producción (MES)' },
+  { key: 'mes-inventario', label: 'Inventario físico', icon: '📋', group: 'Producción (MES)' },
   { key: 'material', label: 'Material de venta', icon: '🎨', group: 'Herramientas' },
   { key: 'inventario', label: 'Inventario', icon: '📦', group: 'Herramientas' },
   { key: 'cotizador', label: 'Cotizador', icon: '🧮', group: 'Herramientas' },
@@ -224,6 +226,7 @@ export default function App() {
         {activeScreen === 'mes-tablet' && <MesTabletScreen />}
         {activeScreen === 'mes-produccion-movil' && <MesProduccionScreen />}
         {activeScreen === 'mes-mermas' && <MesMermasScreen />}
+        {activeScreen === 'mes-inventario' && <MesInventoryScreen />}
       </View>
 
       {/* Menú lateral (drawer) */}

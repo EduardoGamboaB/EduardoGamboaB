@@ -46,7 +46,7 @@ let admin, empCom, empOp, empLinea;
 {
   const r = await post('/api/auth/login', { body: { email: 'admin@mallatex.mx', password: 'mallatex2026' } });
   ok('login admin devuelve token', r.status === 200 && !!r.json?.token);
-  ok('admin recibe 41 módulos web', r.json?.modules?.length === 41, `(${r.json?.modules?.length})`);
+  ok('admin recibe 42 módulos web', r.json?.modules?.length === 42, `(${r.json?.modules?.length})`);
   admin = r.json?.token;
 
   const bad = await post('/api/auth/login', { body: { email: 'admin@mallatex.mx', password: 'incorrecta' } });
@@ -93,9 +93,9 @@ let newUserId;
 sec('IDENTITY · matriz de acceso');
 {
   const cat = await get('/api/access/catalog?surface=mobile', { token: admin });
-  ok('catálogo móvil (18 módulos)', cat.status === 200 && cat.json?.length === 18, `(${cat.json?.length})`);
+  ok('catálogo móvil (19 módulos)', cat.status === 200 && cat.json?.length === 19, `(${cat.json?.length})`);
   const m = await get('/api/access/matrix', { token: admin });
-  ok('matriz completa (149 grants)', m.status === 200 && m.json?.grants?.length === 149, `(${m.json?.grants?.length})`);
+  ok('matriz completa (153 grants)', m.status === 200 && m.json?.grants?.length === 153, `(${m.json?.grants?.length})`);
   // Conceder inventario al perfil operativo y verificar en login
   const before = (m.json.grants || []).filter((g) => g.subjectType === 'profile' && g.subjectKey === 'operativo' && g.surface === 'mobile').map((g) => g.moduleKey);
   const r1 = await put('/api/access/grants', { token: admin, body: { subjectType: 'profile', subjectKey: 'operativo', surface: 'mobile', moduleKeys: [...before, 'inventario'] } });
@@ -445,6 +445,40 @@ sec('MES · almacén (MT-DT-001/002/006)');
   ok('pesaje MT-DT-006 (teórico vs real)', pt.status === 201);
   const loc = await get('/api/mes/locations', { token: admin });
   ok('ubicaciones de almacén', loc.status === 200);
+}
+
+sec('MES · inventario físico + conteo (tablet) + sync SAE');
+{
+  // Alta de artículo (SKU = clave SAE) y saldo por kardex.
+  const it = await post('/api/mes/inventory/items', { token: admin, body: { sku: 'E2E-MALLA-01', descripcion: 'Malla E2E', unidad: 'rollo', minimo: 5 } });
+  ok('alta de artículo de inventario', it.status === 201 && it.json?.sku === 'E2E-MALLA-01', `(${it.status})`);
+  const itemId = it.json?.id;
+  const dup = await post('/api/mes/inventory/items', { token: admin, body: { sku: 'E2E-MALLA-01', descripcion: 'dup' } });
+  ok('SKU duplicado → 409', dup.status === 409, `(${dup.status})`);
+  const ent = await post('/api/mes/inventory/movements', { token: admin, body: { itemId, tipo: 'entrada', cantidad: 100 } });
+  ok('entrada 100 → existencia 100 (kardex)', ent.status === 201 && Number(ent.json?.existencia) === 100, JSON.stringify(ent.json).slice(0, 90));
+  const over = await post('/api/mes/inventory/movements', { token: admin, body: { itemId, tipo: 'salida', cantidad: 999 } });
+  ok('salida > existencia → 409 STOCK_INSUFICIENTE', over.status === 409 && over.json?.code === 'STOCK_INSUFICIENTE', `(${over.status})`);
+
+  // Sin el módulo mes-inventario → 403 (un vendedor comercial no entra).
+  const noacc = await get('/api/mes/inventory/items', { token: empCom });
+  ok('sin módulo mes-inventario → 403', noacc.status === 403, `(${noacc.status})`);
+
+  // Conteo físico desde la tablet (empleado de línea).
+  const cnt = await post('/api/mes/inventory/counts', { token: empLinea, body: { ubicacion: 'Almacén PT' } });
+  ok('inicia conteo con folio CTF-', cnt.status === 201 && /^CTF-\d{4}$/.test(cnt.json?.folio || ''), JSON.stringify(cnt.json).slice(0, 90));
+  const countId = cnt.json?.id;
+  const cap = await post(`/api/mes/inventory/counts/${countId}/lines`, { token: empLinea, body: { sku: 'E2E-MALLA-01', contado: 96 } });
+  ok('captura físico 96 → teórico 100, dif -4', cap.status === 201 && Number(cap.json?.teorico) === 100 && Number(cap.json?.diferencia) === -4, JSON.stringify(cap.json).slice(0, 120));
+  const close = await post(`/api/mes/inventory/counts/${countId}/close`, { token: empLinea });
+  ok('cierra conteo y genera el ajuste', close.status === 200 && close.json?.estado === 'cerrado' && close.json?.resumen?.conDiferencia === 1, JSON.stringify(close.json?.resumen));
+  const items2 = await get('/api/mes/inventory/items', { token: admin });
+  const row = (items2.json || []).find((x) => x.id === itemId);
+  ok('el ajuste dejó la existencia en 96', Number(row?.existencia) === 96, `(${row?.existencia})`);
+
+  // Sincronización de ajustes con el SAE (mock por defecto).
+  const sync = await post(`/api/mes/inventory/counts/${countId}/sync`, { token: admin });
+  ok('sincroniza ajustes al SAE (mock) → sincronizado', sync.status === 200 && sync.json?.estado === 'sincronizado' && sync.json?.saeSyncEstado === 'enviado', JSON.stringify({ e: sync.json?.estado, ref: sync.json?.saeRef }));
 }
 
 sec('MES · tablero, KPIs y tablet de línea (móvil)');

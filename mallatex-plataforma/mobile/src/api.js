@@ -100,6 +100,13 @@ export const api = {
   mktCreateAporte: (body) => request('POST', '/api/mkt/field-posts', { body }),
   mktMyAportes: () => request('GET', '/api/mkt/field-posts/mine'),
   mktAporteMessage: (id, body) => request('POST', `/api/mkt/field-posts/${id}/message`, { body }),
+  // Inventario físico MES (conteo desde la tablet)
+  mesInvItems: (q) => request('GET', '/api/mes/inventory/items' + (q ? `?q=${encodeURIComponent(q)}` : '')),
+  mesInvCounts: () => request('GET', '/api/mes/inventory/counts'),
+  mesInvStartCount: (body) => request('POST', '/api/mes/inventory/counts', { body }),
+  mesInvCount: (id) => request('GET', `/api/mes/inventory/counts/${id}`),
+  mesInvCaptureLine: (id, body) => request('POST', `/api/mes/inventory/counts/${id}/lines`, { body }),
+  mesInvCloseCount: (id) => request('POST', `/api/mes/inventory/counts/${id}/close`, { body: {} }),
   // URL absoluta del binario de una foto de aporte (descarga con Bearer).
   mktAportePhotoUrl: async (photoId) => {
     const base = await getServerUrl(DEFAULT_SERVER_URL);

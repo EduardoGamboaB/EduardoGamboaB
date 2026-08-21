@@ -5,6 +5,8 @@ import { ProductionOrder } from '../src/domain/ProductionOrder.js';
 import { Merma } from '../src/domain/Merma.js';
 import { Roll, ESTADOS_ROLLO } from '../src/domain/Roll.js';
 import { PROCESOS_PRODUCCION, CATEGORIAS_MATERIAL, ESTADOS_PEDIDO } from '../src/domain/constants.js';
+import { InventoryItem, validarMovimientoInv } from '../src/domain/InventoryItem.js';
+import { InventoryCount, nuevoRenglon } from '../src/domain/InventoryCount.js';
 import { DomainError } from '@mallatex/shared/ddd';
 
 // ---------- ProductionOrder: create invariants ----------
@@ -224,4 +226,76 @@ test('escanearEnLinea without orderId keeps the existing link', () => {
 
 test('MES process catalog is the documented one', () => {
   assert.deepEqual(PROCESOS_PRODUCCION, ['corte', 'perforacion', 'costura', 'embobinado']);
+});
+
+// ---------- Inventario físico: kardex + reglas de stock ----------
+
+test('InventoryItem exige SKU y descripción', () => {
+  assert.throws(() => InventoryItem.crear({ sku: '', descripcion: 'x' }), DomainError);
+  assert.throws(() => InventoryItem.crear({ sku: 'A', descripcion: '' }), DomainError);
+  const it = InventoryItem.crear({ sku: 'MALLA-1', descripcion: 'Malla', unidad: 'rollo', minimo: 5 });
+  assert.equal(it.sku, 'MALLA-1');
+  assert.equal(it.minimo, 5);
+});
+
+test('existencia = entradas - salidas +/- ajustes (3 decimales)', () => {
+  const movs = [
+    { tipo: 'entrada', cantidad: 100 },
+    { tipo: 'salida', cantidad: 30 },
+    { tipo: 'ajuste', cantidad: -2.5 },
+  ];
+  assert.equal(InventoryItem.existencia(movs), 67.5);
+});
+
+test('bajoMinimo cuando existencia <= mínimo (y mínimo > 0)', () => {
+  const it = InventoryItem.crear({ sku: 'X', descripcion: 'X', minimo: 10 });
+  assert.equal(it.bajoMinimo(10), true);
+  assert.equal(it.bajoMinimo(11), false);
+  const sinMin = InventoryItem.crear({ sku: 'Y', descripcion: 'Y', minimo: 0 });
+  assert.equal(sinMin.bajoMinimo(0), false);
+});
+
+test('validarMovimientoInv: reglas de cantidad y stock', () => {
+  assert.throws(() => validarMovimientoInv({ tipo: 'x', cantidad: 1 }), (e) => e.code === 'INV_TIPO_INVALIDO');
+  assert.throws(() => validarMovimientoInv({ tipo: 'entrada', cantidad: 0 }), (e) => e.code === 'INV_CANTIDAD_INVALIDA');
+  assert.throws(() => validarMovimientoInv({ tipo: 'ajuste', cantidad: 0 }), (e) => e.code === 'INV_CANTIDAD_INVALIDA');
+  assert.throws(() => validarMovimientoInv({ tipo: 'salida', cantidad: 10 }, { existencia: 5 }), (e) => e.code === 'STOCK_INSUFICIENTE' && e.status === 409);
+  assert.equal(validarMovimientoInv({ tipo: 'salida', cantidad: 3 }, { existencia: 5 }), 3);
+  assert.equal(validarMovimientoInv({ tipo: 'ajuste', cantidad: -2 }, { existencia: 5 }), -2);
+});
+
+test('nuevoRenglon calcula diferencia contado - teórico', () => {
+  const item = InventoryItem.crear({ sku: 'A', descripcion: 'A' });
+  item.existencia = 40;
+  const r = nuevoRenglon({ item, contado: 38, contadoPor: 'Carlos' });
+  assert.equal(r.teorico, 40);
+  assert.equal(r.contado, 38);
+  assert.equal(r.diferencia, -2);
+});
+
+test('InventoryCount: máquina de estados abierto -> cerrado -> sincronizado', () => {
+  const c = InventoryCount.crear({ ubicacion: 'PT' }, { createdBy: 'Ana' });
+  assert.equal(c.estado, 'abierto');
+  c.cerrar();
+  assert.equal(c.estado, 'cerrado');
+  c.marcarSae({ ok: true, ref: 'SAE-1' });
+  assert.equal(c.estado, 'sincronizado');
+  assert.equal(c.saeSyncEstado, 'enviado');
+  assert.equal(c.saeRef, 'SAE-1');
+});
+
+test('InventoryCount: no se puede cerrar dos veces ni cerrar tras sincronizar', () => {
+  const c = InventoryCount.crear({}, { createdBy: 'Ana' });
+  c.cerrar();
+  assert.throws(() => c.cerrar(), (e) => e.code === 'CONTEO_TRANSICION_INVALIDA' && e.status === 409);
+});
+
+test('InventoryCount: error de SAE deja el conteo en error y permite reintento', () => {
+  const c = InventoryCount.crear({}, { createdBy: 'Ana' });
+  c.cerrar();
+  c.marcarSae({ ok: false, error: 'timeout' });
+  assert.equal(c.estado, 'error');
+  assert.equal(c.saeSyncEstado, 'error');
+  c.marcarSae({ ok: true, ref: 'SAE-9' }); // reintento
+  assert.equal(c.estado, 'sincronizado');
 });

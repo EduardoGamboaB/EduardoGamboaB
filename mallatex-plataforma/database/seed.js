@@ -45,6 +45,7 @@ const WEB_MODULES = [
   ['mes-tablero', 'Producción (MES)', 'Tablero de producción'], ['mes-produccion', 'Producción (MES)', 'Jefe de producción'],
   ['mes-operaciones', 'Producción (MES)', 'Operaciones'], ['mes-almacen', 'Producción (MES)', 'Almacén'],
   ['mes-cobranza', 'Producción (MES)', 'Cobranza'], ['mes-direccion', 'Producción (MES)', 'Dirección'],
+  ['mes-inventario', 'Producción (MES)', 'Inventario físico'],
   ['users', 'Administración', 'Usuarios'], ['roles', 'Administración', 'Roles'],
   ['modulos', 'Administración', 'Módulos'], ['permisos', 'Administración', 'Permisos'],
   ['asignacion', 'Administración', 'Asignación de acceso'], ['audit', 'Administración', 'Auditoría'],
@@ -57,6 +58,7 @@ const MOBILE_MODULES = [
   ['mes-tablet', 'Producción (MES)', 'Tablet de línea'],
   ['mes-produccion-movil', 'Producción (MES)', 'Producción'],
   ['mes-mermas', 'Producción (MES)', 'Mermas'],
+  ['mes-inventario', 'Producción (MES)', 'Inventario físico'],
   ['material', 'Herramientas', 'Material de venta'],
   ['inventario', 'Herramientas', 'Inventario'], ['cotizador', 'Herramientas', 'Cotizador'],
   ['pedidos', 'Herramientas', 'Pedidos'], ['bot', 'Herramientas', 'Asesor técnico'],
@@ -77,12 +79,12 @@ grant('role', 'admin', 'web', webKeys);
 grant('role', 'contador', 'web', webKeys.filter((k) => !['users', 'roles', 'modulos', 'permisos', 'asignacion'].includes(k)));
 grant('role', 'nomina', 'web', ['dashboard', 'attendance', 'incidents', 'overtime', 'periods', 'variablepay', 'rh-recibos', 'rh-vacaciones', 'rh-tickets', 'rh-indicadores', 'employees', 'schedules', 'checador', 'audit']);
 grant('role', 'comercial', 'web', ['crm-clientes', 'crm-objetivos', 'crm-administrativo', 'crm-facturacion', 'products', 'mkt-banco', 'mkt-publicaciones', 'mkt-calendario']);
-grant('role', 'produccion', 'web', ['mes-tablero', 'mes-produccion', 'mes-almacen', 'mes-operaciones']);
+grant('role', 'produccion', 'web', ['mes-tablero', 'mes-produccion', 'mes-almacen', 'mes-operaciones', 'mes-inventario']);
 grant('role', 'direccion', 'web', ['dashboard', 'mes-tablero', 'mes-direccion', 'rh-indicadores', 'audit']);
 grant('role', 'marketing', 'web', ['mkt-banco', 'mkt-formatos', 'mkt-aportes', 'mkt-publicaciones', 'mkt-calendario', 'mkt-impresos']);
 grant('profile', 'comercial', 'mobile', MOBILE_MODULES.filter((m) => !m[0].startsWith('mes-')).map((m) => m[0]));
 grant('profile', 'operativo', 'mobile', ['asistencia', 'historial', 'perfil']);
-grant('profile', 'linea', 'mobile', ['mes-tablet', 'mes-produccion-movil', 'mes-mermas', 'asistencia', 'perfil']);
+grant('profile', 'linea', 'mobile', ['mes-tablet', 'mes-produccion-movil', 'mes-mermas', 'mes-inventario', 'asistencia', 'perfil']);
 grant('profile', 'comercial', 'portal', PORTAL_MODULES.map((m) => m[0]));
 grant('profile', 'operativo', 'portal', PORTAL_MODULES.map((m) => m[0]));
 grant('profile', 'linea', 'portal', PORTAL_MODULES.map((m) => m[0]));

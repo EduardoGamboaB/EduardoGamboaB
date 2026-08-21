@@ -6,9 +6,12 @@ import { ProductionOrderDAO, SuborderDAO } from './infrastructure/ProductionOrde
 import { LineDAO, OperatorDAO, LocationDAO } from './infrastructure/CatalogDAO.js';
 import { RollDAO, AvisoDAO, MermaDAO, ProductividadDAO } from './infrastructure/ShopFloorDAO.js';
 import { RecepcionDAO, EgresoDAO, ProductoTerminadoDAO } from './infrastructure/WarehouseDAO.js';
+import { InventoryItemDAO, InventoryMovementDAO, InventoryCountDAO, InventoryCountLineDAO } from './infrastructure/InventoryDAO.js';
+import { SaeClient } from './infrastructure/SaeClient.js';
 import { ProductionService } from './application/ProductionService.js';
 import { ShopFloorService } from './application/ShopFloorService.js';
 import { WarehouseService } from './application/WarehouseService.js';
+import { InventoryService } from './application/InventoryService.js';
 import { BoardService } from './application/BoardService.js';
 import { buildRoutes } from './interfaces/routes.js';
 
@@ -34,6 +37,10 @@ async function bootstrap() {
   const recepcionDAO = new RecepcionDAO(models.Recepcion);
   const egresoDAO = new EgresoDAO(models.Egreso);
   const productoTerminadoDAO = new ProductoTerminadoDAO(models.ProductoTerminado);
+  const invItemDAO = new InventoryItemDAO(models.InventoryItem);
+  const invMovementDAO = new InventoryMovementDAO(models.InventoryMovement);
+  const invCountDAO = new InventoryCountDAO(models.InventoryCount);
+  const invLineDAO = new InventoryCountLineDAO(models.InventoryCountLine);
 
   // ---- Servicios de aplicación --------------------------------------
   const productionService = new ProductionService({ orderDAO, suborderDAO });
@@ -46,6 +53,13 @@ async function bootstrap() {
     productividadDAO,
   });
   const warehouseService = new WarehouseService({ recepcionDAO, egresoDAO, productoTerminadoDAO, locationDAO });
+  const inventoryService = new InventoryService({
+    itemDAO: invItemDAO,
+    movementDAO: invMovementDAO,
+    countDAO: invCountDAO,
+    lineDAO: invLineDAO,
+    sae: new SaeClient(),
+  });
   const boardService = new BoardService({
     orderDAO,
     lineDAO,
@@ -60,7 +74,7 @@ async function bootstrap() {
   const app = createServer({
     name: NAME,
     mountApi: (a) =>
-      a.use(buildRoutes({ productionService, shopFloorService, warehouseService, boardService })),
+      a.use(buildRoutes({ productionService, shopFloorService, warehouseService, inventoryService, boardService })),
   });
   startServer(app, { port: PORT, name: NAME, onClose: closeDb });
 }

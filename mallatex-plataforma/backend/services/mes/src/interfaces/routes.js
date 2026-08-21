@@ -19,8 +19,14 @@ function requireLinea(req, res, next) {
   next();
 }
 
-export function buildRoutes({ productionService, shopFloorService, warehouseService, boardService }) {
+export function buildRoutes({ productionService, shopFloorService, warehouseService, inventoryService, boardService }) {
   const router = Router();
+
+  // Identidad del actor para movimientos/conteos (nombre + origen web|tablet).
+  const invActor = (req) => ({
+    name: req.auth?.name || req.auth?.email || (req.auth?.sub ? `Empleado ${req.auth.sub}` : ''),
+    origen: req.auth?.principal === 'employee' ? 'tablet' : 'web',
+  });
 
   // ---- Pedidos de producción (MT-PC-003) ---------------------------
   const orders = Router();
@@ -149,6 +155,30 @@ export function buildRoutes({ productionService, shopFloorService, warehouseServ
   locations.get('/', asyncHandler(async (_req, res) => res.json(await warehouseService.locations())));
   locations.post('/', asyncHandler(async (req, res) => res.status(201).json(await warehouseService.createLocation(req.body))));
   router.use('/api/mes/locations', locations);
+
+  // ---- Inventario físico + conteo desde tablet + sync SAE ----------
+  // Un solo módulo 'mes-inventario' cubre web (produccion: administra artículos,
+  // ve conteos y sincroniza) y tablet (linea/operativo: conteo físico).
+  const inventory = Router();
+  inventory.use(requireAuth, requireModule('mes-inventario'));
+
+  // Artículos + kardex
+  inventory.get('/items', asyncHandler(async (req, res) => res.json(await inventoryService.listItems(req.query))));
+  inventory.post('/items', asyncHandler(async (req, res) => res.status(201).json(await inventoryService.crearItem(req.body || {}))));
+  inventory.put('/items/:id', asyncHandler(async (req, res) => res.json(await inventoryService.actualizarItem(req.params.id, req.body || {}))));
+  inventory.delete('/items/:id', asyncHandler(async (req, res) => res.json(await inventoryService.eliminarItem(req.params.id))));
+  inventory.get('/items/:id/movements', asyncHandler(async (req, res) => res.json(await inventoryService.movimientos(req.params.id))));
+  inventory.post('/movements', asyncHandler(async (req, res) => res.status(201).json(await inventoryService.registrarMovimiento(req.body || {}, { actor: invActor(req) }))));
+
+  // Conteo físico (folio CTF-####)
+  inventory.get('/counts', asyncHandler(async (req, res) => res.json(await inventoryService.listarConteos(req.query))));
+  inventory.post('/counts', asyncHandler(async (req, res) => res.status(201).json(await inventoryService.iniciarConteo(req.body || {}, { createdBy: invActor(req).name }))));
+  inventory.get('/counts/:id', asyncHandler(async (req, res) => res.json(await inventoryService.detalleConteo(req.params.id))));
+  inventory.post('/counts/:id/lines', asyncHandler(async (req, res) => res.status(201).json(await inventoryService.capturarRenglon(req.params.id, req.body || {}, { contadoPor: invActor(req).name }))));
+  inventory.post('/counts/:id/close', asyncHandler(async (req, res) => res.json(await inventoryService.cerrarConteo(req.params.id, { actor: invActor(req) }))));
+  inventory.post('/counts/:id/sync', asyncHandler(async (req, res) => res.json(await inventoryService.sincronizarConteo(req.params.id))));
+
+  router.use('/api/mes/inventory', inventory);
 
   // ---- Tablero (KPIs operativos) -----------------------------------
   const tablero = Router();
