@@ -19,8 +19,8 @@
 [CmdletBinding()]
 param(
   [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
-  # Rama a traer (por defecto, la rama actual).
-  [string]$Branch = '',
+  # Rama del proyecto unificado. El código completo NO está en 'main'.
+  [string]$Branch = 'claude/mallatex-unified-project-87vgrq',
   # Omite recompilar la web (úsalo si sólo cambió el backend).
   [switch]$SkipWebBuild,
   # Sobrescribe la URL pública del gateway para el build (si no, se lee del ecosystem).

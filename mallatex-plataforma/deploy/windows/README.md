@@ -8,6 +8,22 @@ el manual PDF *Instalación en Windows Server*.
 > los scripts **no** instalan (pero sí validan): Node.js 20 LTS, npm, Git y
 > PostgreSQL 16.
 
+## Obtener el proyecto (rama correcta)
+
+El proyecto unificado **no está en `main`**, sino en la rama
+`claude/mallatex-unified-project-87vgrq`. Clónala explícitamente:
+
+```powershell
+cd C:\
+git clone -b claude/mallatex-unified-project-87vgrq `
+  https://github.com/EduardoGamboaB/EduardoGamboaB.git mallatex
+cd C:\mallatex\mallatex-plataforma
+git branch --show-current   # debe decir: claude/mallatex-unified-project-87vgrq
+```
+
+Si ya clonaste sin la rama: `git fetch origin && git checkout claude/mallatex-unified-project-87vgrq`.
+`update.ps1` ya trae y cambia a esa rama por defecto en cada actualización.
+
 ## `install.ps1` — instalación completa
 
 Valida prerrequisitos → (opcional) crea la base → instala dependencias
@@ -57,10 +73,13 @@ nunca `reset`) → build de la web → `pm2 reload` sin downtime. Hace un
 
 ```powershell
 cd C:\mallatex\mallatex-plataforma\deploy\windows
-.\update.ps1                 # rama actual, recompila web
+.\update.ps1                 # trae la rama unificada y recompila la web
 .\update.ps1 -SkipWebBuild   # sólo cambió el backend
-.\update.ps1 -Branch main
 ```
+
+> Por defecto `update.ps1` hace `checkout` + `pull` de la rama
+> `claude/mallatex-unified-project-87vgrq`. Pasa `-Branch <otra>` sólo si
+> tu organización mueve el proyecto a otra rama.
 
 ## Después de instalar (obligatorio en producción)
 
